@@ -1,11 +1,12 @@
-import ParentRegistration from "@/components/navigation/forms/ParentsStep1Form";
+
+import ChildrenRegistration from "@/components/navigation/forms/AssignStudentForm";
 import Image from "next/image";
 
 export default function Home() {
   return (
 
         <div>
-        <ParentRegistration />
+        <ChildrenRegistration />
     </div>
   );
 }
