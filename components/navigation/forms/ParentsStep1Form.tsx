@@ -36,7 +36,78 @@ export default function ParentRegistration() {
     <p className="text-xs text-gray-900">Children Info</p>
   </div>
 </div>
+                
 
+{/* Form Card */}
+<div className="bg-white mt-8 mx-auto p-5 rounded-lg max-w-xl shadow-md">
+  <h2 className="text-lg font-semibold mb-4 text-black">Parent Information</h2>
+
+  <form className="flex flex-col gap-4">
+    <div>
+      <label className="text-black">Full Name *</label>
+      <input
+        type="text"
+        placeholder="Enter your full name"
+        className="w-full p-2 border text-gray-500 border-gray-300 rounded-md"
+      />
+    </div>
+
+    <div>
+  <label className="text-black">Phone Number *</label>
+  <input
+    type="text"
+    placeholder="(+250) 123-4567"
+    className="w-full p-2 border border-gray-300 rounded-md placeholder-gray-400"
+  />
+</div>
+
+
+    <div>
+      <label className="text-black">Email Address *</label>
+      <input
+        type="email"
+        placeholder="your.email@example.com"
+        className="w-full p-2 border border-gray-300 rounded-md placeholder-gray-400"
+      />
+    </div>
+
+    <div>
+      <label className="text-black">Password *</label>
+      <input
+        type="password"
+        placeholder="Enter a secure password"
+        className="w-full p-2 border border-gray-200 rounded-md placeholder-gray-400"
+      />
+    </div>
+
+    <div>
+      <label className="text-black">Home Address *</label>
+      <textarea
+        placeholder="Enter your complete home address"
+        className="w-full p-2 h-20 border  border-gray-300 rounded-md placeholder-gray-400"
+      ></textarea>
+    </div>
+
+    <div className="flex justify-between text-black mt-3">
+      <button
+        type="button"
+        className="px-4 py-2 border border-gray-300 rounded-md  "
+      >
+        ← Back to Login
+      </button>
+
+      <button
+        type="submit"
+        className="px-4 py-2 bg-blue-600 text-white rounded-md"
+      >
+        Next: Add Children →
+      </button>
+    </div>
+  </form>
+</div>
+
+
+        
     </div>
   );
 }
