@@ -10,17 +10,21 @@ function ParentDashboardMap() {
   const position: LatLngExpression = [-1.9441, 30.0619]
   
   return (
-    <div className="flex justify-end w-1/2 h-[400px] p-4 ml-auto">
-    <MapContainer 
-        center={position}
-        zoom={14}
-        style={{ width: '90%', height: '100%' }}
-      >
-    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <BusMarker />
-      <BusStopMarker/>
-      <SchoolMarker />
-    </MapContainer> 
+    <div>
+    <div className="w-10/12 mx-auto mt-5 h-[400px] flex justify-end">
+      <div className="w-1/2 h-full bg-blue-200 rounded-lg shadow-lg overflow-hidden">
+        <MapContainer 
+            center={position}
+            zoom={14}
+            style={{ width: '100%', height: '100%' }}
+          >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <BusMarker />
+          <BusStopMarker/>
+          <SchoolMarker />
+        </MapContainer>
+      </div>
+    </div>
     </div>
   )
 }
