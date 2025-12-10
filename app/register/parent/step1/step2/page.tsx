@@ -57,6 +57,24 @@ export default function ChildrenRegistration() {
         </div>
       </div>
 
+<div className="bg-white mt-8 mx-auto p-5 rounded-lg max-w-xl shadow-md">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-black">
+            Children Information
+          </h2>
+          <button
+            className="bg-blue-100 text-blue-600 text-sm flex items-center gap-1 px-3 py-2 rounded-md"
+            type="button"
+            onClick={addChild}
+          >
+            <span className="text-lg font-bold">+</span> Add Another Child
+          </button>
+        </div>
+
+       
+      </div>
+
+
       
     </div>
   );
