@@ -12,7 +12,7 @@ function ParentNavbar() {
         <h1 className='text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800'>My Dashboard</h1>
           </div>
         <div className='flex flex-wrap items-center justify-center font-medium text-xs sm:text-sm gap-3 sm:gap-6'>
-        <Link href='/dashboard' className='text-gray-600 hover:text-black'>Dashboard</Link>
+        <Link href='/parent/dashboard' className='text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4'>Dashboard</Link>
         
         <Link href='/Setting' className='text-gray-600 hover:text-black'>Setting</Link>
         
