@@ -26,11 +26,11 @@ function ParentNavbar() {
         <div className={`${isMenuOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row absolute sm:relative top-full sm:top-auto left-0 sm:left-auto w-full sm:w-auto bg-white sm:bg-transparent shadow-lg sm:shadow-none items-center justify-center font-medium text-xs sm:text-sm gap-3 sm:gap-6 py-4 sm:py-0`}>
         <Link href='/parent/dashboard' className='text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4'>Dashboard</Link>
         
-        <Link href='/Setting' className='text-gray-600 hover:text-black'>Setting</Link>
+        <Link href='/parent/dashboard/settings' className='text-gray-600 hover:text-black'>Settings</Link>
         
         <div className='h-6 w-px bg-gray-300'></div>
         
-        <Link href='/Logout' className='flex items-center gap-2 text-gray-600 hover:text-red-500 border border-transparent transition-all duration-300 hover:bg-red-100 rounded-lg py-1 px-3 sm:py-2 sm:px-5'>
+        <Link href='/login' className='flex items-center gap-2 text-gray-600 hover:text-red-500 border border-transparent transition-all duration-300 hover:bg-red-100 rounded-lg py-1 px-3 sm:py-2 sm:px-5'>
         <FaSignOutAlt/>
         Logout
         
