@@ -27,7 +27,7 @@ export default function ParentDashboard() {
         </div>
 
         {/* Recent Updates Section */}
-         <RecentUpdates />
+         <RecentUpdates/>
       </main>
       <Footer />
     </div>

@@ -14,7 +14,7 @@ const RecentUpdates = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 mt-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b">Recent Updates</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 pb-3 ">Recent Updates</h2>
       
       <div className="space-y-6">
         {updates.map((update, index) => (
