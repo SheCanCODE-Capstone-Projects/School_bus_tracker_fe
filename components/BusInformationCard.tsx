@@ -7,54 +7,61 @@ const BusInformationCard = () => {
       
       <div className="space-y-4 md:space-y-5">
         {/* Your Child's Bus Section */}
-        <div className="bg-sky-200 border border-sky-300 rounded-lg p-3 mb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="mr-3 w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                  <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-1h4v1a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H20a1 1 0 001-1v-4a1 1 0 00-.293-.707l-2-2A1 1 0 0018 7h-3V4a1 1 0 00-1-1H3zm11 3h3.586l1 1H14V7zm-6 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm7 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-                </svg>
-              </div>
-              <span className="text-gray-700 text-sm md:text-base">Your Child s Bus</span>
+        <div className="bg-sky-100 border border-sky-100 rounded-lg p-3 mb-2">
+          <div className="flex items-start">
+            <div className="mr-3 w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-1h4v1a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H20a1 1 0 001-1v-4a1 1 0 00-.293-.707l-2-2A1 1 0 0018 7h-3V4a1 1 0 00-1-1H3zm11 3h3.586l1 1H14V7zm-6 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm7 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+              </svg>
             </div>
-            <span className="bg-blue-100 text-blue-800 text-xs md:text-sm font-bold py-1 px-2 md:py-1 md:px-3 rounded-full">
-              Bus 01
-            </span>
+            <div className="flex flex-col">
+              <span className="text-gray-700 text-sm md:text-base mb-1">Your Childs Bus</span>
+              <span className="bg-blue-100 text-blue-800 text-xs md:text-sm font-bold py-1 px-2 md:py-1 md:px-3 rounded-full self-start">
+                Bus 01
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Driver Section */}
-        <div className="border border-gray-300 rounded-lg p-3 mb-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center mb-2 sm:mb-0">
-              <div className="mr-3 w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-blue-100 rounded-full">
-                <svg className="w-3 h-3 md:w-4 md:h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <span className="text-gray-700 text-sm md:text-base">Driver</span>
+        <div className="border border-gray-200 rounded-lg p-3 mb-2">
+          <div className="flex items-start">
+            <div 
+              className="mr-3 w-7 h-7 md:w-8 md:h-8 rounded-full bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage: 'url(/image.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            ></div>
+            <div className="flex flex-col">
+              <span className="text-gray-700 text-sm md:text-base mb-1">Driver</span>
+              <span className="font-semibold text-gray-800 text-sm md:text-base">
+                Michael Johnson
+              </span>
             </div>
-            <span className="font-semibold text-gray-800 text-sm md:text-base break-words sm:text-right">
-              Michael Johnson
-            </span>
           </div>
         </div>
 
         {/* School Section */}
-        <div className="border border-gray-300 rounded-lg p-3 mb-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center mb-2 sm:mb-0">
-              <div className="mr-3 w-7 h-7 md:w-8 md:h-8 flex items-center justify-center">
-                <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838l-2.727 1.17 1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-                </svg>
-              </div>
-              <span className="text-gray-700 text-sm md:text-base">School</span>
+        <div className="border border-gray-200 rounded-lg p-3 mb-2">
+          <div className="flex items-start">
+            <div className="mr-3 w-7 h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3L2 12H5V20H19V12H22L12 3ZM7 18V10.5L12 6L17 10.5V18H15V13H9V18H7Z"/>
+                <rect x="10" y="14" width="1" height="2" fill="currentColor"/>
+                <rect x="13" y="14" width="1" height="2" fill="currentColor"/>
+                <rect x="10" y="7" width="4" height="1" fill="currentColor"/>
+                <rect x="10" y="9" width="4" height="1" fill="currentColor"/>
+              </svg>
             </div>
-            <span className="font-semibold text-gray-800 text-sm md:text-base break-words sm:text-right">
-              Lincoln Elementary School
-            </span>
+            <div className="flex flex-col">
+              <span className="text-gray-700 text-sm md:text-base mb-1">School</span>
+              <span className="font-semibold text-gray-800 text-sm md:text-base">
+                Lincoln Elementary School
+              </span>
+            </div>
           </div>
         </div>
 
