@@ -15,20 +15,20 @@ export default function ChildrenRegistration() {
   };
 
   return (
-    <div className="p-5 bg-gray-100 min-h-screen">
-      <div className="text-center mt-5">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-500 rounded-2xl shadow-lg mb-4">
-          <Bus className="w-12 h-12 text-white" strokeWidth={2.5} />
+    <div className="p-3 sm:p-5 bg-gray-100 min-h-screen">
+      <div className="text-center mt-3 sm:mt-5">
+        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-blue-500 rounded-2xl shadow-lg mb-4">
+          <Bus className="w-8 h-8 sm:w-12 sm:h-12 text-white" strokeWidth={2.5} />
         </div>
         <div>
-          <h1 className="text-gray-900 text-3xl font-bold">
+          <h1 className="text-gray-900 text-xl sm:text-2xl md:text-3xl font-bold">
             SCHOOL BUS TRACKER
           </h1>
         </div>
-        <h1 className="mt-3 text-2xl text-black font-semibold">
+        <h1 className="mt-3 text-lg sm:text-xl md:text-2xl text-black font-semibold">
           Parent Registration
         </h1>
-        <p className="text-gray-500 text-sm">
+        <p className="text-gray-500 text-sm px-4">
           Create your account to track your children's bus
         </p>
       </div>
@@ -60,17 +60,17 @@ export default function ChildrenRegistration() {
         </div>
       </div>
 
-      <div className="bg-white mt-8 mx-auto p-5 rounded-lg max-w-xl shadow-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-black">
+      <div className="bg-white mt-6 sm:mt-8 mx-3 sm:mx-auto p-4 sm:p-5 rounded-lg max-w-xl shadow-md">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
+          <h2 className="text-base sm:text-lg font-semibold text-black">
             Children Information
           </h2>
           <button
-            className="bg-blue-100 text-blue-600 text-sm flex items-center gap-1 px-3 py-2 rounded-md"
+            className="bg-blue-100 text-blue-600 text-xs sm:text-sm flex items-center gap-1 px-2 sm:px-3 py-2 rounded-md w-full sm:w-auto justify-center"
             type="button"
             onClick={addChild}
           >
-            <span className="text-lg font-bold">+</span> Add Another Child
+            <span className="text-sm sm:text-lg font-bold">+</span> Add Another Child
           </button>
         </div>
 
@@ -78,45 +78,45 @@ export default function ChildrenRegistration() {
           {children.map((child, index) => (
             <div
               key={child.id}
-              className="bg-gray-50 p-4 rounded-lg shadow-sm relative"
+              className="bg-gray-50 p-3 sm:p-4 rounded-lg shadow-sm relative"
             >
               {children.length > 1 && (
                 <button
                   type="button"
                   onClick={() => deleteChild(child.id)}
-                  className="absolute top-3 right-3 text-red-500 text-xl"
+                  className="absolute top-2 sm:top-3 right-2 sm:right-3 text-red-500 text-lg sm:text-xl"
                 >
-                  <Trash2 />
+                  <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               )}
 
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+              <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 Child {index + 1}
               </h3>
 
               <div className="mb-3">
-                <label className="text-sm text-gray-700">Full Name *</label>
+                <label className="text-xs sm:text-sm text-gray-700">Full Name *</label>
                 <input
                   type="text"
                   placeholder="Child's full name"
-                  className="w-full p-2 mt-1 border border-gray-300 rounded-md placeholder-gray-400"
+                  className="w-full p-2 mt-1 border border-gray-300 rounded-md placeholder-gray-400 text-black"
                 />
               </div>
 
               <div className="mb-3">
-                <label className="text-sm text-gray-700">
+                <label className="text-xs sm:text-sm text-gray-700">
                   Student Number *
                 </label>
                 <input
                   type="text"
                   placeholder="e.g., STU12345"
-                  className="w-full p-2 mt-1 border border-gray-300 rounded-md placeholder-gray-400"
+                  className="w-full p-2 mt-1 border border-gray-300 rounded-md placeholder-gray-400 text-black"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="text-sm text-gray-700">Age *</label>
+                  <label className="text-xs sm:text-sm text-gray-700">Age *</label>
                   <input
                     type="number"
                     placeholder="Age"
@@ -125,7 +125,7 @@ export default function ChildrenRegistration() {
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-700">Bus Stop *</label>
+                  <label className="text-xs sm:text-sm text-gray-700">Bus Stop *</label>
                   <select className="w-full p-2 mt-1 border border-gray-300 rounded-md text-gray-700">
                     <option>Select bus stop</option>
                   </select>
@@ -134,18 +134,18 @@ export default function ChildrenRegistration() {
             </div>
           ))}
 
-          <div className="flex justify-between text-black mt-3">
-            <Link href="/register/parent/step1">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 text-black mt-4">
+            <Link href="/register/parent/step1" className="w-full sm:w-auto">
               <button
                 type="button"
-                className="px-10 py-2 border border-gray-300 rounded-full"
+                className="w-full sm:w-auto px-4 sm:px-10 py-2 border border-gray-300 rounded-full text-sm sm:text-base"
               >
                 ← Back
               </button>
             </Link>
             <button
               type="submit"
-              className="px-25 py-2 bg-green-600 text-white rounded-full flex items-center gap-2"
+              className="w-full sm:w-auto px-4 sm:px-25 py-2 bg-green-600 text-white rounded-full flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               ✓ Complete Registration
             </button>

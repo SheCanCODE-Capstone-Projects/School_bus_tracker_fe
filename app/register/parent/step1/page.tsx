@@ -50,30 +50,30 @@ export default function ParentRegistration() {
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 mt-5 px-4">
+      <div className="flex justify-center gap-8 mt-5">
         <div className="flex items-center gap-3">
           {/* Circle */}
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center">
-            <UserPlus className="text-white w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+            <UserPlus className="text-white w-5 h-5" />
           </div>
 
           {/* Right side: Step 1 + Parent Info */}
           <div className="flex flex-col">
             <p className="text-xs font-semibold text-blue-600">Step 1</p>
-            <p className="text-xs sm:text-sm text-gray-600 font-medium">Parent Info</p>
+            <p className="text-sm text-gray-600 font-medium">Parent Info</p>
           </div>
         </div>
 
-        <div className="w-1 h-8 sm:w-10 sm:h-1 bg-gray-400"></div>
+        <div className="w-10 h-1 mt-4 bg-gray-400"></div>
 
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-300 rounded-full flex items-center justify-center">
-            <Users className="text-white w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+            <Users className="text-white w-5 h-5" />
           </div>
 
           <div className="flex flex-col">
             <p className="text-xs font-semibold text-gray-400">Step 2</p>
-            <p className="text-xs sm:text-sm text-gray-400 font-medium">Children Info</p>
+            <p className="text-sm text-gray-400 font-medium">Children Info</p>
           </div>
         </div>
       </div>
