@@ -8,7 +8,7 @@ function ParentDashboard() {
   return (
     <div className="bg-white flex flex-col min-h-screen">
         <ParentNavbar/>
-        <main>
+        <main className="flex-1">
           <div className='lg:flex-1'>
            <Notifications /> 
           </div>
