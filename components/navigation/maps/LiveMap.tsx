@@ -43,7 +43,10 @@ const LiveMap = () => {
       keyboard={true}
       style={{ width: '100%', height: '300px', minHeight: '250px' }}
     >  
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      />
       {busData.map(bus => (
         <Marker key={bus.id} position={bus.position} icon={createBusIcon(bus.name, bus.status)}>
           <Popup>
