@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Bus, Users, User, UserCog } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 interface Role {
   id: 'parent' | 'driver' | 'admin';
   label: string;
@@ -12,6 +13,7 @@ export default function LoginPage(){
  const [selectedRole, setSelectedRole] = useState<'parent' | 'driver' | 'admin'>('parent');
  const [email, setEmail] = useState<string>('');
  const [password, setPassword] = useState<string>('');
+ const router= useRouter();
  const roles:Role[]=[
   { id: 'parent', label: 'Parent', icon: Users },
   { id: 'driver', label: 'Driver', icon: User },
@@ -21,6 +23,7 @@ export default function LoginPage(){
     const handleLogin = (): void => {
     console.log('Login attempt:', { role: selectedRole, email });
     // authentication logic will be here
+    router.push('/parent/dashboard')
   };
 
    const handleKeyPress = (e: React.KeyboardEvent): void => {
@@ -126,8 +129,8 @@ export default function LoginPage(){
 
           {/* Register Link */}
           <p className="text-center text-sm text-gray-600 mt-6">
-            If you don&apos;t have an account?{' '}
-            <Link href="/register" className="text-blue-500 hover:text-blue-600 font-medium hover:underline">
+            If you don’t have an account?{' '}
+            <Link href="/register/parent/step1" className="text-blue-500 hover:text-blue-600 font-medium hover:underline">
               Register Here
             </Link>
           </p>

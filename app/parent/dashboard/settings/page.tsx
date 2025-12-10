@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { LogOut, Save, Bus } from 'lucide-react';
 import ToggleSwitch from './ToggleSwitch';
+import ParentNavbar from '@/components/navigation/ParentNavbar';
 
 export default function Settings() {
   const [fullName, setFullName] = useState('Sarah Anderson');
@@ -27,38 +28,7 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center">
-                <Bus className="w-7 h-7 text-white" strokeWidth={2} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">muhetobpeace</span>
-                </div>
-              </div>
-            </div>
-            <nav className="flex items-center gap-8">
-              <button className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                Dashboard
-              </button>
-              <button className="text-blue-600 font-medium">Settings</button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="font-medium">Logout</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </header>
-
+   <ParentNavbar />
       <main className="max-w-5xl mx-auto px-6 py-12">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
           <div className="flex items-start gap-3 mb-8">
