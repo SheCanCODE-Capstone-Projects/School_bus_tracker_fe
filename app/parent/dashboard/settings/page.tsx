@@ -235,7 +235,7 @@ export default function Settings() {
 
         <footer className="text-center py-8">
           <p className="text-gray-600 font-medium mb-1">
-            School Bus Tracker © 2024
+            School Bus Tracker © 2025
           </p>
           <p className="text-gray-500 text-sm">
             Keeping your children safe, one ride at a time
