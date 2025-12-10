@@ -71,7 +71,83 @@ export default function ChildrenRegistration() {
           </button>
         </div>
 
-       
+        <form className="flex flex-col gap-4">
+          {children.map((child, index) => (
+            <div
+              key={child.id}
+              className="bg-gray-50 p-4 rounded-lg shadow-sm relative"
+            >
+              {children.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => deleteChild(child.id)}
+                  className="absolute top-3 right-3 text-red-500 text-xl"
+                >
+                  <Trash2 />
+                </button>
+              )}
+
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Child {index + 1}
+              </h3>
+
+              <div className="mb-3">
+                <label className="text-sm text-gray-700">Full Name *</label>
+                <input
+                  type="text"
+                  placeholder="Child's full name"
+                  className="w-full p-2 mt-1 border border-gray-300 rounded-md placeholder-gray-400"
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="text-sm text-gray-700">
+                  Student Number *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., STU12345"
+                  className="w-full p-2 mt-1 border border-gray-300 rounded-md placeholder-gray-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-700">Age *</label>
+                  <input
+                    type="number"
+                    placeholder="Age"
+                    className="w-full p-2 mt-1 border border-gray-300 rounded-md placeholder-gray-400 text-gray-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-700">Bus Stop *</label>
+                  <select className="w-full p-2 mt-1 border border-gray-300 rounded-md text-gray-700">
+                    <option>Select bus stop</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <div className="flex justify-between text-black mt-3">
+            <Link href="/register/parent/step1">
+              <button
+                type="button"
+                className="px-10 py-2 border border-gray-300 rounded-full"
+              >
+                ← Back
+              </button>
+            </Link>
+            <button
+              type="submit"
+              className="px-25 py-2 bg-green-600 text-white rounded-full flex items-center gap-2"
+            >
+              ✓ Complete Registration
+            </button>
+          </div>
+        </form>
       </div>
 
 
