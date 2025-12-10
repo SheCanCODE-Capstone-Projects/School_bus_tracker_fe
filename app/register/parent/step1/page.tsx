@@ -48,7 +48,7 @@ export default function ParentRegistration() {
           Parent Registration
         </h1>
         <p className="text-gray-500 text-sm px-4">
-          Create your account to track your children's bus
+          Create your account to track your children&apos;s bus
         </p>
       </div>
 
