@@ -10,8 +10,8 @@ const DynamicMap = dynamic(() => import('./LiveMap'), {
 function ParentDashboardMap() {
 
     return (
-      <div className="w-full lg:w-1/2 ml-auto mt-5 px-4">
-        <div className='border border-gray-200 p-4 rounded-lg shadow-lg bg-white mb-5'>
+      <div className="w-full pr-4 sm:pr-8 md:pr-16 lg:pr-32 lg:w-1/2 ml-auto mt-5 px-4">
+        <div className='border border-gray-200 h-auto min-h-[480px] p-4 rounded-lg shadow-lg bg-white mb-5'>
           <div className="flex items-center gap-2 mb-4">
             <div className="h-4 w-1 bg-blue-700 rounded-lg"></div>
             <h2 className='text-lg sm:text-xl lg:text-2xl font-semibold text-black'>Live Bus Location</h2>
