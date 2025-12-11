@@ -27,13 +27,13 @@ export default function Settings() {
     <div className="min-h-screen bg-gray-50">
       <ParentNavbar />
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
         {/* ---------------- PROFILE ---------------- */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6 group transition-transform hover:translate-y-[-7px]">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8 mb-6 group transition-transform hover:translate-y-[-7px]">
           <div className="flex items-start gap-3 mb-8 hover:bg-gray-50 p-2 rounded-lg transition-all hover:translate-x-1">
             <div className="w-1 h-8 rounded-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h2 className="text-2xl font-semibold text-gray-900">Profile Information</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Profile Information</h2>
           </div>
 
           <div className="space-y-6">
@@ -92,10 +92,10 @@ export default function Settings() {
         </div>
 
         {/* ---------------- SECURITY ---------------- */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6 group transition-transform hover:translate-y-[-7px]">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8 mb-6 group transition-transform hover:translate-y-[-7px]">
           <div className="flex items-start gap-3 mb-8 hover:bg-gray-50 p-2 rounded-lg transition-all hover:translate-x-1">
             <div className="w-1 h-8 rounded-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h2 className="text-2xl font-semibold text-gray-900">Security</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Security</h2>
           </div>
 
           <div className="space-y-6">
@@ -144,15 +144,15 @@ export default function Settings() {
         </div>
 
         {/* ---------------- NOTIFICATION PREFS ---------------- */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6 group transition-transform hover:translate-y-[-7px]">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8 mb-6 group transition-transform hover:translate-y-[-7px]">
           <div className="flex items-start gap-3 mb-8 hover:bg-gray-50 p-2 rounded-lg transition-all hover:translate-x-1">
             <div className="w-1 h-8 rounded-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h2 className="text-2xl font-semibold text-gray-900">Notification Preferences</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Notification Preferences</h2>
           </div>
 
           <div className="space-y-8">
 
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-1">Email Notifications</h3>
                 <p className="text-sm text-gray-600">Receive updates via email</p>
@@ -160,7 +160,7 @@ export default function Settings() {
               <ToggleSwitch checked={emailNotifications} onChange={setEmailNotifications} />
             </div>
 
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-1">SMS Notifications</h3>
                 <p className="text-sm text-gray-600">Receive text message alerts</p>
@@ -168,7 +168,7 @@ export default function Settings() {
               <ToggleSwitch checked={smsNotifications} onChange={setSmsNotifications} />
             </div>
 
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-1">Emergency Alerts</h3>
                 <p className="text-sm text-gray-600">Critical updates only</p>
@@ -176,7 +176,7 @@ export default function Settings() {
               <ToggleSwitch checked={emergencyAlerts} onChange={setEmergencyAlerts} />
             </div>
 
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-1">Daily Summary</h3>
                 <p className="text-sm text-gray-600">End of day bus report</p>
@@ -187,10 +187,10 @@ export default function Settings() {
         </div>
 
         {/* SAVE BUTTON */}
-        <div className="flex justify-end mb-12">
+        <div className="flex justify-center sm:justify-end mb-8 sm:mb-12">
           <button
             onClick={handleSaveChanges}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3.5 rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 sm:px-8 py-3.5 rounded-lg transition-colors shadow-sm w-full sm:w-auto justify-center"
           >
             <Save className="w-5 h-5" />
             Save Changes
