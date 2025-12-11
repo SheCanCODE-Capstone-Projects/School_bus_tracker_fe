@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Bus, Users, User, UserCog } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
 
 interface Role {
   id: 'parent' | 'driver' | 'admin';
@@ -14,6 +16,7 @@ export default function SchoolBusLogin() {
   const [selectedRole, setSelectedRole] = useState<'parent' | 'driver' | 'admin'>('parent');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const router= useRouter();
 
   const roles: Role[] = [
     { id: 'parent', label: 'Parent', icon: Users },
@@ -24,6 +27,7 @@ export default function SchoolBusLogin() {
   const handleLogin = (): void => {
     console.log('Login attempt:', { role: selectedRole, email });
     // Add your authentication logic here
+    router.push('/parent/dashboard')
   };
 
   const handleKeyPress = (e: React.KeyboardEvent): void => {
