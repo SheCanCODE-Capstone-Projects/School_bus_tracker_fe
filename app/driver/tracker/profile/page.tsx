@@ -18,7 +18,7 @@ export default function DriverProfile() {
               <h1 className="text-xl font-semibold text-gray-900">Driver Profile</h1>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">muhetobpeace</span>
+                <span className="text-sm text-gray-600">peace</span>
               </div>
             </div>
           </div>
@@ -26,8 +26,9 @@ export default function DriverProfile() {
             <button className="text-gray-600 hover:text-gray-900 font-medium">Tracker</button>
             <button className="text-blue-600 hover:text-blue-700 font-medium">Profile</button>
             <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-              <span>Logout</span>
               <span>→</span>
+              <span>Logout</span>
+            
             </button>
           </div>
         </div>
@@ -53,9 +54,9 @@ export default function DriverProfile() {
           </div>
 
           {/* Personal Information */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6 transition-transform duration-300 hover:-translate-y-2.5 hover:shadow-lg">
+            <div className="flex items-center gap-3 mb-6 group">
+              <div className="w-1 h-6 bg-blue-600 rounded-full transition-all duration-300 group-hover:w-2"></div>
               <h2 className="text-2xl font-semibold text-gray-900">Personal Information</h2>
             </div>
             
@@ -96,9 +97,9 @@ export default function DriverProfile() {
           </div>
 
           {/* Bus Assignment */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6 transition-transform duration-300 hover:-translate-y-2.5 hover:shadow-lg">
+            <div className="flex items-center gap-3 mb-6 group">
+              <div className="w-1 h-6 bg-blue-600 rounded-full transition-all duration-300 group-hover:w-2"></div>
               <h2 className="text-2xl font-semibold text-gray-900">Bus Assignment</h2>
             </div>
             
@@ -115,9 +116,9 @@ export default function DriverProfile() {
           </div>
 
           {/* Professional Details */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6 transition-transform duration-300 hover:-translate-y-2.5 hover:shadow-lg">
+            <div className="flex items-center gap-3 mb-6 group">
+              <div className="w-1 h-6 bg-blue-600 rounded-full transition-all duration-300 group-hover:w-2"></div>
               <h2 className="text-2xl font-semibold text-gray-900">Professional Details</h2>
             </div>
             
@@ -174,19 +175,19 @@ export default function DriverProfile() {
           {/* Stats Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {/* On-time Rate */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center transition-transform duration-300 hover:-translate-y-2.5 hover:shadow-lg">
               <h3 className="text-4xl font-bold text-gray-900 mb-2">100%</h3>
               <p className="text-gray-600 font-medium">On-Time Rate</p>
             </div>
             
             {/* Incidents */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center transition-transform duration-300 hover:-translate-y-2.5 hover:shadow-lg">
               <h3 className="text-4xl font-bold text-gray-900 mb-2">0</h3>
               <p className="text-gray-600 font-medium">Incidents</p>
             </div>
             
             {/* Students */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center transition-transform duration-300 hover:-translate-y-2.5 hover:shadow-lg">
               <h3 className="text-4xl font-bold text-gray-900 mb-2">45</h3>
               <p className="text-gray-600 font-medium">Students</p>
             </div>
