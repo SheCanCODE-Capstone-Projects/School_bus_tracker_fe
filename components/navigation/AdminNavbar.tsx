@@ -3,7 +3,7 @@ import { Bus, LogOut } from "lucide-react";
 
 export default function AdminDashboardHeader() {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-12 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
