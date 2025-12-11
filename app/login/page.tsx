@@ -1,36 +1,37 @@
 'use client';
+
 import React, { useState } from 'react';
-import { Bus, Users, User, UserCog } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Bus, Users, User, UserCog } from 'lucide-react';
+
 interface Role {
   id: 'parent' | 'driver' | 'admin';
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
-export default function LoginPage(){
- const [selectedRole, setSelectedRole] = useState<'parent' | 'driver' | 'admin'>('parent');
- const [email, setEmail] = useState<string>('');
- const [password, setPassword] = useState<string>('');
- const router= useRouter();
- const roles:Role[]=[
-  { id: 'parent', label: 'Parent', icon: Users },
-  { id: 'driver', label: 'Driver', icon: User },
-  { id: 'admin', label: 'Admin', icon: UserCog }
- 
- ];
-    const handleLogin = (): void => {
+export default function SchoolBusLogin() {
+  const [selectedRole, setSelectedRole] = useState<'parent' | 'driver' | 'admin'>('parent');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+
+  const roles: Role[] = [
+    { id: 'parent', label: 'Parent', icon: Users },
+    { id: 'driver', label: 'Driver', icon: User },
+    { id: 'admin', label: 'Admin', icon: UserCog }
+  ];
+
+  const handleLogin = (): void => {
     console.log('Login attempt:', { role: selectedRole, email });
-    // authentication logic will be here
-    router.push('/parent/dashboard')
+    // Add your authentication logic here
   };
 
-   const handleKeyPress = (e: React.KeyboardEvent): void => {
+  const handleKeyPress = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter') {
       handleLogin();
     }
   };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -93,7 +94,7 @@ export default function LoginPage(){
                   value={email}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="email@gmail.com"
+                  placeholder="your.email@gmail.com"
                   className="w-full px-4 py-3 pl-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 placeholder:text-gray-400"
                 />
               </div>
@@ -125,12 +126,19 @@ export default function LoginPage(){
             >
               LOGIN AS A {selectedRole.toUpperCase()}
             </button>
+
+            {/* Forgot Password Link */}
+            <div className="text-center mt-4">
+              <Link href="/login/resetpassword" className="text-sm text-blue-500 hover:text-blue-600 font-medium hover:underline">
+                Forgot Password?
+              </Link>
+            </div>
           </div>
 
           {/* Register Link */}
           <p className="text-center text-sm text-gray-600 mt-6">
-            If you don’t have an account?{' '}
-            <Link href="/register/parent/step1" className="text-blue-500 hover:text-blue-600 font-medium hover:underline">
+            If you don&apos;t have an account?{' '}
+            <Link href="/register" className="text-blue-500 hover:text-blue-600 font-medium hover:underline">
               Register Here
             </Link>
           </p>
