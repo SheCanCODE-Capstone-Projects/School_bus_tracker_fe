@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Trash2, Users, Bus, UserPlus } from "lucide-react";
-import Link from "next/link";
+import { Users, Bus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ParentRegistration() {
@@ -10,158 +9,252 @@ export default function ParentRegistration() {
     phone: "",
     email: "",
     password: "",
-    address: ""
+    address: "",
   });
-  const [errors, setErrors] = useState({});
+
+  const [errors, setErrors] = useState<any>({});
   const router = useRouter();
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    let newErrors: any = {};
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\+?\d{10,15}$/.test(formData.phone)) {
+      newErrors.phone = "Enter a valid phone number";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Enter a valid email";
+    }
+
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!formData.address.trim()) {
+      newErrors.address = "Home address is required";
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = (e: any) => {
     e.preventDefault();
-    const newErrors = {};
-    
-    if (!formData.fullName) newErrors.fullName = "Required";
-    if (!formData.phone) newErrors.phone = "Required";
-    if (!formData.email) newErrors.email = "Required";
-    if (!formData.password) newErrors.password = "Required";
-    if (!formData.address) newErrors.address = "Required";
-    
+    const newErrors = validateForm();
     setErrors(newErrors);
-    
+
     if (Object.keys(newErrors).length === 0) {
-      window.location.href = "/register/parent/step1/step2";
+      router.push("/register/parent/step1/step2");
     }
   };
+
   return (
-    <div className="p-3 sm:p-5 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-      <div className="text-center mt-3 sm:mt-5">
-        <div className="flex justify-center mt-3 sm:mt-5">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-blue-500 rounded-2xl shadow-lg mb-4">
-            <Bus className="w-8 h-8 sm:w-12 sm:h-12 text-white" strokeWidth={2.5} />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+
+        {/* HEADER */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-500 rounded-2xl shadow-lg mb-4">
+            <Bus className="w-12 h-12 text-white" strokeWidth={2.5} />
           </div>
-        </div>
-        <div>
-          <h1 className="text-gray-900 text-xl sm:text-2xl md:text-3xl font-bold">
+
+          <h1 className="text-3xl font-bold text-gray-900">
             SCHOOL BUS TRACKER
           </h1>
-        </div>
-        <h1 className="mt-3 text-lg sm:text-xl text-black font-semibold">
-          Parent Registration
-        </h1>
-        <p className="text-gray-500 text-sm px-4">
-          Create your account to track your children&apos;s bus
-        </p>
-      </div>
 
-      <div className="flex justify-center gap-8 mt-5">
-        <div className="flex items-center gap-3">
-          {/* Circle */}
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-            <UserPlus className="text-white w-5 h-5" />
-          </div>
+          <h2 className="text-xl font-semibold text-gray-800 mt-2">
+            Parent Registration
+          </h2>
 
-          {/* Right side: Step 1 + Parent Info */}
-          <div className="flex flex-col">
-            <p className="text-xs font-semibold text-blue-600">Step 1</p>
-            <p className="text-sm text-gray-600 font-medium">Parent Info</p>
-          </div>
+          <p className="text-gray-600 text-sm">
+            Create your account to track your children’s bus
+          </p>
         </div>
 
-        <div className="w-10 h-1 mt-4 bg-gray-400"></div>
+          <div className="flex items-center justify-center gap-6 mb-8">
+            {/* Step 1 */}
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow">
+                <UserPlus className="text-white w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-blue-600">Step 1</p>
+                <p className="text-sm text-gray-700 font-medium">
+                  Parent Info
+                </p>
+              </div>
+            </div>
 
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-            <Users className="text-white w-5 h-5" />
+            {/* Line */}
+            <div className="w-10 h-1 bg-gray-400"></div>
+
+            {/* Step 2 */}
+            <div className="flex items-center gap-2 opacity-50">
+              <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center shadow">
+                <Users className="text-white w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500">Step 2</p>
+                <p className="text-sm text-gray-500 font-medium">
+                  Children Info
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col">
-            <p className="text-xs font-semibold text-gray-400">Step 2</p>
-            <p className="text-sm text-gray-400 font-medium">Children Info</p>
-          </div>
+
+        {/* CARD */}
+        <div className="bg-white rounded-3xl shadow-xl p-8">
+
+          
+
+          {/* FORM */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <h3 className="text-xl font-bold text-gray-900">Parent Information</h3>
+
+            {/* FULL NAME */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                placeholder="Enter your full name"
+                value={formData.fullName}
+                onChange={(e) =>
+                  setFormData({ ...formData, fullName: e.target.value })
+                }
+                className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-gray-900 placeholder:text-gray-400 ${
+                  errors.fullName
+                    ? "border-red-500 focus:ring-2 focus:ring-red-400"
+                    : "border-gray-300 focus:ring-2 focus:ring-blue-500"
+                }`}
+              />
+              {errors.fullName && (
+                <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
+              )}
+            </div>
+
+            {/* PHONE */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number *
+              </label>
+              <input
+                type="text"
+                placeholder="+250 788 000 000"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+                className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-gray-900 placeholder:text-gray-400 ${
+                  errors.phone
+                    ? "border-red-500 focus:ring-2 focus:ring-red-400"
+                    : "border-gray-300 focus:ring-2 focus:ring-blue-500"
+                }`}
+              />
+              {errors.phone && (
+                <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+              )}
+            </div>
+
+            {/* EMAIL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                placeholder="your.email@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-gray-900 placeholder:text-gray-400 ${
+                  errors.email
+                    ? "border-red-500 focus:ring-2 focus:ring-red-400"
+                    : "border-gray-300 focus:ring-2 focus:ring-blue-500"
+                }`}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+              )}
+            </div>
+
+            {/* PASSWORD */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password *
+              </label>
+              <input
+                type="password"
+                placeholder="Enter a secure password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-gray-900 placeholder:text-gray-400 ${
+                  errors.password
+                    ? "border-red-500 focus:ring-2 focus:ring-red-400"
+                    : "border-gray-300 focus:ring-2 focus:ring-blue-500"
+                }`}
+              />
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+              )}
+            </div>
+
+            {/* ADDRESS */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Home Address *
+              </label>
+              <textarea
+                placeholder="Enter your complete home address"
+                value={formData.address}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
+                className={`w-full px-4 py-3 h-24 border rounded-xl outline-none transition-all text-gray-900 placeholder:text-gray-400 ${
+                  errors.address
+                    ? "border-red-500 focus:ring-2 focus:ring-red-400"
+                    : "border-gray-300 focus:ring-2 focus:ring-blue-500"
+                }`}
+              ></textarea>
+              {errors.address && (
+                <p className="text-red-500 text-xs mt-1">{errors.address}</p>
+              )}
+            </div>
+
+            {/* BUTTONS */}
+          <div className="flex flex-col sm:flex-row justify-between gap-3 mt-2">
+  <button
+    type="button"
+    onClick={() => router.push("/login")}
+    className="whitespace-nowrap px-4 py-2.5 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 transition"
+  >
+    ← Back to Login
+  </button>
+
+  <button
+    type="submit"
+    className="whitespace-nowrap px-7 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+  >
+    Next: Add Children →
+  </button>
+</div>
+
+          </form>
         </div>
-      </div>
-
-      <div className="bg-white mt-6 sm:mt-8 mx-3 sm:mx-auto p-4 sm:p-5 rounded-lg max-w-xl shadow-md">
-        <h2 className="text-lg font-semibold mb-4 text-black">
-          Parent Information
-        </h2>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="text-black">Full Name *</label>
-            <input
-              type="text"
-              placeholder="Enter your full name"
-              value={formData.fullName}
-              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-              className={`w-full p-2 border text-black rounded-md ${errors.fullName ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
-          </div>
-
-          <div>
-            <label className="text-black">Phone Number *</label>
-            <input
-              type="text"
-              placeholder="(+250) 123-4567"
-              value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              className={`w-full p-2 border text-black rounded-md ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
-          </div>
-
-          <div>
-            <label className="text-black">Email Address *</label>
-            <input
-              type="email"
-              placeholder="your.email@example.com"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className={`w-full p-2 border text-black rounded-md ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-          </div>
-
-          <div>
-            <label className="text-black">Password *</label>
-            <input
-              type="password"
-              placeholder="Enter a secure password"
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className={`w-full p-2 border text-black rounded-md ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-          </div>
-
-          <div>
-            <label className="text-black">Home Address *</label>
-            <textarea
-              placeholder="Enter your complete home address"
-              value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
-              className={`w-full p-2 h-20 border text-black rounded-md ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
-            ></textarea>
-            {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 text-black mt-4">
-            <button
-              type="button"
-              className="px-6 sm:px-10 py-2 border border-gray-300 rounded-full text-sm sm:text-base"
-              onClick={() => router.push("/login")}
-            >
-              ← Back to Login
-            </button>
-
-            <button
-              type="submit"
-              className="px-6 sm:px-22 py-2 bg-blue-600 text-white rounded-full text-sm sm:text-base"
-            >
-              Next: Add Children →
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
