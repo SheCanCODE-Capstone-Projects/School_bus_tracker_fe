@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Users, Bus, UserPlus } from "lucide-react";
+import { Users, Bus, UserPlus, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ParentRegistration() {
@@ -13,6 +13,7 @@ export default function ParentRegistration() {
   });
 
   const [errors, setErrors] = useState<any>({});
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const validateForm = () => {
@@ -195,19 +196,28 @@ export default function ParentRegistration() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Password *
               </label>
-              <input
-                type="password"
-                placeholder="Enter a secure password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-gray-900 placeholder:text-gray-400 ${
-                  errors.password
-                    ? "border-red-500 focus:ring-2 focus:ring-red-400"
-                    : "border-gray-300 focus:ring-2 focus:ring-blue-500"
-                }`}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter a secure password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className={`w-full px-4 py-3 pr-12 border rounded-xl outline-none transition-all text-gray-900 placeholder:text-gray-400 ${
+                    errors.password
+                      ? "border-red-500 focus:ring-2 focus:ring-red-400"
+                      : "border-gray-300 focus:ring-2 focus:ring-blue-500"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
               {errors.password && (
                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
               )}
