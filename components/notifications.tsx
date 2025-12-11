@@ -11,8 +11,8 @@ function Notifications() {
   if (!isVisible) return null
 
   return (
-    <div className='relative block border pl-10 sm:flex flex-col bg-gradient-to-r from-amber-500 to-amber-600 via-amber-600 w-10/12 mx-auto mt-5 p-6 min-h-20 rounded-lg shadow-amber-600'>
-        <button type="button" onClick={() => setIsVisible(false)} aria-label="Close notification" className='absolute top-2 right-2 text-white p-4 hover:text-black transition-colors'>
+    <div className='relative block border pl-10 sm:flex flex-col bg-gradient-to-r from-yellow-500 to-amber-600 via-yellow-600 w-10/12 mx-auto mt-5 p-6 min-h-20 rounded-lg shadow-2xl shadow-amber-100 w-12/12 mx-auto mt-5 p-6 min-h-20 rounded-3xl shadow'>
+        <button type="button" onClick={() => setIsVisible(false)} aria-label="Close notification" className='absolute top-2 right-2 text-white p-4 hover:text-white transition-colors'>
           <FaTimes size={20} />
         </button>
         <h2 className='flex items-center text-black text-xl font-semibold pt-4 gap-2'>

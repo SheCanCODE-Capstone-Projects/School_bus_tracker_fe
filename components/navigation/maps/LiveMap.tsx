@@ -41,7 +41,7 @@ const LiveMap = () => {
       touchZoom={true}
       doubleClickZoom={true}
       keyboard={true}
-      style={{ width: '100%', height: '300px', minHeight: '250px' }}
+      style={{ width: '100%', height: '700px', minHeight: '250px' }}
     >  
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

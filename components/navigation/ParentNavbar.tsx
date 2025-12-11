@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import React, { useState } from 'react'
 import { FaSignOutAlt } from 'react-icons/fa'
 import { LuBus } from 'react-icons/lu'
@@ -7,6 +8,7 @@ import { HiMenu, HiX } from 'react-icons/hi'
 
 function ParentNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = usePathname()
 
   return (
     <div>
@@ -24,9 +26,9 @@ function ParentNavbar() {
         </button>
         
         <div className={`${isMenuOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row absolute sm:relative top-full sm:top-auto left-0 sm:left-auto w-full sm:w-auto bg-white sm:bg-transparent shadow-lg sm:shadow-none items-center justify-center font-medium text-xs sm:text-sm gap-3 sm:gap-6 py-4 sm:py-0`}>
-        <Link href='/parent/dashboard' className='text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4'>Dashboard</Link>
+        <Link href='/parent/dashboard' className={pathname === '/parent/dashboard' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Dashboard</Link>
         
-        <Link href='/parent/dashboard/settings' className='text-gray-600 hover:text-black'>Settings</Link>
+        <Link href='/parent/dashboard/settings' className={pathname === '/parent/dashboard/settings' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Settings</Link>
         
         <div className='h-6 w-px bg-gray-300'></div>
         

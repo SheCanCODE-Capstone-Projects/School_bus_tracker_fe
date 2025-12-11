@@ -1,5 +1,4 @@
-import React from 'react'
-
+'use client;'
 function Footer() {
   return (
     <div className='font-sans text-sm text-gray-600 border-t border-gray-300 bg-white flex items-center justify-around gap-6 py-3 px-4 shadow-lg leading-relaxed'>
