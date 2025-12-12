@@ -31,7 +31,7 @@ function ParentDashboardMap() {
         <div className="bg-blue-200 p-4 lg:p-6 rounded-xl flex-1 relative transition-all duration-300">
           {/* Map */}
           <div className="w-4/5 absolute top-4 right-4 bottom-4 overflow-hidden rounded-lg transition-all duration-300">
-            {/* Actual Map with Error Handling */}
+          
             <div className="w-full h-full">
               <React.Suspense fallback={
                 <div className="w-full h-full bg-gray-100 flex items-center justify-center">

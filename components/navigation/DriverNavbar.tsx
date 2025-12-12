@@ -28,7 +28,7 @@ function DriverNavbar() {
         <div className={`${isMenuOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row absolute sm:relative top-full sm:top-auto left-0 sm:left-auto w-full sm:w-auto bg-white sm:bg-transparent shadow-lg sm:shadow-none items-center justify-center font-medium text-xs sm:text-sm gap-3 sm:gap-6 py-4 sm:py-0`}>
         <Link href='/driver/tracker' className={pathname === '/driver/tracker' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Tracker</Link>
         
-        <Link href='/driver/tracker/profile' className={pathname === '/driver/tracker/settings' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Profile</Link>
+        <Link href='/driver/tracker/profile' className={pathname === '/driver/tracker/profile' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Profile</Link>
         
         <div className='h-6 w-px bg-gray-300'></div>
         
