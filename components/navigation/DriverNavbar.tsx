@@ -1,30 +1,47 @@
-'use client';
+'use client'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import React, { useState } from 'react'
+import { FaSignOutAlt } from 'react-icons/fa'
+import { LuBus } from 'react-icons/lu'
+import { HiMenu, HiX } from 'react-icons/hi'
 
-import React from 'react';
-import { Bus, User, LogOut } from 'lucide-react';
+function DriverNavbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = usePathname()
 
-export default function DriverNavbar() {
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center gap-3">
-            <Bus className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">Driver Portal</span>
+    <div className='relative'>
+        <nav className='font-sans bg-white flex items-center justify-between py-4 sm:py-6 px-4 sm:px-8 shadow-xs border-b border-gray-200'>
+        <div className='flex items-center gap-3'>
+        <LuBus className='bg-blue-500 rounded-lg p-2 h-10 w-10 text-white'/>
+        <h1 className='text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800'>Bus Tracker</h1>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900">
-              <User className="w-5 h-5" />
-              <span>Profile</span>
-            </button>
-            <button className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900">
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
-          </div>
+        
+        <button 
+          className='sm:hidden'
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          {isMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
+        </button>
+        
+        <div className={`${isMenuOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row absolute sm:relative top-full sm:top-auto left-0 sm:left-auto w-full sm:w-auto bg-white sm:bg-transparent shadow-lg sm:shadow-none items-center justify-center font-medium text-xs sm:text-sm gap-3 sm:gap-6 py-4 sm:py-0`}>
+        <Link href='/driver/tracker' className={pathname === '/driver/tracker' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Tracker</Link>
+        
+        <Link href='/driver/tracker/profile' className={pathname === '/driver/tracker/profile' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Profile</Link>
+        
+        <div className='h-6 w-px bg-gray-300'></div>
+        
+        <Link href='/login' className='flex items-center gap-2 text-gray-600 hover:text-red-500 border border-transparent transition-all duration-300 hover:bg-red-100 rounded-lg py-1 px-3 sm:py-2 sm:px-5'>
+        <FaSignOutAlt/>
+        Logout
+        
+        </Link>
         </div>
-      </div>
-    </nav>
-  );
+       
+        </nav>
+    </div>
+  )
 }
+
+export default DriverNavbar

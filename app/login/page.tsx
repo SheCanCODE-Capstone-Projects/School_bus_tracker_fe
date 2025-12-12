@@ -1,36 +1,47 @@
 'use client';
+
 import React, { useState } from 'react';
-import { Bus, Users, User, UserCog } from 'lucide-react';
 import Link from 'next/link';
+import { Bus, Users, User, UserCog } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
 interface Role {
   id: 'parent' | 'driver' | 'admin';
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
-export default function LoginPage(){
- const [selectedRole, setSelectedRole] = useState<'parent' | 'driver' | 'admin'>('parent');
- const [email, setEmail] = useState<string>('');
- const [password, setPassword] = useState<string>('');
- const router= useRouter();
- const roles:Role[]=[
-  { id: 'parent', label: 'Parent', icon: Users },
-  { id: 'driver', label: 'Driver', icon: User },
-  { id: 'admin', label: 'Admin', icon: UserCog }
- 
- ];
-    const handleLogin = (): void => {
+export default function SchoolBusLogin() {
+  const [selectedRole, setSelectedRole] = useState<'parent' | 'driver' | 'admin'>('parent');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const router = useRouter();
+
+  const roles: Role[] = [
+    { id: 'parent', label: 'Parent', icon: Users },
+    { id: 'driver', label: 'Driver', icon: User },
+    { id: 'admin', label: 'Admin', icon: UserCog }
+  ];
+
+  // ✅ Updated navigation logic
+  const handleLogin = (): void => {
     console.log('Login attempt:', { role: selectedRole, email });
-    // authentication logic will be here
-    router.push('/parent/dashboard')
+
+    if (selectedRole === 'parent') {
+      router.push('/parent/dashboard');
+    } else if (selectedRole === 'driver') {
+      router.push('/driver/tracker');
+    } else if (selectedRole === 'admin') {
+      router.push('/admin/dashboard');
+    }
   };
 
-   const handleKeyPress = (e: React.KeyboardEvent): void => {
+  const handleKeyPress = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter') {
       handleLogin();
     }
   };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -48,7 +59,7 @@ export default function LoginPage(){
         {/* Login Card */}
         <div className="bg-white rounded-3xl shadow-xl p-8">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Select Your Role</h2>
-          
+
           {/* Role Selection */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             {roles.map((role) => {
@@ -64,14 +75,16 @@ export default function LoginPage(){
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                 >
-                  <Icon 
+                  <Icon
                     className={`w-8 h-8 mb-2 ${
                       selectedRole === role.id ? 'text-blue-500' : 'text-gray-600'
-                    }`} 
+                    }`}
                   />
-                  <span className={`text-sm font-medium ${
-                    selectedRole === role.id ? 'text-blue-600' : 'text-gray-700'
-                  }`}>
+                  <span
+                    className={`text-sm font-medium ${
+                      selectedRole === role.id ? 'text-blue-600' : 'text-gray-700'
+                    }`}
+                  >
                     {role.label}
                   </span>
                 </button>
@@ -91,9 +104,9 @@ export default function LoginPage(){
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="email@gmail.com"
+                  placeholder="your.email@gmail.com"
                   className="w-full px-4 py-3 pl-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 placeholder:text-gray-400"
                 />
               </div>
@@ -109,7 +122,7 @@ export default function LoginPage(){
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Enter password"
                   className="w-full px-4 py-3 pl-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 placeholder:text-gray-400"
@@ -125,12 +138,19 @@ export default function LoginPage(){
             >
               LOGIN AS A {selectedRole.toUpperCase()}
             </button>
+
+            {/* Forgot Password Link */}
+            <div className="text-center mt-4">
+              <Link href="/login/resetpassword" className="text-sm text-blue-500 hover:text-blue-600 font-medium hover:underline">
+                Forgot Password?
+              </Link>
+            </div>
           </div>
 
           {/* Register Link */}
           <p className="text-center text-sm text-gray-600 mt-6">
-            If you don’t have an account?{' '}
-            <Link href="/register/parent/step1" className="text-blue-500 hover:text-blue-600 font-medium hover:underline">
+            If you don&apos;t have an account?{' '}
+            <Link href="register/parent/step1" className="text-blue-500 hover:text-blue-600 font-medium hover:underline">
               Register Here
             </Link>
           </p>
