@@ -35,7 +35,7 @@ export default function DriverTracker() {
         <DriverNavbar/>
         
         <div className='p-4'>
-          <div className='bg-white border border-gray-200 w-11/12 mx-auto rounded-lg shadow-lg p-4 transition-all duration-300 hover:shadow-xl hover:border-gray-300 hover:-translate-y-1 hover:scale-[1.02]'>
+          <div className='bg-white border border-gray-200 w-3/4 mx-auto rounded-lg shadow-lg p-4 transition-all duration-300 hover:shadow-xl hover:border-gray-300 hover:-translate-y-1 hover:scale-[1.02]'>
             <div className="flex items-center gap-2 mb-4">
               <div className="h-4 w-1 bg-blue-700 rounded-lg"></div>
               <h3 className='text-xl text-black'>Current Location Preview</h3>
