@@ -242,6 +242,18 @@ export default function StudentBusDashboard() {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectedBus, setSelectedBus] = useState('');
   
+  // Add Student Modal state
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    name: '',
+    age: '',
+    parentName: '',
+    parentPhone: '',
+    address: '',
+    busStop: '',
+    assignedBus: ''
+  });
+  
   // Calculate total pages
   const totalPages = Math.ceil(students.length / studentsPerPage);
   
@@ -291,6 +303,40 @@ export default function StudentBusDashboard() {
     closeAssignModal();
   };
 
+  // Open Add Student Modal
+  const openAddStudentModal = () => {
+    setShowAddStudentModal(true);
+  };
+
+  // Close Add Student Modal
+  const closeAddStudentModal = () => {
+    setShowAddStudentModal(false);
+    setNewStudent({
+      name: '',
+      age: '',
+      parentName: '',
+      parentPhone: '',
+      address: '',
+      busStop: '',
+      assignedBus: ''
+    });
+  };
+
+  // Handle input change
+  const handleInputChange = (field, value) => {
+    setNewStudent({
+      ...newStudent,
+      [field]: value
+    });
+  };
+
+  // Add new student
+  const handleAddStudent = () => {
+    // Here you would handle adding the student
+    console.log('Adding new student:', newStudent);
+    closeAddStudentModal();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -323,7 +369,9 @@ export default function StudentBusDashboard() {
           </button>
 
           {/* Add Student Button */}
-          <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+          <button 
+            onClick={openAddStudentModal}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
             <UserPlus className="w-5 h-5" />
             Add Student
           </button>
@@ -438,7 +486,7 @@ export default function StudentBusDashboard() {
 
       {/* Assign to Bus Modal */}
       {showAssignModal && (
-        <div className="fixed inset-0 bg-white bg-opacity-10 backdrop-blur-3xl flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             {/* Modal Header */}
             <div className="flex items-center gap-3 mb-6">
@@ -493,6 +541,145 @@ export default function StudentBusDashboard() {
               </button>
               <button
                 onClick={closeAssignModal}
+                className="px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Student Modal */}
+      {showAddStudentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <UserPlus className="w-6 h-6 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900">Add New Student</h2>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-4">
+              {/* Student Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Student Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  value={newStudent.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Age */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  placeholder="8"
+                  value={newStudent.age}
+                  onChange={(e) => handleInputChange('age', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Parent Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Parent Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Jane Doe"
+                  value={newStudent.parentName}
+                  onChange={(e) => handleInputChange('parentName', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Parent Phone */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Parent Phone
+                </label>
+                <input
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={newStudent.parentPhone}
+                  onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Address */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  placeholder="123 Main Street"
+                  value={newStudent.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Bus Stop */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bus Stop
+                </label>
+                <select
+                  value={newStudent.busStop}
+                  onChange={(e) => handleInputChange('busStop', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a bus stop</option>
+                  <option value="Oak Street Stop">Oak Street Stop</option>
+                  <option value="Maple Avenue Stop">Maple Avenue Stop</option>
+                  <option value="Pine Road Stop">Pine Road Stop</option>
+                  <option value="Elm Street Stop">Elm Street Stop</option>
+                </select>
+              </div>
+
+              {/* Assign to Bus */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assign to Bus
+                </label>
+                <select
+                  value={newStudent.assignedBus}
+                  onChange={(e) => handleInputChange('assignedBus', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a bus</option>
+                  <option value="Bus 01">Bus 01</option>
+                  <option value="Bus 02">Bus 02</option>
+                  <option value="Bus 03">Bus 03</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleAddStudent}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                Add Student
+              </button>
+              <button
+                onClick={closeAddStudentModal}
                 className="px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
               >
                 Cancel
