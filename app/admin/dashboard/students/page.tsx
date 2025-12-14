@@ -237,6 +237,11 @@ export default function StudentBusDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const studentsPerPage = 9;
   
+  // Modal state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [selectedBus, setSelectedBus] = useState('');
+  
   // Calculate total pages
   const totalPages = Math.ceil(students.length / studentsPerPage);
   
@@ -258,6 +263,34 @@ export default function StudentBusDashboard() {
     }
   };
 
+  // Handle student selection
+  const toggleStudentSelection = (studentName) => {
+    if (selectedStudents.includes(studentName)) {
+      setSelectedStudents(selectedStudents.filter(name => name !== studentName));
+    } else {
+      setSelectedStudents([...selectedStudents, studentName]);
+    }
+  };
+
+  // Open modal
+  const openAssignModal = () => {
+    setShowAssignModal(true);
+  };
+
+  // Close modal
+  const closeAssignModal = () => {
+    setShowAssignModal(false);
+    setSelectedStudents([]);
+    setSelectedBus('');
+  };
+
+  // Assign students to bus
+  const handleAssignToBus = () => {
+    // Here you would handle the actual assignment
+    console.log('Assigning students:', selectedStudents, 'to bus:', selectedBus);
+    closeAssignModal();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -269,12 +302,12 @@ export default function StudentBusDashboard() {
             <input
               type="text"
               placeholder="Search students by name, parent, or bus..."
-              className="w-full text-gray-700 pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Dropdown */}
-          <select className="px-4 py-3 text-gray-700 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select className="px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option>All Bus Stops</option>
             <option>Bus Stop 1</option>
             <option>Bus Stop 2</option>
@@ -282,7 +315,9 @@ export default function StudentBusDashboard() {
           </select>
 
           {/* Assign to Bus Button */}
-          <button className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+          <button 
+            onClick={openAssignModal}
+            className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
             <Bus className="w-5 h-5" />
             Assign to Bus
           </button>
@@ -324,7 +359,7 @@ export default function StudentBusDashboard() {
         {/* Students Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 border border-gray-200">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Student</th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Age</th>
@@ -382,7 +417,7 @@ export default function StudentBusDashboard() {
               <button
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -392,7 +427,7 @@ export default function StudentBusDashboard() {
               <button
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -400,6 +435,72 @@ export default function StudentBusDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Assign to Bus Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-white bg-opacity-10 backdrop-blur-3xl flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <Bus className="w-6 h-6 text-purple-600" />
+              <h2 className="text-xl font-semibold text-gray-900">Assign Students to Bus</h2>
+            </div>
+
+            {/* Select Students Section */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Select Students
+              </label>
+              <div className="border border-gray-300 rounded-lg max-h-64 overflow-y-auto p-2">
+                {students.map((student, index) => (
+                  <div key={index} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                    <input
+                      type="checkbox"
+                      checked={selectedStudents.includes(student.name)}
+                      onChange={() => toggleStudentSelection(student.name)}
+                      className="w-4 h-4 text-purple-600 rounded"
+                    />
+                    <span className="text-gray-700">{student.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Assign to Bus Section */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Assign to Bus
+              </label>
+              <select
+                value={selectedBus}
+                onChange={(e) => setSelectedBus(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="">Select a bus</option>
+                <option value="Bus 01">Bus 01</option>
+                <option value="Bus 02">Bus 02</option>
+                <option value="Bus 03">Bus 03</option>
+              </select>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleAssignToBus}
+                className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium"
+              >
+                Assign to Bus
+              </button>
+              <button
+                onClick={closeAssignModal}
+                className="px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
