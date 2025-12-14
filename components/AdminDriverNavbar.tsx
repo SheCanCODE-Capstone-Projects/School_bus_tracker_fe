@@ -27,8 +27,8 @@ export default function AdminDriverNavbar() {
             </h1>
 
             <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              <span>dfhkj</span>
+              
+              <span></span>
             </div>
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function AdminDriverNavbar() {
         >
           <a
             href="/admin/dashboard"
-            className="text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4"
+            className="text-blue-600 bg-sky-100 border border-sky-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Dashboard
           </a>
