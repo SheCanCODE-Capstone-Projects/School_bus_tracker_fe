@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Bus, LogOut } from "lucide-react";
 import { HiMenu, HiX } from "react-icons/hi";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function AdminNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -50,40 +51,40 @@ export default function AdminNavbar() {
           bg-white sm:bg-transparent shadow-lg sm:shadow-none
           items-center justify-center gap-3 sm:gap-6 py-4 sm:py-0 font-medium text-xs sm:text-sm`}
         >
-          <a
+          <Link
             href="/admin/dashboard"
             className="text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Dashboard
-          </a>
+          </Link>
 
-          <a
-            href="/admin/buses"
+          <Link
+            href="/admin/dashboard/buses"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Buses
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/drivers"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Drivers
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/parents"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Parents
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin/students"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Students
-          </a>
+          </Link>
 
           <a
             href="#"
@@ -92,12 +93,12 @@ export default function AdminNavbar() {
             History
           </a>
 
-          <a
+          <Link
             href="/admin/emergencies"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Emergencies
-          </a>
+          </Link>
 
           {/* Divider */}
           <div className="h-6 w-px bg-gray-300"></div>
