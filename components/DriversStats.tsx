@@ -12,14 +12,14 @@ export default function DriversStats() {
   ];
 
   return (
-    <div className="grid md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
       {stats.map((stat) => (
         <div
           key={stat.title}
-          className={`bg-white border ${stat.border} rounded-2xl p-6 shadow-lg`}
+          className={`bg-white border ${stat.border} rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg`}
         >
-          <p className="text-gray-500">{stat.title}</p>
-          <h2 className="text-sm mt-2 text-gray-500">{stat.value}</h2>
+          <p className="text-gray-500 text-sm sm:text-base">{stat.title}</p>
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mt-1 sm:mt-2 text-gray-800">{stat.value}</h2>
         </div>
       ))}
     </div>
