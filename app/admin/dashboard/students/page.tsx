@@ -321,7 +321,84 @@ export default function StudentBusDashboard() {
           </div>
         </div>
 
-       
+        {/* Students Table */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 border border-gray-200">
+              <tr>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Student</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Age</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Parent</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Bus Stop</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Assigned Bus</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentStudents.map((student, index) => (
+                <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="text-gray-900 font-medium">{student.name}</div>
+                    <div className="text-gray-500 text-sm">{student.address}</div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-700">{student.age}</td>
+                  <td className="px-6 py-4">
+                    <div className="text-gray-900">{student.parent}</div>
+                    <div className="text-gray-500 text-sm">{student.phone}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <MapPin className="w-4 h-4 text-blue-500" />
+                      {student.busStop}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Bus className="w-4 h-4" />
+                      {student.assignedBus}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <button className="text-blue-500 hover:text-blue-700">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button className="text-red-500 hover:text-red-700">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <div className="text-sm text-gray-600">
+              Showing {indexOfFirstStudent + 1} to {Math.min(indexOfLastStudent, students.length)} of {students.length} students
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm text-gray-700">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
