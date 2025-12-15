@@ -236,12 +236,12 @@ export default function StudentBusDashboard() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const studentsPerPage = 9;
-  
+
   // Modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectedBus, setSelectedBus] = useState('');
-  
+
   // Add Student Modal state
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [newStudent, setNewStudent] = useState({
@@ -253,10 +253,10 @@ export default function StudentBusDashboard() {
     busStop: '',
     assignedBus: ''
   });
-  
+
   // Calculate total pages
   const totalPages = Math.ceil(students.length / studentsPerPage);
-  
+
   // Get current students
   const indexOfLastStudent = currentPage * studentsPerPage;
   const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
@@ -344,16 +344,16 @@ export default function StudentBusDashboard() {
         <div className="flex gap-4 mb-8">
           {/* Search Input */}
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Search students by name, parent, or bus..."
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-12 pr-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Dropdown */}
-          <select className="px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select className="px-4 py-3 border border-gray-300 text-gray-600 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option>All Bus Stops</option>
             <option>Bus Stop 1</option>
             <option>Bus Stop 2</option>
@@ -407,7 +407,7 @@ export default function StudentBusDashboard() {
         {/* Students Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 border border-gray-200">
               <tr>
                 <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Student</th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Age</th>
@@ -467,7 +467,7 @@ export default function StudentBusDashboard() {
                 disabled={currentPage === 1}
                 className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
               </button>
               <span className="text-sm text-gray-700">
                 Page {currentPage} of {totalPages}
@@ -477,7 +477,7 @@ export default function StudentBusDashboard() {
                 disabled={currentPage === totalPages}
                 className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 text-gray-600" />
               </button>
             </div>
           </div>
@@ -522,7 +522,7 @@ export default function StudentBusDashboard() {
               <select
                 value={selectedBus}
                 onChange={(e) => setSelectedBus(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="">Select a bus</option>
                 <option value="Bus 01">Bus 01</option>
@@ -574,7 +574,7 @@ export default function StudentBusDashboard() {
                   placeholder="John Doe"
                   value={newStudent.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -588,7 +588,7 @@ export default function StudentBusDashboard() {
                   placeholder="8"
                   value={newStudent.age}
                   onChange={(e) => handleInputChange('age', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 text-gray-600 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -602,7 +602,7 @@ export default function StudentBusDashboard() {
                   placeholder="Jane Doe"
                   value={newStudent.parentName}
                   onChange={(e) => handleInputChange('parentName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 text-gray-600 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -616,7 +616,7 @@ export default function StudentBusDashboard() {
                   placeholder="+1 (555) 123-4567"
                   value={newStudent.parentPhone}
                   onChange={(e) => handleInputChange('parentPhone', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 text-gray-600 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -630,7 +630,7 @@ export default function StudentBusDashboard() {
                   placeholder="123 Main Street"
                   value={newStudent.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 text-gray-600 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -642,7 +642,7 @@ export default function StudentBusDashboard() {
                 <select
                   value={newStudent.busStop}
                   onChange={(e) => handleInputChange('busStop', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 text-gray-600 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select a bus stop</option>
                   <option value="Oak Street Stop">Oak Street Stop</option>
@@ -660,9 +660,9 @@ export default function StudentBusDashboard() {
                 <select
                   value={newStudent.assignedBus}
                   onChange={(e) => handleInputChange('assignedBus', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select a bus</option>
+                  <option  value="">Select a bus</option> 
                   <option value="Bus 01">Bus 01</option>
                   <option value="Bus 02">Bus 02</option>
                   <option value="Bus 03">Bus 03</option>
@@ -691,3 +691,4 @@ export default function StudentBusDashboard() {
     </div>
   );
 }
+ 
