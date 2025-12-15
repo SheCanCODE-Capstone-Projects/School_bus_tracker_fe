@@ -82,7 +82,7 @@ const BusesPage = () => {
             return (
               <div key={bus.id} className="bg-white border rounded-2xl shadow">
                 {/* Header */}
-                <div className={`p-4 rounded-t-2xl ${bus.active ? "bg-blue-500" : "bg-gray-300"}`}>
+                <div className={`p-4 rounded-t-2xl ${bus.active ? "bg-blue-500" : "bg-gray-400"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">🚌</span>
@@ -108,7 +108,7 @@ const BusesPage = () => {
                     <IoPersonOutline className="text-blue-500 mr-2" />
                     <div>
                       <p className="text-gray-500 text-sm">Driver</p>
-                      <p className="text-gray-500">{bus.driver}</p>
+                      <p className={bus.driver === "Not Assigned" ? "text-red-500" : "text-gray-500"}>{bus.driver}</p>
                     </div>
                   </div>
 
@@ -134,7 +134,7 @@ const BusesPage = () => {
                       <button
                         onClick={() => openStatusModal(bus)}
                         aria-label={`Change status for ${bus.name}`}
-                        className="text-green-500 text-xl cursor-pointer flex items-center justify-center"
+                        className={`${bus.active ? "text-red-500" : "text-green-500"} text-xl cursor-pointer flex items-center justify-center`}
                       >
                         <CiPower />
                       </button>
