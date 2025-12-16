@@ -231,7 +231,7 @@ export default function EditStudentPage() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium"
                 >
                   <Save className="w-5 h-5" />
                   Save Changes

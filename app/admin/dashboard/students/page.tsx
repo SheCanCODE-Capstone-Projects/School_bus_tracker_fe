@@ -60,7 +60,7 @@ export default function StudentBusDashboard() {
 
   // Modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedBus, setSelectedBus] = useState("");
 
   // Add Student Modal state
