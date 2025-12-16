@@ -16,10 +16,10 @@ export default function DriversStats() {
       {stats.map((stat) => (
         <div
           key={stat.title}
-          className={`bg-white border ${stat.border} rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg`}
+          className={`bg-white border ${stat.border} rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg cursor-pointer transform transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95`}
         >
           <p className="text-gray-500 text-sm sm:text-base">{stat.title}</p>
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mt-1 sm:mt-2 text-gray-800">{stat.value}</h2>
+          <h2 className="text-lg sm:text-xl lg:text-md  mt-1 sm:mt-2 text-gray-800">{stat.value}</h2>
         </div>
       ))}
     </div>

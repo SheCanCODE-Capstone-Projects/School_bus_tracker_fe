@@ -30,7 +30,7 @@ function ParentDashboardMap() {
         {/* Map Container */}
         <div className="bg-blue-200 p-4 lg:p-6 rounded-xl flex-1 relative transition-all duration-300">
           {/* Map */}
-          <div className="w-4/5 absolute top-4 right-4 bottom-4 overflow-hidden rounded-lg transition-all duration-300">
+          <div className="w-3/4 absolute top-4 right-4 bottom-4 overflow-hidden rounded-lg transition-all duration-300">
           
             <div className="w-full h-full">
               <React.Suspense fallback={
@@ -55,7 +55,7 @@ function ParentDashboardMap() {
           </div>
           
           {/* Status Legend - On Blue Border */}
-          <div className="absolute bottom-4 left-4 flex flex-col gap-2 text-xs p-3 w-28 bg-white border border-gray-300 rounded-lg shadow-lg z-10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+          <div className="absolute bottom-4 left-4 flex flex-col gap-2 text-xs p-3 w-28 bg-white border border-gray-300 rounded-lg shadow-lg z-10 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl mr-4">
             <h3 className="font-semibold mb-1 text-gray-700">Status Legend</h3>
 
             <div className="flex items-center gap-2">
