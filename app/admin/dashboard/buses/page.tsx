@@ -57,7 +57,7 @@ const BusesPage = () => {
         <div className="flex gap-4 mb-5">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input type="text" placeholder="Search buses..." className="w-full pl-10 pr-4 py-2 border rounded-xl" />
+            <input type="text" placeholder="Search buses by name, driver, or route..." className="w-full pl-10 pr-4 py-2 border border-blue-100 text-gray-600 rounded-xl  focus:outline-none focus:ring-1 focus:ring-offset-2 focus:ring-blue-600" />
           </div>
           <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-blue-500 text-white rounded-xl whitespace-nowrap">
             + Add Bus
@@ -153,14 +153,14 @@ const BusesPage = () => {
           <div className="relative bg-white rounded-2xl shadow-lg max-w-md w-full p-6 z-10">
             <div className="flex items-center gap-3 mb-4">
               <CiPower className="text-green-600 text-2xl" />
-              <h3 className="text-lg font-bold">Active Bus?</h3>
+              <h3 className="text-lg text-black font-bold">Active Bus?</h3>
             </div>
             <p className="text-gray-700 mb-6">
-              Are you sure you want to change <span className="font-medium">{selectedBus.name}</span>&apos;s status to <span className="font-bold text-green-600">{selectedBus.active ? "Inactive" : "Active"}</span>?
+              Are you sure you want to change <span className="font-medium">{selectedBus.name}</span>&apos;s status to <span className="font-bold text-black">{selectedBus.active ? "Inactive" : "Active"}</span>?
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-evenly">
               <button onClick={confirmChangeStatus} className="px-4 py-2 border border-green-500 bg-green-100 text-green-800 rounded-lg">Yes, Change Status</button>
-              <button onClick={closeModal} className="px-4 py-2 rounded-lg border">Cancel</button>
+              <button onClick={closeModal} className="px-4 py-2 rounded-lg text-gray-600 border">Cancel</button>
             </div>
           </div>
         </div>
