@@ -301,7 +301,7 @@ export default function DriversToolbar() {
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors"
+                className="flex-1 bg-blue-600 hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-colors"
               >
                 Add Driver
               </button>
