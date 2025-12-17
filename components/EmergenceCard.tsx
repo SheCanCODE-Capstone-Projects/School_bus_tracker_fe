@@ -57,7 +57,7 @@ const EmergencyCard = () => {
             <span className="text-base sm:text-lg font-semibold">REPORT ISSUE</span>
           </div>
         </button>
-      </div>
+      </div> 
       
       {/* Warning text outside red border */}
       <p className="text-gray-600 text-center text-xs sm:text-sm mt-6 italic">

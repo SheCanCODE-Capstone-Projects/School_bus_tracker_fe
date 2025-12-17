@@ -56,7 +56,7 @@ export default function DriversToolbar() {
         <input
           type="text"
           placeholder="Search drivers by name or bus..."
-          className="w-full outline-none text-xs sm:text-sm placeholder-gray-500"
+          className="w-full outline-none text-xs sm:text-sm placeholder-gray-500 text-black"
           suppressHydrationWarning={true}
         />
       </div>
@@ -133,7 +133,7 @@ export default function DriversToolbar() {
                 <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">
                   Assign to Bus
                 </label>
-                <select className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-500">
+                <select className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-black">
                   <option value="" className="text-gray-500">Select a bus</option>
                   <option value="bus01">Bus 01</option>
                   <option value="bus02">Bus 02</option>
@@ -149,7 +149,7 @@ export default function DriversToolbar() {
                 </label>
                 <input 
                   type="date" 
-                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-500"
+                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-black"
                 />
               </div>
               
@@ -161,7 +161,7 @@ export default function DriversToolbar() {
                 <textarea 
                   placeholder="Any additional notes about this assignment"
                   rows={3}
-                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none placeholder-gray-500"
+                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none placeholder-gray-500 text-black"
                 />
               </div>
             </div>
@@ -203,7 +203,7 @@ export default function DriversToolbar() {
                 <input 
                   type="text"
                   placeholder="e.g. John Smith"
-                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-black"
                 />
               </div>
               
@@ -215,7 +215,7 @@ export default function DriversToolbar() {
                 <input 
                   type="email"
                   placeholder="e.g. john.smith@school.com"
-                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-black"
                 />
               </div>
             
@@ -227,7 +227,7 @@ export default function DriversToolbar() {
                 <input 
                   type="tel"
                   placeholder="e.g. +1 (555) 123-4567"
-                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-black"
                 />
               </div>
               
@@ -239,7 +239,7 @@ export default function DriversToolbar() {
                 <input   
                   type="text"
                   placeholder="e.g. DL123456789"
-                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-black"
                 />
               </div>
               
