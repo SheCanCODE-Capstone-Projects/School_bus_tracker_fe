@@ -220,7 +220,7 @@ const BusesPage = () => {
                       <IoPersonOutline className="text-blue-500 mr-2" />
                       <div>
                         <p className="text-gray-500 text-sm">Driver</p>
-                        <p className={isAssigned ? "text-gray-5change inactive from red to 00 " : "text-gray-500"}>{bus.driver}</p>
+                        <p className={isAssigned ? "text-gray-500 change inactive from red to 00 " : "text-gray-500"}>{bus.driver}</p>
                       </div>
                     </div>
 
@@ -251,7 +251,6 @@ const BusesPage = () => {
                       <div className="flex gap-2 ml-3">
                         <button 
                           onClick={() => openEditModal(bus)} 
-                          title="Edit bus details" 
                           className="text-blue-500 text-2xl p-2 rounded-full hover:bg-blue-50 transition-colors"
                         >
                           <FiEdit />
@@ -291,14 +290,14 @@ const BusesPage = () => {
             </button>
             
             <div className="flex items-center gap-3 mb-4">
-              <CiPower className="text-2xl text-green-600" />
+              <CiPower className="text-2xl text-red-600 hover:bg-red-100 rounded-lg" />
               <h3 className="text-lg text-gray-800 font-bold">Confirm Status Change</h3>
             </div>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to change <span className="font-medium text-black">{selectedBus.name}</span>&apos;s status to <span className={`font-bold ${selectedBus.active ? "text-red-600" : "text-green-600"}`}>{selectedBus.active ? "Inactive" : "Active"}</span>?
+              Are you sure you want to change <span className=" text-black">{selectedBus.name}</span>&apos;s status to <span className={`font-bold ${selectedBus.active ? "text-red-600" : "text-green-600"}`}>{selectedBus.active ? "Inactive" : "Active"}</span>?
             </p>
             <div className="flex justify-end">
-              <button onClick={confirmChangeStatus} className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${selectedBus.active ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}`}>Yes, Change Status</button>
+              <button onClick={confirmChangeStatus} className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${selectedBus.active ? "bg-red-500 hover:bg-red-600   transition-all duration-300 hover:scale-105" : "bg-green-500 hover:bg-green-600  transition-all duration-300 hover:scale-105"}`}>Yes, Change Status</button>
             </div>
           </div>
         </div>
