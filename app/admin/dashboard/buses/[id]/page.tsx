@@ -56,7 +56,7 @@ const BusDetailsPage = () => {
   };
 
   const handleLiveTracking = () => {
-    window.location.href = '/parent/dashboard';
+    window.location.href = '/admin/dashboard';
   };
 
   const handleEmergencyAlert = () => {
