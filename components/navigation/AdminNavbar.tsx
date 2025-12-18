@@ -66,7 +66,7 @@ export default function AdminNavbar() {
           </a>
 
           <a 
-            href="/admin/drivers" 
+            href="/admin/dashboard/drivers" 
             className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
@@ -74,7 +74,7 @@ export default function AdminNavbar() {
           </a>
 
           <a 
-            href="/admin/parents" 
+            href="/admin/dashboard/parents" 
             className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
@@ -82,7 +82,7 @@ export default function AdminNavbar() {
           </a>
 
           <a 
-            href="/admin/dashboardstudents" 
+            href="/admin/dashboard/students" 
             className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
@@ -94,7 +94,7 @@ export default function AdminNavbar() {
             className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-gray-100 hover:translate-x-1" >History </a>
 
           <a 
-            href="/admin/emergencies" 
+            href="/admin/dashboard/emergencies" 
             className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
