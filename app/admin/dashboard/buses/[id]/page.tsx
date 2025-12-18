@@ -126,7 +126,7 @@ const BusDetailsPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className={`w-full px-3 py-2 rounded-full text-xs font-medium text-center ${currentBus.active ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
+                <div className={`w-full px-3 py-2 rounded-lg text-xs font-medium text-center border ${currentBus.active ? "bg-green-100 text-green-800 border-green-500" : "bg-red-500 text-white border-red-500"}`}>
                   Status: {currentBus.active ? "Moving" : "Inactive"}
                 </div>
                 <div className="mt-3 space-y-3 text-xs">

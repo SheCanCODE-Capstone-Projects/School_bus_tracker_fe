@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import Footer from "@/components/Footer";
+import AdminFooter from "@/components/navigation/AdminFooter";
 import BusesNavbar from "@/components/navigation/dashboard/BusStatusCard";
 import { Search, X, Bus } from "lucide-react";
 import { FiEdit } from "react-icons/fi";
@@ -176,27 +176,34 @@ const BusesPage = () => {
               <form onSubmit={handleAddBus} className="space-y-4">
                 <div>
                   <label className="block text-xs text-black mb-1">Bus Name</label>
-                  <input type="text" placeholder="Bus 06" value={name} onChange={e => setName(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                  <input type="text" placeholder="Bus 06" value={name} onChange={e => setName(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Bus Number</label>
-                  <input type="text" placeholder="SCH-106" value={code} onChange={e => setCode(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                  <input type="text" placeholder="SCH-106" value={code} onChange={e => setCode(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Max Capacity</label>
-                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Current Filled</label>
-                  <input type="number" placeholder="0" value={capacity} onChange={e => setCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                  <input type="number" placeholder="0" value={capacity} max={maxCapacity} onChange={e => {
+                    const value = Number(e.target.value);
+                    if (value > maxCapacity) {
+                      alert(`Current filled (${value}) cannot exceed max capacity (${maxCapacity})`);
+                      return;
+                    }
+                    setCapacity(value);
+                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Route</label>
-                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Assign Driver</label>
-                  <select value={driver} onChange={e => setDriver(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required>
+                  <select value={driver} onChange={e => setDriver(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required>
                     <option value="">No Assignment</option>
                     <option value="Michael Johnson">Michael Johnson</option>
                     <option value="Sarah Williams">Sarah Williams</option>
@@ -274,7 +281,7 @@ const BusesPage = () => {
                           className="h-full rounded-full" 
                           style={{ 
                             width: `${percent}%`, 
-                            backgroundColor: percent === 0 ? "#D1D5DB" : percent < 50 ? "#EF4444" : "#10B981" 
+                            backgroundColor: bus.capacity === 0 ? "#D1D5DB" : bus.capacity <= 20 ? "#EF4444" : bus.capacity <= 30 ? "#F97316" : "#10B981" 
                           }}
                         ></div>
                       </div>
@@ -341,7 +348,7 @@ const BusesPage = () => {
               Are you sure you want to change <span className="text-black font-semibold">{selectedBus.name}</span>&apos;s status to <span className={`font-bold ${selectedBus.active ? "text-red-600" : "text-green-600"}`}>{selectedBus.active ? "Inactive" : "Active"}</span>?
             </p>
             <div className="flex justify-end">
-              <button onClick={confirmChangeStatus} className={`px-4 py-2 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 ${selectedBus.active ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}`}>Yes, Change Status</button>
+              <button onClick={confirmChangeStatus} className={`px-4 py-2 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 ${selectedBus.active ? "bg-orange-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}`}>Yes, Change Status</button>
             </div>
           </div>
         </div>
@@ -356,7 +363,7 @@ const BusesPage = () => {
         />
       )}
 
-      <Footer />
+      <AdminFooter />
     </div>
   );
 };
