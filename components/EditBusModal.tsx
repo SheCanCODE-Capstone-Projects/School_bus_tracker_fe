@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { X, Save, BusFront, Route, User, DollarSign, Users } from 'lucide-react';
+import { X, Save, Bus, Route, User, DollarSign, Users } from 'lucide-react';
 
 // Define the Bus type for consistency
 interface Bus {
@@ -40,13 +40,14 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose}></div>
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b pb-3 mb-4">
-          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <BusFront className="text-blue-600" /> Edit Bus: {bus.name}
-          </h3>
+          <div className="flex items-center gap-2">
+            <Bus className="w-6 h-6 text-blue-500" />
+            <h3 className="text-lg font-bold text-gray-700">Edit Bus: {bus.name}</h3>
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={24} />
           </button>
@@ -55,130 +56,141 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
         {/* Edit Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {/* Bus Name & Code */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 flex items-center mb-1">
-                <BusFront size={16} className="mr-1 text-gray-500" /> Bus Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="code" className="block text-sm font-medium text-gray-700 flex items-center mb-1">
-                <DollarSign size={16} className="mr-1 text-gray-500" /> Bus Code
-              </label>
-              <input
-                type="text"
-                id="code"
-                name="code"
-                value={formData.code}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Route & Driver */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="route" className="block text-sm font-medium text-gray-700 flex items-center mb-1">
-                <Route size={16} className="mr-1 text-gray-500" /> Route
-              </label>
-              <input
-                type="text"
-                id="route"
-                name="route"
-                value={formData.route}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="driver" className="block text-sm font-medium text-gray-700 flex items-center mb-1">
-                <User size={16} className="mr-1 text-gray-500" /> Driver
-              </label>
-              {/* This would ideally be a select/autocomplete fetching from a drivers list */}
-              <input
-                type="text"
-                id="driver"
-                name="driver"
-                value={formData.driver}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
+          {/* Bus Name */}
+          <div>
+            <label htmlFor="name" className="block text-xs text-black mb-1">
+              Bus Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              required
+            />
           </div>
           
-          {/* Capacity */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 flex items-center mb-1">
-                <Users size={16} className="mr-1 text-gray-500" /> Current Students
-              </label>
-              <input
-                type="number"
-                id="capacity"
-                name="capacity"
-                value={formData.capacity}
-                onChange={handleChange}
-                min="0"
-                max={formData.maxCapacity}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="maxCapacity" className="block text-sm font-medium text-gray-700 flex items-center mb-1">
-                <Users size={16} className="mr-1 text-gray-500" /> Max Capacity
-              </label>
-              <input
-                type="number"
-                id="maxCapacity"
-                name="maxCapacity"
-                value={formData.maxCapacity}
-                onChange={handleChange}
-                min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
+          {/* Bus Number */}
+          <div>
+            <label htmlFor="code" className="block text-xs text-black mb-1">
+              Bus Number
+            </label>
+            <input
+              type="text"
+              id="code"
+              name="code"
+              value={formData.code}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              required
+            />
+          </div>
+
+          {/* Max Capacity */}
+          <div>
+            <label htmlFor="maxCapacity" className="block text-xs text-black mb-1">
+              Max Capacity
+            </label>
+            <input
+              type="number"
+              id="maxCapacity"
+              name="maxCapacity"
+              value={formData.maxCapacity}
+              onChange={handleChange}
+              min="1"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              required
+            />
+          </div>
+
+          {/* Current Filled */}
+          <div>
+            <label htmlFor="capacity" className="block text-xs text-black mb-1">
+              Current Filled
+            </label>
+            <input
+              type="number"
+              id="capacity"
+              name="capacity"
+              value={formData.capacity}
+              onChange={handleChange}
+              min="0"
+              max={formData.maxCapacity}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              required
+            />
+          </div>
+
+          {/* Route */}
+          <div>
+            <label htmlFor="route" className="block text-xs text-black mb-1">
+              Route
+            </label>
+            <input
+              type="text"
+              id="route"
+              name="route"
+              value={formData.route}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              required
+            />
+          </div>
+          
+          {/* Assign Driver */}
+          <div>
+            <label htmlFor="driver" className="block text-xs text-black mb-1">
+              Assign Driver
+            </label>
+            <select
+              id="driver"
+              name="driver"
+              value={formData.driver}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              required
+            >
+              <option value="">No Assignment</option>
+              <option value="Michael Johnson">Michael Johnson (#001)</option>
+              <option value="Sarah Williams">Sarah Williams (#002)</option>
+              <option value="John Doe">John Doe (#003)</option>
+              <option value="Alice Brown">Alice Brown (#004)</option>
+            </select>
           </div>
 
           {/* Status */}
           <div>
-            <label htmlFor="active" className="block text-sm font-medium text-gray-700 flex items-center mb-1">
+            <label htmlFor="active" className="block text-xs text-black mb-1">
               Status
             </label>
             <select
               id="active"
               name="active"
-              value={formData.active.toString()} // Select expects string or number, convert boolean
+              value={formData.active.toString()}
               onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.value === 'true' }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
             >
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end pt-4">
+          {/* Submit Buttons */}
+          <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-xl flex items-center gap-2 font-medium hover:bg-blue-700 transition-colors"
+              className="flex-1 px-4 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors"
             >
-              <Save size={20} /> Save Changes
+              Save Changes
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Cancel
             </button>
           </div>
         </form>

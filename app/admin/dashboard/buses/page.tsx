@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import Footer from "@/components/Footer";
 import BusesNavbar from "@/components/navigation/dashboard/BusStatusCard";
-import { Search, X } from "lucide-react";
+import { Search, X, Bus } from "lucide-react";
 import { FiEdit } from "react-icons/fi";
 import { IoPersonOutline } from "react-icons/io5";
 import { LiaEyeSolid } from "react-icons/lia";
@@ -136,7 +136,7 @@ const BusesPage = () => {
       <BusesNavbar />
       
       {/* Search and Add Button */}
-      <div className="p-4 sm:p-8">
+      <div className="px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:gap-4 mb-5">
           <div className="relative flex-1 mb-3 sm:mb-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -156,27 +156,67 @@ const BusesPage = () => {
           </button>
         </div>
 
-        {/* Add Bus Form */}
+        {/* Add Bus Modal */}
         {showAddForm && (
-          <form onSubmit={handleAddBus} className="mb-6 p-4 border rounded-xl shadow-sm bg-gray-50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <input type="text" placeholder="Bus Name" value={name} onChange={e => setName(e.target.value)} className="w-full border px-3 py-2 rounded-lg text-gray-700" required />
-            <input type="text" placeholder="Bus Code" value={code} onChange={e => setCode(e.target.value)} className="w-full border px-3 py-2 rounded-lg text-gray-700" required />
-            <input type="text" placeholder="Route" value={route} onChange={e => setRoute(e.target.value)} className="w-full border px-3 py-2 rounded-lg text-gray-700" required />
-            <input type="text" placeholder="Driver Name" value={driver} onChange={e => setDriver(e.target.value)} className="w-full border px-3 py-2 rounded-lg text-gray-700" required />
-            <input type="number" placeholder="Current Capacity" value={capacity} onChange={e => setCapacity(Number(e.target.value))} className="w-full border px-3 py-2 rounded-lg text-gray-700" required />
-            <input type="number" placeholder="Max Capacity" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border px-3 py-2 rounded-lg text-gray-700" required />
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} className="w-4 h-4" />
-              <label className="text-gray-700">Active</label>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowAddForm(false)}></div>
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10">
+              <button 
+                onClick={() => setShowAddForm(false)} 
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <Bus className="w-6 h-6 text-blue-500" />
+                <h3 className="text-lg font-bold text-gray-700">Add New Bus</h3>
+              </div>
+              
+              <form onSubmit={handleAddBus} className="space-y-4">
+                <div>
+                  <label className="block text-xs text-black mb-1">Bus Name</label>
+                  <input type="text" placeholder="Bus 06" value={name} onChange={e => setName(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                </div>
+                <div>
+                  <label className="block text-xs text-black mb-1">Bus Number</label>
+                  <input type="text" placeholder="SCH-106" value={code} onChange={e => setCode(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                </div>
+                <div>
+                  <label className="block text-xs text-black mb-1">Max Capacity</label>
+                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                </div>
+                <div>
+                  <label className="block text-xs text-black mb-1">Current Filled</label>
+                  <input type="number" placeholder="0" value={capacity} onChange={e => setCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                </div>
+                <div>
+                  <label className="block text-xs text-black mb-1">Route</label>
+                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required />
+                </div>
+                <div>
+                  <label className="block text-xs text-black mb-1">Assign Driver</label>
+                  <select value={driver} onChange={e => setDriver(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400" required>
+                    <option value="">No Assignment</option>
+                    <option value="Michael Johnson">Michael Johnson</option>
+                    <option value="Sarah Williams">Sarah Williams</option>
+                    <option value="John Doe">John Doe</option>
+                    <option value="Alice Brown">Alice Brown</option>
+                  </select>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="submit" className="flex-1 px-4 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors">Add Bus</button>
+                  <button type="button" onClick={() => setShowAddForm(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                </div>
+              </form>
             </div>
-            <button type="submit" className="col-span-full px-4 py-2 bg-green-500 text-white rounded-lg">Add Bus</button>
-          </form>
+          </div>
         )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {stats.map((stat, i) => (
-            <div key={i} className={`border shadow-lg p-4 rounded-xl ${stat.color} bg-white`}>
+            <div key={i} className={`border shadow-lg p-4 rounded-xl ${stat.color} bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}>
               <p className="text-gray-500">{stat.title}</p>
               <p className=" text-gray-500">{stat.value}</p>
             </div>
@@ -184,7 +224,7 @@ const BusesPage = () => {
         </div>
 
         {/* Bus Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
           {filteredBuses.length > 0 ? (
             filteredBuses.map((bus) => {
@@ -192,7 +232,7 @@ const BusesPage = () => {
               const isAssigned = bus.driver !== "Not Assigned";
               
               return (
-                <div key={bus.id} className="bg-white border rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div key={bus.id} className="bg-white border rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                   {/* Header */}
                   <div className={`p-4 rounded-t-2xl ${bus.active ? "bg-blue-400" : "bg-gray-400"}`}>
                     <div className="flex items-center justify-between">
@@ -203,42 +243,44 @@ const BusesPage = () => {
                           <p className="text-sm text-gray-600">{bus.code}</p>
                         </div>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${bus.active ? "bg-blue-300  text-white" : "bg-gray-300 text-white"}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${bus.active ? "bg-blue-300  text-white" : "bg-gray-300 text-white"}`}>
                         {bus.active ? "Active" : "Inactive"}
                       </span>
                     </div>
                   </div>
 
                   {/* Details */}
-                  <div className="p-4">
-                    <div className="mb-3">
-                      <p className="text-gray-500 text-sm">Route</p>
-                      <p className="text-gray-500">{bus.route}</p>
+                  <div className="p-6">
+                    <div className="mb-4">
+                      <p className="text-gray-500 text-xs">Route</p>
+                      <p className="text-gray-500 text-xs">{bus.route}</p>
                     </div>
 
-                    <div className="flex items-center mb-3">
-                      <IoPersonOutline className="text-blue-500 mr-2" />
-                      <div>
-                        <p className="text-gray-500 text-sm">Driver</p>
-                        <p className={isAssigned ? "text-gray-500 change inactive from red to 00 " : "text-gray-500"}>{bus.driver}</p>
+                    <div className="mb-4">
+                      <p className="text-gray-500 text-xs mb-1">Driver</p>
+                      <div className="flex items-center">
+                        <IoPersonOutline className="text-blue-500 mr-2" />
+                        <p className="text-gray-500 text-xs">{bus.driver}</p>
                       </div>
                     </div>
 
                     <div className="mb-4">
-                      <div className="flex justify-between text-sm mb-1">
+                      <div className="flex justify-between text-xs mb-1">
                         <span className="text-gray-500">Capacity</span>
                         <span className="text-gray-800 font-medium">{bus.capacity}/{bus.maxCapacity}</span>
                       </div>
-                      <div className="w-full bg-gray-200 h-2 rounded-full">
+                      <div className="w-full h-2 rounded-full bg-gray-300">
                         <div 
-                          className="h-2 rounded-full" 
+                          className="h-full rounded-full" 
                           style={{ 
                             width: `${percent}%`, 
-                            backgroundColor: percent >= 90 ? "#EF4444" : percent >= 70 ? "#F59E0B" : "#10B981" 
+                            backgroundColor: percent === 0 ? "#D1D5DB" : percent < 50 ? "#EF4444" : "#10B981" 
                           }}
                         ></div>
                       </div>
                     </div>
+
+                    <hr className="border-gray-200 my-4" />
 
                     {/* Action Buttons */}
                     <div className="flex items-center">
@@ -251,7 +293,7 @@ const BusesPage = () => {
                       <div className="flex gap-2 ml-3">
                         <button 
                           onClick={() => openEditModal(bus)} 
-                          className="text-blue-500 text-2xl p-2 rounded-full hover:bg-blue-50 transition-colors"
+                          className="text-blue-500 text-lg p-2 rounded-full hover:bg-blue-50 transition-colors"
                         >
                           <FiEdit />
                         </button>
@@ -259,7 +301,7 @@ const BusesPage = () => {
                           onClick={() => openStatusModal(bus)}
                           aria-label={`Change status for ${bus.name}`}
                           title={bus.active ? "Deactivate Bus" : "Activate Bus"}
-                          className={`${bus.active ? "text-red-500 hover:bg-red-50" : "text-green-500 hover:bg-green-50"} text-2xl p-2 rounded-full transition-colors`}
+                          className={`${bus.active ? "text-red-500 hover:bg-red-50" : "text-green-500 hover:bg-green-50"} text-lg p-2 rounded-full transition-colors`}
                         >
                           <CiPower />
                         </button>
@@ -280,7 +322,7 @@ const BusesPage = () => {
       {/* Status Change Modal */}
       {showStatusModal && selectedBus && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={closeStatusModal}></div>
+          <div className="absolute inset-0 bg-black/50" onClick={closeStatusModal}></div>
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 z-10">
             <button 
               onClick={closeStatusModal} 
@@ -290,14 +332,16 @@ const BusesPage = () => {
             </button>
             
             <div className="flex items-center gap-3 mb-4">
-              <CiPower className="text-2xl text-red-600 hover:bg-red-100 rounded-lg" />
+              <div className={`p-2 rounded-full ${selectedBus.active ? "bg-red-100" : "bg-green-100"}`}>
+                <CiPower className={`text-2xl ${selectedBus.active ? "text-red-600" : "text-green-600"}`} />
+              </div>
               <h3 className="text-lg text-gray-800 font-bold">Confirm Status Change</h3>
             </div>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to change <span className=" text-black">{selectedBus.name}</span>&apos;s status to <span className={`font-bold ${selectedBus.active ? "text-red-600" : "text-green-600"}`}>{selectedBus.active ? "Inactive" : "Active"}</span>?
+              Are you sure you want to change <span className="text-black font-semibold">{selectedBus.name}</span>&apos;s status to <span className={`font-bold ${selectedBus.active ? "text-red-600" : "text-green-600"}`}>{selectedBus.active ? "Inactive" : "Active"}</span>?
             </p>
             <div className="flex justify-end">
-              <button onClick={confirmChangeStatus} className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${selectedBus.active ? "bg-red-500 hover:bg-red-600   transition-all duration-300 hover:scale-105" : "bg-green-500 hover:bg-green-600  transition-all duration-300 hover:scale-105"}`}>Yes, Change Status</button>
+              <button onClick={confirmChangeStatus} className={`px-4 py-2 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 ${selectedBus.active ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}`}>Yes, Change Status</button>
             </div>
           </div>
         </div>
