@@ -13,7 +13,7 @@ export default function AdminNavbar() {
   };
 
   return (
-    <header className="relative bg-white border-b border-gray-200 px-4 sm:px-6 md:px-8 lg:px-12 py-4 z-50">
+    <header className="relative bg-white border-b border-gray-200 px-4 sm:px-6 md:px-8 lg:px-12 py-8 z-50">
       <div className="flex items-center justify-between">
 
         {/* LEFT: Logo + Title */}
