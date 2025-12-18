@@ -1,7 +1,17 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import {Search,Bus,UserPlus,MapPin,Trash2,ChevronLeft,ChevronRight,SquarePen,AlertTriangle,} from "lucide-react";
+import {
+  Search,
+  Bus,
+  UserPlus,
+  MapPin,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  SquarePen,
+  AlertTriangle,
+} from "lucide-react";
 import AdminNavbar from "@/components/navigation/AdminNavbar";
 import AdminFooter from "@/components/navigation/AdminFooter";
 
@@ -308,6 +318,19 @@ export default function StudentBusDashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<any>(null);
 
+  // Edit Student Modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editStudent, setEditStudent] = useState({
+    id: "",
+    name: "",
+    age: "",
+    parentName: "",
+    parentPhone: "",
+    address: "",
+    busStop: "",
+    assignedBus: "",
+  });
+
   // Calculate total pages
   const totalPages = Math.ceil(students.length / studentsPerPage);
 
@@ -408,8 +431,47 @@ export default function StudentBusDashboard() {
   };
 
   // Handle edit click
-  const handleEditClick = (studentId: string) => {
-    router.push(`/admin/dashboard/students/${studentId}`);
+  const handleEditClick = (student: any) => {
+    setEditStudent({
+      id: student.id,
+      name: student.name,
+      age: student.age,
+      parentName: student.parent,
+      parentPhone: student.phone,
+      address: student.address,
+      busStop: student.busStop,
+      assignedBus: student.assignedBus,
+    });
+    setShowEditModal(true);
+  };
+
+  // Close Edit Modal
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditStudent({
+      id: "",
+      name: "",
+      age: "",
+      parentName: "",
+      parentPhone: "",
+      address: "",
+      busStop: "",
+      assignedBus: "",
+    });
+  };
+
+  // Handle edit input change
+  const handleEditInputChange = (field: string, value: string) => {
+    setEditStudent({
+      ...editStudent,
+      [field]: value,
+    });
+  };
+
+  // Save edited student
+  const handleSaveEdit = () => {
+    console.log("Saving edited student:", editStudent);
+    closeEditModal();
   };
 
   // Handle delete click
@@ -439,88 +501,106 @@ export default function StudentBusDashboard() {
       <AdminNavbar />
       <div className="min-h-screen bg-gray-50 p-4 md:p-4 lg:p-8">
         <div className="max-w-full   mx-auto px-2 md:px-4">
-          <div className="flex flex-col   md:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
+          <div className="flex flex-col lg:flex-row gap-3 mb-6 md:mb-8">
             <div className="flex-1">
               <div className="flex items-center border border-gray-300 rounded-2xl focus-within:ring-2 focus-within:ring-blue-500">
                 <Search className="ml-4 text-gray-500 w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Search students by name, parent, or bus stop"
-                  className="w-full pl-3 pr-4 py-3 text-gray-600 rounded-2xl focus:outline-none"
+                  className="w-full pl-3 pr-4 py-3 text-gray-600 rounded-2xl focus:outline-none text-sm md:text-base"
                 />
               </div>
             </div>
 
-            {/* Dropdown */}
-            <select className="px-4 py-3 border border-gray-300 text-gray-600 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option>All Bus Stops</option>
-              <option>Bus Stop 1</option>
-              <option>Bus Stop 2</option>
-              <option>Bus Stop 3</option>
+            <select className="lg:w-40 px-4 py-3 border border-gray-300 text-gray-600 text-sm md:text-base rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option>All Stops</option>
+              <option>Stop 1</option>
+              <option>Stop 2</option>
+              <option>Stop 3</option>
             </select>
 
-            {/* Buttons - Stack vertically on mobile, horizontal on larger screens */}
-            <div className="flex flex-col  sm:flex-row gap-3 w-full sm:w-auto">
-              <button
-                onClick={openAssignModal}
-                className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-purple-600 text-white rounded-2xl hover:bg-purple-700 transition w-full sm:w-auto"
-              >
-                <Bus className="w-5 h-5" />
-                <span>Assign to Bus</span>
-              </button>
+            <button
+              onClick={openAssignModal}
+              className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-purple-600 text-white rounded-2xl hover:bg-purple-700 transition text-sm md:text-base whitespace-nowrap"
+            >
+              <Bus className="w-4 h-4 md:w-5 md:h-5" />
+              <span>Assign to Bus</span>
+            </button>
 
-              <button
-                onClick={openAddStudentModal}
-                className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition w-full sm:w-auto"
-              >
-                <UserPlus className="w-5 h-5" />
-                <span>Add Student</span>
-              </button>
-            </div>
+            <button
+              onClick={openAddStudentModal}
+              className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition text-sm md:text-base whitespace-nowrap"
+            >
+              <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
+              <span>Add Student</span>
+            </button>
           </div>
 
           {/* Cards Section - Responsive Grid: 1 column on mobile, 2 on tablet, 4 on desktop */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
-              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">Total Students</div>
-              <div className="text-2xl md:text-3xl font-semibold text-gray-900">25</div>
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300  hover:shadow-xl hover:-translate-y-2 cursor-pointer">
+              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">
+                Total Students
+              </div>
+              <div className="text-2xl md:text-3xl font-semibold text-gray-900">
+                25
+              </div>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
-              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">Bus 01 Students</div>
-              <div className="text-2xl md:text-3xl font-semibold text-gray-900">5</div>
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300  hover:shadow-xl hover:-translate-y-2 cursor-pointer">
+              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">
+                Bus 01 Students
+              </div>
+              <div className="text-2xl md:text-3xl font-semibold text-gray-900">
+                5
+              </div>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
-              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">Bus 02 Students</div>
-              <div className="text-2xl md:text-3xl font-semibold text-gray-900">4</div>
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300  hover:shadow-xl hover:-translate-y-2 cursor-pointer">
+              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">
+                Bus 02 Students
+              </div>
+              <div className="text-2xl md:text-3xl font-semibold text-gray-900">
+                4
+              </div>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
-              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">Bus 03 Students</div>
-              <div className="text-2xl md:text-3xl font-semibold text-gray-900">3</div>
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300  hover:shadow-xl hover:-translate-y-2 cursor-pointer">
+              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">
+                Bus 03 Students
+              </div>
+              <div className="text-2xl md:text-3xl font-semibold text-gray-900">
+                3
+              </div>
             </div>
           </div>
 
           {/* Students Table - Horizontal Scroll on Small Screens */}
-          <div className={`bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 ${isTransitioning ? 'opacity-50 transform translate-x-2' : 'opacity-100 transform translate-x-0'}`}>
+          <div
+            className={`bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 ${
+              isTransitioning
+                ? "opacity-50 transform translate-x-2"
+                : "opacity-100 transform translate-x-0"
+            }`}
+          >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[800px] border-collapse">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 border-b  border-gray-200">
                   <tr>
-                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-600">
+                    <th className="text-left px-4 md:px-6  py-3 md:py-4 text-xs md:text-sm font-bold text-gray-600">
                       Student
                     </th>
-                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-600">
+                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-bold text-gray-600">
                       Age
                     </th>
-                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-600">
+                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-bold text-gray-600">
                       Parent
                     </th>
-                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-600">
+                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-bold text-gray-600">
                       Bus Stop
                     </th>
-                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-600">
+                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-bold text-gray-600">
                       Assigned Bus
                     </th>
-                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-600">
+                    <th className="text-left px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-bold text-gray-600">
                       Actions
                     </th>
                   </tr>
@@ -532,16 +612,20 @@ export default function StudentBusDashboard() {
                       className="border-b border-gray-200 hover:bg-gray-50"
                     >
                       <td className="px-4 md:px-6 py-3 md:py-4">
-                        <div className="text-gray-900 font-medium text-sm md:text-base">
+                        <div className="text-gray-900  text-sm md:text-base">
                           {student.name}
                         </div>
                         <div className="text-gray-500 text-xs md:text-sm">
                           {student.address}
                         </div>
                       </td>
-                      <td className="px-4 md:px-6 py-3 md:py-4 text-gray-700 text-sm md:text-base">{student.age}</td>
+                      <td className="px-4 md:px-6 py-3 md:py-4 text-gray-700 text-sm md:text-base">
+                        {student.age}
+                      </td>
                       <td className="px-4 md:px-6 py-3 md:py-4">
-                        <div className="text-gray-900 text-sm md:text-base">{student.parent}</div>
+                        <div className="text-gray-900 text-sm md:text-base">
+                          {student.parent}
+                        </div>
                         <div className="text-gray-500 text-xs md:text-sm">
                           {student.phone}
                         </div>
@@ -563,7 +647,7 @@ export default function StudentBusDashboard() {
                       <td className="px-4 md:px-6 py-3 md:py-4">
                         <div className="flex items-center gap-2 md:gap-3">
                           <button
-                            onClick={() => handleEditClick(student.id)}
+                            onClick={() => handleEditClick(student)}
                             className="text-blue-500 hover:text-blue-700 transition"
                           >
                             <SquarePen className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -628,12 +712,19 @@ export default function StudentBusDashboard() {
           </div>
         </div>
 
-        {/* Assign to Bus Modal - Responsive */}
         {showAssignModal && (
-          <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-gray-700/40 backdrop-blur-md"
+              onClick={closeAssignModal}
+            />
+
+            {/* Modal */}
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6">
               <div className="flex items-center gap-3 mb-4 md:mb-6">
-                <Bus className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                <div className="bg-gray-100 p-2 rounded-2xl">
+                  <Bus className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                </div>
                 <h2 className="text-lg md:text-xl font-semibold text-gray-900">
                   Assign Students to Bus
                 </h2>
@@ -655,7 +746,9 @@ export default function StudentBusDashboard() {
                         onChange={() => toggleStudentSelection(student.name)}
                         className="w-4 h-4 text-purple-600 rounded"
                       />
-                      <span className="text-sm md:text-base text-gray-700">{student.name}</span>
+                      <span className="text-sm md:text-base text-gray-700">
+                        {student.name}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -668,7 +761,7 @@ export default function StudentBusDashboard() {
                 <select
                   value={selectedBus}
                   onChange={(e) => setSelectedBus(e.target.value)}
-                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm md:text-base"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-600"
                 >
                   <option value="">Select a bus</option>
                   <option value="Bus 01">Bus 01</option>
@@ -677,16 +770,19 @@ export default function StudentBusDashboard() {
                 </select>
               </div>
 
-              <div className="flex gap-3">
+              <hr className="w-full border-t  border-gray-300 my-4" />
+
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleAssignToBus}
-                  className="flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-purple-600 text-white rounded-2xl hover:bg-purple-700 transition font-medium text-sm md:text-base"
+                  className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-purple-600 text-white rounded-2xl hover:bg-purple-700 transition font-medium"
                 >
-                  Assign
+                  Assign to Bus
                 </button>
+
                 <button
                   onClick={closeAssignModal}
-                  className="px-4 md:px-6 py-2.5 md:py-3 bg-white text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition font-medium text-sm md:text-base"
+                  className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-gray-200 text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-300 transition font-medium"
                 >
                   Cancel
                 </button>
@@ -697,8 +793,12 @@ export default function StudentBusDashboard() {
 
         {/* Add New Student Modal - Responsive */}
         {showAddStudentModal && (
-          <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-gray-700/40 backdrop-blur-md"
+              onClick={closeAddStudentModal}
+            />
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3 mb-4 md:mb-6">
                 <div className="bg-blue-100 p-2 rounded-2xl">
                   <UserPlus className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
@@ -818,16 +918,19 @@ export default function StudentBusDashboard() {
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-4 md:mt-6">
+              <hr className="w-full border-t border-gray-300 my-4" />
+
+              <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-6">
                 <button
                   onClick={handleAddStudent}
-                  className="flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition font-medium text-sm md:text-base"
+                  className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition font-medium text-sm md:text-base"
                 >
                   Add Student
                 </button>
+
                 <button
                   onClick={closeAddStudentModal}
-                  className="px-4 md:px-6 py-2.5 md:py-3 bg-white text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition font-medium text-sm md:text-base"
+                  className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-gray-200 text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-300 transition font-medium text-sm md:text-base"
                 >
                   Cancel
                 </button>
@@ -838,8 +941,12 @@ export default function StudentBusDashboard() {
 
         {/* Delete Confirmation Modal - Responsive */}
         {showDeleteModal && (
-          <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-gray-700/40 backdrop-blur-md"
+              onClick={closeDeleteModal}
+            />
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6">
               <div className="flex items-center gap-3 mb-3 md:mb-4">
                 <div className="bg-red-100 p-2 rounded-2xl">
                   <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
@@ -857,16 +964,209 @@ export default function StudentBusDashboard() {
                 ? This action cannot be undone.
               </p>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition font-medium text-sm md:text-base"
+                  className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition font-medium text-sm md:text-base"
                 >
                   Delete
                 </button>
                 <button
                   onClick={closeDeleteModal}
-                  className="px-4 md:px-6 py-2.5 md:py-3 bg-white text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition font-medium text-sm md:text-base"
+                  className="w-full sm:w-auto px-4 md:px-6 py-2.5 md:py-3 bg-white text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition font-medium text-sm md:text-base"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Student Modal - Responsive */}
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-gray-700/40 backdrop-blur-md"
+              onClick={closeEditModal}
+            />
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center gap-3 mb-4 md:mb-6">
+                <div className="bg-green-100 p-2 rounded-2xl">
+                  <SquarePen className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
+                </div>
+                <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+                  Edit Student
+                </h2>
+              </div>
+
+              <div className="space-y-3 md:space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Student Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudent.name}
+                    onChange={(e) =>
+                      handleEditInputChange("name", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Age
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudent.age}
+                    onChange={(e) =>
+                      handleEditInputChange("age", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Parent Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudent.parentName}
+                    onChange={(e) =>
+                      handleEditInputChange("parentName", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Parent Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={editStudent.parentPhone}
+                    onChange={(e) =>
+                      handleEditInputChange("parentPhone", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudent.address}
+                    onChange={(e) =>
+                      handleEditInputChange("address", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bus Stop
+                  </label>
+                  <select
+                    value={editStudent.busStop}
+                    onChange={(e) =>
+                      handleEditInputChange("busStop", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                  >
+                    <option
+                      value=""
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Select a bus stop
+                    </option>
+                    <option
+                      value="Oak Street Stop"
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Oak Street Stop
+                    </option>
+                    <option
+                      value="Maple Avenue Stop"
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Maple Avenue Stop
+                    </option>
+                    <option
+                      value="Pine Road Stop"
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Pine Road Stop
+                    </option>
+                    <option
+                      value="Elm Street Stop"
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Elm Street Stop
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assigned Bus
+                  </label>
+                  <select
+                    value={editStudent.assignedBus}
+                    onChange={(e) =>
+                      handleEditInputChange("assignedBus", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                  >
+                    <option
+                      value=""
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Select a bus
+                    </option>
+                    <option
+                      value="Bus 01"
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Bus 01
+                    </option>
+                    <option
+                      value="Bus 02"
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Bus 02
+                    </option>
+                    <option
+                      value="Bus 03"
+                      className="text-xs sm:text-sm md:text-base truncate"
+                    >
+                      Bus 03
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="w-full h-px bg-gray-300 my-4" />
+
+
+              <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-6">
+                <button
+                  onClick={handleSaveEdit}
+                  className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-green-500 text-white rounded-2xl hover:bg-green-600 transition font-medium text-sm md:text-base"
+                >
+                  Save Changes
+                </button>
+
+                <button
+                  onClick={closeEditModal}
+                  className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-gray-200 text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-300 transition font-medium text-sm md:text-base"
                 >
                   Cancel
                 </button>

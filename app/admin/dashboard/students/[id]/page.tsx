@@ -95,25 +95,25 @@ export default function EditStudentPage() {
   return (
     <>
       <AdminNavbar />
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <button
               onClick={() => router.push("/admin/dashboard/students")}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 md:mb-4 text-sm md:text-base"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
               Back to Students
             </button>
-            <h1 className="text-3xl font-semibold text-gray-900">
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
               Edit Student
             </h1>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm p-4 md:p-6">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               {/* Student Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -123,7 +123,7 @@ export default function EditStudentPage() {
                   type="text"
                   value={student.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -137,7 +137,7 @@ export default function EditStudentPage() {
                   type="number"
                   value={student.age}
                   onChange={(e) => handleInputChange("age", e.target.value)}
-                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -153,7 +153,7 @@ export default function EditStudentPage() {
                   onChange={(e) =>
                     handleInputChange("parentName", e.target.value)
                   }
-                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -169,7 +169,7 @@ export default function EditStudentPage() {
                   onChange={(e) =>
                     handleInputChange("parentPhone", e.target.value)
                   }
-                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -183,7 +183,7 @@ export default function EditStudentPage() {
                   type="text"
                   value={student.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
-                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -196,7 +196,7 @@ export default function EditStudentPage() {
                 <select
                   value={student.busStop}
                   onChange={(e) => handleInputChange("busStop", e.target.value)}
-                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   required
                 >
                   <option value="">Select a bus stop</option>
@@ -217,7 +217,7 @@ export default function EditStudentPage() {
                   onChange={(e) =>
                     handleInputChange("assignedBus", e.target.value)
                   }
-                  className="w-full px-4 py-3 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   required
                 >
                   <option value="">Select a bus</option>
@@ -228,18 +228,18 @@ export default function EditStudentPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition font-medium text-sm md:text-base"
                 >
-                  <Save className="w-5 h-5" />
+                  <Save className="w-4 h-4 md:w-5 md:h-5" />
                   Save Changes
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push("/admin/dashboard/students")}
-                  className="px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                  className="px-4 md:px-6 py-2.5 md:py-3 bg-white text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition font-medium text-sm md:text-base"
                 >
                   Cancel
                 </button>

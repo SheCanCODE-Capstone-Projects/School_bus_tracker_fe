@@ -3,14 +3,13 @@
 import React, { useState } from "react";
 import { Bus, LogOut } from "lucide-react";
 import { HiMenu, HiX } from "react-icons/hi";
-import { useRouter } from "next/navigation";
 
 export default function AdminNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const router = useRouter();
 
   const handleLogout = () => {
-    router.push("/login");
+    console.log("Logging out...");
+    // router.push("/login");
   };
 
   return (
@@ -30,7 +29,7 @@ export default function AdminNavbar() {
 
         {/* Mobile Menu Button */}
         <button
-          className="lg:hidden text-gray-800"
+          className="lg:hidden text-gray-800 transition-transform duration-200 hover:scale-110"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           {isMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
@@ -38,36 +37,67 @@ export default function AdminNavbar() {
 
         {/* Navigation */}
         <nav
-          className={`${isMenuOpen ? "flex" : "hidden"} lg:flex flex-col lg:flex-row absolute lg:relative top-full lg:top-auto left-0 lg:left-auto
-          w-full lg:w-auto bg-white lg:bg-transparent shadow-lg lg:shadow-none items-start lg:items-center gap-2 sm:gap-3 lg:gap-4 py-4 lg:py-0 pl-4 lg:pl-0 text-xs sm:text-sm lg:text-base font-medium`} >
+          className={`${
+            isMenuOpen 
+              ? "flex opacity-100 translate-y-0" 
+              : "hidden opacity-0 -translate-y-4"
+          } lg:flex lg:opacity-100 lg:translate-y-0 
+          flex-col lg:flex-row absolute lg:relative top-full lg:top-auto left-0 lg:left-auto
+          w-full lg:w-auto bg-white lg:bg-transparent shadow-lg lg:shadow-none 
+          items-start lg:items-center gap-2 sm:gap-3 lg:gap-4 
+          py-4 lg:py-0 pl-4 lg:pl-0 
+          text-xs sm:text-sm lg:text-base font-medium
+          transition-all duration-300 ease-in-out`}
+        >
           <a
             href="/admin/dashboard"
-            className="text-blue-600 bg-blue-100 border border-blue-200 rounded-lg px-4 py-2"
+            className="text-blue-600 bg-blue-100 border border-blue-200 rounded-lg px-4 py-2 
+            transition-all duration-200 hover:bg-blue-200 hover:scale-105 hover:shadow-md"
           >
             Dashboard
           </a>
 
-          <a href="/admin/buses" className="text-gray-600 hover:text-black px-3 py-2">
+          <a 
+            href="/admin/buses" 
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
+          >
             Buses
           </a>
 
-          <a href="/admin/drivers" className="text-gray-600 hover:text-black px-3 py-2">
+          <a 
+            href="/admin/drivers" 
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
+          >
             Drivers
           </a>
 
-          <a href="/admin/parents" className="text-gray-600 hover:text-black px-3 py-2">
+          <a 
+            href="/admin/parents" 
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
+          >
             Parents
           </a>
 
-          <a href="/admin/students" className="text-gray-600 hover:text-black px-3 py-2">
+          <a 
+            href="/admin/dashboardstudents" 
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
+          >
             Students
           </a>
 
-          <a href="#" className="text-gray-600 hover:text-black px-3 py-2">
-            History
-          </a>
+          <a 
+            href="#" 
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-gray-100 hover:translate-x-1" >History </a>
 
-          <a href="/admin/emergencies" className="text-gray-600 hover:text-black px-3 py-2">
+          <a 
+            href="/admin/emergencies" 
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
+          >
             Emergencies
           </a>
 
@@ -76,10 +106,12 @@ export default function AdminNavbar() {
           {/* Logout */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-gray-600 hover:text-red-500 hover:bg-red-100 rounded-lg p-2  transition"
+            className="flex items-center gap-2 text-gray-600 hover:text-red-500 
+            hover:bg-red-50 rounded-lg px-3 py-2
+            transition-all duration-200 hover:scale-105 hover:shadow-sm"
           >
-            <LogOut className="w-4 h-4 px-1/2" />
-            <span className="px-2">Logout</span>
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
           </button>
         </nav>
       </div>
