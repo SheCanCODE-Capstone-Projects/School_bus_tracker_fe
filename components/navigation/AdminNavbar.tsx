@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { Bus, LogOut } from "lucide-react";
 import { HiMenu, HiX } from "react-icons/hi";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function AdminNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -49,13 +51,13 @@ export default function AdminNavbar() {
           text-xs sm:text-sm lg:text-base font-medium
           transition-all duration-300 ease-in-out`}
         >
-          <a
+          <Link
             href="/admin/dashboard"
             className="text-blue-600 bg-blue-100 border border-blue-200 rounded-lg px-4 py-2 
             transition-all duration-200 hover:bg-blue-200 hover:scale-105 hover:shadow-md"
           >
             Dashboard
-          </a>
+          </Link>
 
           <a 
             href="/admin/buses" 
@@ -63,7 +65,7 @@ export default function AdminNavbar() {
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Buses
-          </a>
+          </Link>
 
           <a 
             href="/admin/drivers" 
@@ -71,7 +73,7 @@ export default function AdminNavbar() {
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Drivers
-          </a>
+          </Link>
 
           <a 
             href="/admin/parents" 
@@ -79,7 +81,7 @@ export default function AdminNavbar() {
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Parents
-          </a>
+          </Link>
 
           <a 
             href="/admin/dashboardstudents" 
@@ -87,7 +89,7 @@ export default function AdminNavbar() {
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Students
-          </a>
+          </Link>
 
           <a 
             href="#" 
@@ -99,7 +101,7 @@ export default function AdminNavbar() {
             transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Emergencies
-          </a>
+          </Link>
 
           <div className="hidden lg:block h-6 w-px bg-gray-300" />
 
