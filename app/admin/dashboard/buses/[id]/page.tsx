@@ -5,9 +5,7 @@ import { useState } from "react";
 import Footer from "@/components/Footer";
 import BusesNavbar from "@/components/navigation/dashboard/BusStatusCard";
 import { 
-    ArrowLeft, MapPin, Users, Phone, Mail, Clock, Fuel, FileText, Calendar, 
-    Zap, 
-    User, 
+    ArrowLeft, MapPin, Users, Phone, FileText, Calendar, 
     ShieldAlert 
 } from "lucide-react";
 import Link from "next/link";
@@ -18,8 +16,7 @@ const BusDetailsPage = () => {
   const params = useParams();
   const busId = params.id;
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showEmergencyAlert, setShowEmergencyAlert] = useState(false);
-  const [isTracking, setIsTracking] = useState(false);
+
   const [buses, setBuses] = useState([
     { id: 1, name: "Bus 01", code: "SCH-101", route: "Route A - North District", driver: "Michael Johnson", capacity: 42, maxCapacity: 50, active: true },
     { id: 2, name: "Bus 02", code: "SCH-102", route: "Route B - East District", driver: "Sarah Williams", capacity: 42, maxCapacity: 50, active: true },
@@ -42,7 +39,7 @@ const BusDetailsPage = () => {
     return buses.find(bus => bus.id === parseInt(id)) || buses[0];
   };
 
-  const openEditModal = (bus: any) => {
+  const openEditModal = () => {
     setShowEditModal(true);
   };
 
@@ -50,7 +47,7 @@ const BusDetailsPage = () => {
     setShowEditModal(false);
   };
 
-  const handleUpdateBus = (updatedBusData: any) => {
+  const handleUpdateBus = (updatedBusData: typeof currentBus) => {
     setBuses(prev => prev.map(b => b.id === updatedBusData.id ? updatedBusData : b));
     closeEditModal();
   };
@@ -95,7 +92,7 @@ const BusDetailsPage = () => {
     ]
   };
 
-  const percent = Math.round((busData.capacity / busData.maxCapacity) * 100);
+
 
   return (
     <div className="min-h-screen bg-gray-50"> 
@@ -220,7 +217,7 @@ const BusDetailsPage = () => {
                     <ShieldAlert size={14} /> Emergency Alert
                   </button>
                   <button 
-                    onClick={() => openEditModal(currentBus)}
+                    onClick={() => openEditModal()}
                     className="w-full bg-blue-500 text-white py-2 rounded-lg text-xs font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-1"
                   >
                     <FileText size={14} /> Edit Bus Info

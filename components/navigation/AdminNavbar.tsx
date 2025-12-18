@@ -86,12 +86,12 @@ export default function AdminNavbar() {
             Students
           </Link>
 
-          <a
-            href="#"
+          <Link
+            href="/admin/history"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             History
-          </a>
+          </Link>
 
           <Link
             href="/admin/emergencies"
