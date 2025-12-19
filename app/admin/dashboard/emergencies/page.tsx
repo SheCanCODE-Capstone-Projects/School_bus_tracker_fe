@@ -248,13 +248,13 @@ const EmergenciesPage = () => {
           {filteredEmergencies.map((emergency) => (
             <div
               key={emergency.id}
-              className={`rounded-2xl p-6 shadow-sm border-2 hover:shadow-lg transition-shadow duration-300 ${
+              className={`rounded-2xl px-8  shadow-sm border-2 hover:shadow-lg transition-shadow duration-300 ${
                 emergency.status === 'active'
                   ? 'bg-red-100 border-red-200'
                   : 'bg-green-100 border-green-200'
               }`}
             >
-              <div className="flex flex-col sm:flex-row items-start justify-between mb-4 gap-4">
+              <div className="flex flex-col sm:flex-row items-start justify-between mb-4 gap-4 pt-10">
                 <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center ${
@@ -317,8 +317,8 @@ const EmergenciesPage = () => {
                       <MapPin className="w-4 h-4" />
                       <span className="font-medium">Location</span>
                     </div>
-                    <p className="text-gray-700 ml-6 mb-4">{emergency.location}</p>
-                    <p className="font-medium text-gray-700 mb-1">Driver Contact</p>
+                    <p className="text-gray-700 ml-3 mb-4">{emergency.location}</p>
+                    <p className="font-medium text-gray-700 ml-3 mb-1">Driver Contact</p>
                     <p className="text-gray-600 ml-6">{emergency.driverContact}</p>
                   </div>
 
@@ -327,8 +327,8 @@ const EmergenciesPage = () => {
                       <Clock className="w-4 h-4" />
                       <span className="font-medium">Reported At</span>
                     </div>
-                    <p className="text-gray-700 ml-6 mb-4">{emergency.reportedAt}</p>
-                    <p className="font-medium text-gray-700 mb-1">Parents Notified</p>
+                    <p className="text-gray-700 ml-3 mb-4">{emergency.reportedAt}</p>
+                    <p className="font-medium text-gray-700 ml-3 mb-1">Parents Notified</p>
                     <p className="text-green-600 ml-6 flex items-center space-x-1">
                       <CheckCircle className="w-4 h-4" />
                       <span>Yes</span>
@@ -348,9 +348,9 @@ const EmergenciesPage = () => {
               )}
 
               {emergency.status === 'active' && (
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4 rounded-lg hover:shadow-md transition-shadow duration-300">
-                  <div className="flex items-center">
-                    <AlertTriangle className="w-5 h-5 text-yellow-600 mr-3" />
+                <div className="bg-yellow-50 border-t border-l-4 border-yellow-500 p-4 gap-y-0 mt-10 rounded-lg hover:shadow-md transition-shadow duration-300">
+                  <div className="flex flex= ">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 " />
                     <p className="text-yellow-800">
                       This emergency requires immediate attention. Click Manage to take action.
                     </p>
@@ -368,32 +368,32 @@ const EmergenciesPage = () => {
               <div className="p-6">
                 {/* Modal Header */}
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-red-300 rounded-full flex items-center justify-center">
                     <AlertTriangle className="w-6 h-6 text-red-600" />
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900">Manage Emergency</h2>
                 </div>
 
                 {/* Emergency Details Card */}
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <div className="bg-red-100 border border-red-300 rounded-xl p-4 mb-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{selectedEmergency.type}</h3>
                   <p className="text-gray-700">{selectedEmergency.description}</p>
                 </div>
 
                 {/* Bus and Driver Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                  <div className="bg-gray-100 rounded-lg p-4 shadow-sm border border-gray-300">
                     <label className="text-sm font-medium text-gray-600 mb-2 block">Bus</label>
                     <p className="text-gray-900 font-medium">{selectedEmergency.bus}</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                  <div className="bg-gray-100 rounded-lg p-4 shadow-sm border border-gray-300">
                     <label className="text-sm font-medium text-gray-600 mb-2 block">Driver</label>
                     <p className="text-gray-900 font-medium">{selectedEmergency.driver}</p>
                   </div>
                 </div>
 
                 {/* View Location Button */}
-                <button className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors mb-6">
+                <button className="w-full bg-blue-500 text-white py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors mb-6">
                   View Bus Location on Map
                 </button>
 
@@ -404,18 +404,18 @@ const EmergenciesPage = () => {
                     value={resolutionNotes}
                     onChange={(e) => setResolutionNotes(e.target.value)}
                     placeholder="Describe how the emergency was resolved..."
-                    className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    className="w-full h-32 px-4 py-3 text-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-none"
                   />
                 </div>
 
                 {/* Send Notification Checkbox */}
-                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="bg-blue-50 rounded-lg p-4 mb-6">
                   <label className="flex items-center space-x-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={sendNotification}
                       onChange={(e) => setSendNotification(e.target.checked)}
-                      className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                      className="w-5 h-5 text-blue-600 border-blue-300 rounded focus:ring-blue-500"
                     />
                     <span className="text-gray-900 font-medium">Send safety notification to all parents</span>
                   </label>
@@ -443,7 +443,7 @@ const EmergenciesPage = () => {
         )}
       </main>
          {/* Footer */}
-      <footer className="bg-white border-t border-gray-300 mt-12">
+      <footer className="bg-white border-t border-gray-400 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center space-y-2">
             <p className="text-gray-600 text-sm sm:text-base">
