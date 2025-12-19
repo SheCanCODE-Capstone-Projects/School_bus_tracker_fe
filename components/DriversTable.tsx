@@ -68,7 +68,7 @@ export default function DriversTable() {
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-xs sm:text-sm min-w-[600px]">
+        <table className="w-full text-xs sm:text-sm min-w-[600px] ">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="p-2 sm:p-4 text-left text-black font-bold">Driver</th>

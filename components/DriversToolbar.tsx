@@ -88,7 +88,7 @@ export default function DriversToolbar() {
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4 backdrop-blur-sm bg-black/20">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 w-full max-w-md">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-6 ml-4">
               <UserPlus size={24} className="text-purple-600" />
               <h2 className="text-xl font-bold text-black">Assign driver to bus</h2>
             </div>
@@ -129,7 +129,7 @@ export default function DriversToolbar() {
               </div>
               
               {/* Assign to Bus */}
-              <div className="mb-6">
+              <div className="mb-6 ml-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">
                   Assign to Bus
                 </label>
@@ -189,7 +189,7 @@ export default function DriversToolbar() {
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4 backdrop-blur-sm bg-black/20">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 w-full max-w-md">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-6 ml-3">
               <UserPlus size={24} className="text-blue-600" />
               <h2 className="text-xl font-bold text-black">Add new driver</h2>
             </div>
