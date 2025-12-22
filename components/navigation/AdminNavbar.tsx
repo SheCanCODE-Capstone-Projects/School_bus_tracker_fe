@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { Bus, LogOut } from "lucide-react";
 import { HiMenu, HiX } from "react-icons/hi";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function AdminNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,7 +17,7 @@ export default function AdminNavbar() {
   };
 
   return (
-    <header className="relative bg-white border-b border-gray-200 px-4 sm:px-6 md:px-8 lg:px-12 py-9 z-50">
+    <header className="relative bg-white border-b border-gray-200 px-4 sm:px-6 md:px-8 lg:px-12 py-8 z-50">
       <div className="flex items-center justify-between">
 
         {/* LEFT: Logo + Title */}
@@ -51,40 +53,43 @@ export default function AdminNavbar() {
           text-xs sm:text-sm lg:text-base font-medium
           transition-all duration-300 ease-in-out`}
         >
-          <a
+          <Link
             href="/admin/dashboard"
             className={`${pathname === '/admin/dashboard' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
           >
             Dashboard
-          </a>
+          </Link>
 
           <a 
             href="/admin/buses" 
             className={`${pathname === '/admin/buses' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
           >
             Buses
-          </a>
+          </Link>
 
           <a 
-            href="/admin/drivers" 
-            className={`${pathname === '/admin/drivers' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
+            href="/admin/dashboard/drivers" 
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Drivers
-          </a>
+          </Link>
 
           <a 
             href="/admin/dashboard/parents" 
-            className={`${pathname === '/admin/dashboard/parents' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Parents
-          </a>
+          </Link>
 
           <a 
             href="/admin/dashboard/students" 
-            className={`${pathname === '/admin/dashboard/students' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Students
-          </a>
+          </Link>
 
           <a 
             href="#" 
@@ -94,11 +99,12 @@ export default function AdminNavbar() {
           </a>
 
           <a 
-            href="/admin/emergencies" 
-            className={`${pathname === '/admin/emergencies' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
+            href="/admin/dashboard/emergencies" 
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
+            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
           >
             Emergencies
-          </a>
+          </Link>
 
           <div className="hidden lg:block h-6 w-px bg-gray-300" />
 
