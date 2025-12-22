@@ -35,7 +35,7 @@ const LiveMap = () => {
   return (
     <MapContainer 
       center={position}
-      zoom={14}
+      zoom={12}
       scrollWheelZoom={true}
       dragging={true}
       touchZoom={true}
