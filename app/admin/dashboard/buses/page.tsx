@@ -9,6 +9,7 @@ import { LiaEyeSolid } from "react-icons/lia";
 import { CiPower } from "react-icons/ci";
 import Link from "next/link";
 import EditBusModal from "@/components/EditBusModal";
+import AdminNavbar from "@/components/navigation/AdminNavbar";
 
 // Define a type for the bus data
 interface Bus {
@@ -133,7 +134,7 @@ const BusesPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <BusesNavbar />
+      <AdminNavbar />
       
       {/* Search and Add Button */}
       <div className="px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
