@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle, Info, MapPin, Clock, Phone, Users } from 'lucide-react';
+import AdminNavbar from '@/components/navigation/AdminNavbar';
 
 const EmergenciesPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
@@ -102,67 +103,7 @@ const EmergenciesPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
-                  <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Emergency Management</h1>
-                <div className="flex items-center space-x-2 mt-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">peace</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <nav className="hidden md:flex items-center space-x-8">
-                <a href="#" className="text-gray-600 hover:text-gray-900">Dashboard</a>
-                <a href="#" className="text-gray-600 hover:text-gray-900">Buses</a>
-                <a href="#" className="text-gray-600 hover:text-gray-900">Drivers</a>
-                <a href="#" className="text-gray-600 hover:text-gray-900">Parents</a>
-                <a href="#" className="text-blue-500 font-medium">Emergencies</a>
-                <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
-                  <span>Logout</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </button>
-              </nav>
-              <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-200">
-            <div className="px-6 py-4 space-y-2">
-              <a href="#" className="block text-gray-600 hover:text-gray-900 py-2">Dashboard</a>
-              <a href="#" className="block text-gray-600 hover:text-gray-900 py-2">Buses</a>
-              <a href="#" className="block text-gray-600 hover:text-gray-900 py-2">Drivers</a>
-              <a href="#" className="block text-gray-600 hover:text-gray-900 py-2">Parents</a>
-              <a href="#" className="block text-blue-500 font-medium py-2">Emergencies</a>
-              <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 py-2">
-                <span>Logout</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
-      </header>
+    <AdminNavbar />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
