@@ -67,21 +67,21 @@ export default function BusesNavbar() {
           </Link>
 
           <Link
-            href="/admin/drivers"
+            href="/admin/dashboard/drivers"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Drivers
           </Link>
 
           <Link
-            href="/admin/parents"
+            href="/admin/dashboard/parents"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Parents
           </Link>
 
           <Link
-            href="/admin/students"
+            href="/admin/dashboard/students"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Students
@@ -95,7 +95,7 @@ export default function BusesNavbar() {
           </Link>
 
           <Link
-            href="/admin/emergencies"
+            href="/admin/dashboard/emergencies"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Emergencies
