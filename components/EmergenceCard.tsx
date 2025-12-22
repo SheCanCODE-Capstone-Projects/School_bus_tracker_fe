@@ -57,7 +57,7 @@ const EmergencyCard = () => {
             <span className="text-base sm:text-lg font-semibold">REPORT ISSUE</span>
           </div>
         </button>
-      </div>
+      </div> 
       
       {/* Warning text outside red border */}
       <p className="text-gray-600 text-center text-xs sm:text-sm mt-6 italic">
@@ -66,7 +66,7 @@ const EmergencyCard = () => {
       
       {/* Emergency Report Modal Overlay */}
       {showReportModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm bg-black/20">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 sm:p-6 w-full max-w-md sm:max-w-lg h-96 flex flex-col items-center justify-center">
               {/* Header with exclamation mark */}
               <div className="text-center mb-6">
