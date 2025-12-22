@@ -3,11 +3,13 @@
 import React, { useState } from "react";
 import { Bus, LogOut } from "lucide-react";
 import { HiMenu, HiX } from "react-icons/hi";
+import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function AdminNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const handleLogout = () => {
     console.log("Logging out...");
@@ -20,21 +22,21 @@ export default function AdminNavbar() {
 
         {/* LEFT: Logo + Title */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-            <Bus className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:rotate-12 hover:shadow-lg cursor-pointer">
+            <Bus className="w-5 h-5 text-white transition-transform duration-300 hover:scale-110" />
           </div>
 
-          <h1 className="text-lg md:text-xl font-semibold text-gray-900 whitespace-nowrap">
+          <h1 className="text-lg md:text-xl font-semibold text-gray-900 whitespace-nowrap transition-all duration-300 hover:text-blue-600 cursor-pointer">
             Admin Dashboard
           </h1>
         </div>
 
         {/* Mobile Menu Button */}
         <button
-          className="lg:hidden text-gray-800 transition-transform duration-200 hover:scale-110"
+          className="lg:hidden text-gray-800 transition-all duration-300 hover:scale-110 hover:rotate-180 hover:bg-gray-100 rounded-lg p-2"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
-          {isMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
+          {isMenuOpen ? <HiX size={24} className="transition-transform duration-300 rotate-180" /> : <HiMenu size={24} className="transition-transform duration-300" />}
         </button>
 
         {/* Navigation */}
@@ -53,16 +55,14 @@ export default function AdminNavbar() {
         >
           <Link
             href="/admin/dashboard"
-            className="text-blue-600 bg-blue-100 border border-blue-200 rounded-lg px-4 py-2 
-            transition-all duration-200 hover:bg-blue-200 hover:scale-105 hover:shadow-md"
+            className={`${pathname === '/admin/dashboard' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
           >
             Dashboard
           </Link>
 
           <a 
             href="/admin/buses" 
-            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg
-            transition-all duration-200 hover:bg-gray-100 hover:translate-x-1"
+            className={`${pathname === '/admin/buses' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
           >
             Buses
           </Link>
@@ -93,7 +93,10 @@ export default function AdminNavbar() {
 
           <a 
             href="#" 
-            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-gray-100 hover:translate-x-1" >History </a>
+            className={`${pathname === '#' ? 'text-blue-600 bg-blue-100 border border-blue-200 scale-105 shadow-lg -translate-y-1' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100 hover:-translate-y-1'} rounded-lg px-4 py-2 transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg transform hover:rotate-1`}
+          >
+            History
+          </a>
 
           <a 
             href="/admin/dashboard/emergencies" 
@@ -110,9 +113,9 @@ export default function AdminNavbar() {
             onClick={handleLogout}
             className="flex items-center gap-2 text-gray-600 hover:text-red-500 
             hover:bg-red-50 rounded-lg px-3 py-2
-            transition-all duration-200 hover:scale-105 hover:shadow-sm"
+            transition-all duration-300 hover:scale-110 hover:shadow-lg hover:-translate-y-1 hover:rotate-3"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 transition-transform duration-300 hover:rotate-12" />
             <span>Logout</span>
           </button>
         </nav>
