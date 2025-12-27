@@ -87,49 +87,51 @@ export default function DriversTable() {
       </div>
       
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-        <div className="text-sm text-gray-700">
-          Showing {startIndex + 1} to {Math.min(endIndex, drivers.length)} of {drivers.length} drivers
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* First Page / Previous Button */}
-          <button
-            onClick={handlePrevPage}
-            disabled={currentPage === 1}
-            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <FaAngleLeft className="text-gray-600" />
-          </button>
-          
-          {/* Page Number Cards */}
-          {Array.from({ length: totalPages }, (_, index) => {
-            const pageNumber = index + 1;
-            return (
-              <button
-                key={pageNumber}
-                onClick={() => setCurrentPage(pageNumber)}
-                className={`px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
-                  currentPage === pageNumber
-                    ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {pageNumber}
-              </button>
-            );
-          })}
-          
-          {/* Next Page Button */}
-          <button
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <FaAngleRight className="text-gray-600" />
-          </button>
-        </div>
-      </div>
+     <div className="flex flex-row flex-wrap items-center justify-between px-4 py-3 border-t border-gray-200 gap-2">
+  <div className="text-sm text-gray-700 flex-shrink-0">
+    Showing {startIndex + 1} to {Math.min(endIndex, drivers.length)} of {drivers.length} drivers
+  </div>
+
+<div className="flex items-center gap-2 flex-wrap">
+  {/* First Page / Previous Button */}
+  <button
+    onClick={handlePrevPage}
+    disabled={currentPage === 1}
+    className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+  >
+    <FaAngleLeft className="text-gray-600" />
+  </button>
+
+  {/* Page Number Cards */}
+  {Array.from({ length: totalPages }, (_, index) => {
+    const pageNumber = index + 1;
+    return (
+      <button
+        key={pageNumber}
+        onClick={() => setCurrentPage(pageNumber)}
+        className={`w-10 h-10 flex items-center justify-center text-sm font-medium rounded-lg border transition-colors ${
+          currentPage === pageNumber
+            ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+        }`}
+      >
+        {pageNumber}
+      </button>
+    );
+  })}
+
+  {/* Next Page Button */}
+  <button
+    onClick={handleNextPage}
+    disabled={currentPage === totalPages}
+    className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+  >
+    <FaAngleRight className="text-gray-600" />
+  </button>
+</div>
+
+</div>
+
     </div>
   );
 }
