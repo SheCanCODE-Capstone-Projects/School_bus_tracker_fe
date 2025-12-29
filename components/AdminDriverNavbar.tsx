@@ -1,11 +1,10 @@
-"use client"
+'use client';
 import React, { useState } from "react";
 import { Bus, LogOut } from "lucide-react";
 import { HiMenu, HiX } from "react-icons/hi";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
-export default function BusesNavbar() {
+export default function AdminDriverNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router= useRouter();
   const handleLogout=()=>{
@@ -24,12 +23,12 @@ export default function BusesNavbar() {
 
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-             Manage Buses
+              Manage Drivers
             </h1>
 
             <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              <span>dfhkj</span>
+              
+              <span></span>
             </div>
           </div>
         </div>
@@ -51,55 +50,49 @@ export default function BusesNavbar() {
           bg-white sm:bg-transparent shadow-lg sm:shadow-none
           items-center justify-center gap-3 sm:gap-6 py-4 sm:py-0 font-medium text-xs sm:text-sm`}
         >
-          <Link
+          <a
             href="/admin/dashboard"
-             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
-
+            className="text-blue-600 bg-sky-100 border border-sky-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Dashboard
-          </Link>
+          </a>
 
-          <Link
-            href="/admin/dashboard/buses"
-                       className="text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4"
+          <a
+            href="/admin/buses"
+            className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Buses
-          </Link>
+          </a>
 
-          <Link
+          <a
             href="/admin/dashboard/drivers"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Drivers
-          </Link>
+          </a>
 
-          <Link
-            href="/admin/dashboard/parents"
+          <a
+            href="/admin/parents"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Parents
-          </Link>
+          </a>
 
-          <Link
-            href="/admin/dashboard/students"
+          <a
+            href="/admin/students"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Students
-          </Link>
+          </a>
 
-          <Link
-            href="#"
-            className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
-          >
-            History
-          </Link>
+          
 
-          <Link
-            href="/admin/dashboard/emergencies"
+          <a
+            href="/admin/emergencies"
             className="text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4"
           >
             Emergencies
-          </Link>
+          </a>
 
           {/* Divider */}
           <div className="h-6 w-px bg-gray-300"></div>
