@@ -122,7 +122,7 @@ const BusesPage = () => {
   // --- Stats Data ---
   const activeBuses = buses.filter(b => b.active).length;
   const totalStudents = 172; // fixed
-  const totalCapacity = buses.reduce((sum, b) => sum + b.maxCapacity, 0);
+
   const avgCapacity = "70%"; // fixed
 
   const stats = [
@@ -237,7 +237,7 @@ const BusesPage = () => {
           {filteredBuses.length > 0 ? (
             filteredBuses.map((bus) => {
               const percent = Math.round((bus.capacity / bus.maxCapacity) * 100);
-              const isAssigned = bus.driver !== "Not Assigned";
+
               
               return (
                 <div key={bus.id} className="bg-white border rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">

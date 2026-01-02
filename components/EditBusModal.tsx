@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { X, Save, Bus, Route, User, DollarSign, Users } from 'lucide-react';
+import { X, Bus } from 'lucide-react';
 
 // Define the Bus type for consistency
 interface Bus {
