@@ -5,9 +5,11 @@ import {
   Phone,
   Bus,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  Mail
 } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 // Driver type
 type Driver = {
@@ -36,7 +38,6 @@ export default function DriverRow({ driver }: { driver: Driver }) {
   };
 
   const handleSaveChanges = () => {
-    // save logic here
     setShowEditModal(false);
   };
 
@@ -44,7 +45,8 @@ export default function DriverRow({ driver }: { driver: Driver }) {
     <>
       {/* TABLE ROW */}
       <tr className="border-b last:border-none">
-        <td className="p-4 flex gap-3">
+        {/* ✅ ONLY CHANGE IS HERE: items-center added */}
+        <td className="p-4 flex items-center gap-3">
           <span className="text-2xl">🧑‍✈️</span>
           <p className="text-black">{driver.name}</p>
         </td>
@@ -52,16 +54,18 @@ export default function DriverRow({ driver }: { driver: Driver }) {
         <td className="p-4 space-y-1">
           <div className="flex items-center gap-2">
             <Phone size={14} className="text-blue-500" />
-            <span className="text-black text-xs">{driver.phone}</span>
+            <span className="text-gray-500 text-sm">{driver.phone}</span>
           </div>
+
           <div className="flex items-center gap-2">
-            <span className="text-black text-xs">{driver.email}</span>
+            <Mail size={14} className="text-blue-500" />
+            <span className="text-gray-500 text-sm">{driver.email}</span>
           </div>
         </td>
 
         <td className="p-4 flex items-center gap-2">
           <Bus size={14} className="text-blue-500" />
-          <span className="text-black">{driver.bus ?? "Not assigned"}</span>
+          <span className="text-gray-500">{driver.bus ?? "Not assigned"}</span>
         </td>
 
         <td className="p-4">
@@ -76,7 +80,7 @@ export default function DriverRow({ driver }: { driver: Driver }) {
           </span>
         </td>
 
-        <td className="p-4 flex gap-3">
+        <td className="p-8 flex gap-6">
           <SquarePen
             size={18}
             className="text-blue-500 cursor-pointer hover:text-blue-700"
@@ -91,120 +95,123 @@ export default function DriverRow({ driver }: { driver: Driver }) {
       </tr>
 
       {/* ================= EDIT MODAL ================= */}
-      {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8 w-full max-w-2xl">
-            <h2 className="text-2xl font-bold text-black mb-6 flex items-center gap-3">
-              <SquarePen className="text-blue-600" />
-              Edit Driver
-            </h2>
+      {showEditModal &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8 w-full max-w-2xl">
+              <h2 className="text-2xl font-bold text-black mb-6 flex items-center gap-3">
+                <SquarePen className="text-blue-600" />
+                Edit Driver
+              </h2>
 
-            {/* FORM */}
-            <div className="space-y-5">
-              <input
-                value={formData.name}
-                onChange={e => handleInputChange("name", e.target.value)}
-                className="w-full border rounded-2xl px-4 py-3 text-black"
-                placeholder="Full Name"
-              />
+              <div className="space-y-5">
+                <input
+                  value={formData.name}
+                  onChange={e => handleInputChange("name", e.target.value)}
+                  className="w-full border rounded-2xl border-gray-300 px-4 py-3 text-black"
+                  placeholder="Full Name"
+                />
 
-              <input
-                value={formData.email}
-                onChange={e => handleInputChange("email", e.target.value)}
-                className="w-full border rounded-2xl px-4 py-3 text-black"
-                placeholder="Email"
-              />
+                <input
+                  value={formData.email}
+                  onChange={e => handleInputChange("email", e.target.value)}
+                  className="w-full border rounded-2xl border-gray-300 px-4 py-3 text-black"
+                  placeholder="Email"
+                />
 
-              <input
-                value={formData.phone}
-                onChange={e => handleInputChange("phone", e.target.value)}
-                className="w-full border rounded-2xl px-4 py-3 text-black"
-                placeholder="Phone"
-              />
+                <input
+                  value={formData.phone}
+                  onChange={e => handleInputChange("phone", e.target.value)}
+                  className="w-full border rounded-2xl border-gray-300 px-4 py-3 text-black"
+                  placeholder="Phone"
+                />
 
-              <input
-                value={formData.license}
-                onChange={e => handleInputChange("license", e.target.value)}
-                className="w-full border rounded-2xl px-4 py-3 text-black"
-                placeholder="License"
-              />
+                <input
+                  value={formData.license}
+                  onChange={e => handleInputChange("license", e.target.value)}
+                  className="w-full border rounded-2xl border-gray-300 px-4 py-3 text-black"
+                  placeholder="License"
+                />
 
-              {/* BUS DROPDOWN */}
-              <div className="relative text-black">
+                <div className="relative text-black">
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex justify-between border rounded-2xl border-gray-300 px-4 py-3"
+                  >
+                    {selectedBus || "No assignment"}
+                    <ChevronDown size={18} />
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div className="absolute w-full bg-white border rounded-2xl mt-1 shadow-lg">
+                      {["", "Bus 01", "Bus 02", "Bus 03"].map(bus => (
+                        <button
+                          key={bus}
+                          onClick={() => {
+                            setSelectedBus(bus);
+                            setIsDropdownOpen(false);
+                          }}
+                          className="block w-full px-4 py-3 hover:bg-gray-100 text-left"
+                        >
+                          {bus || "No assignment"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-8">
                 <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-full flex justify-between border rounded-2xl px-4 py-3"
+                  onClick={handleSaveChanges}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700"
                 >
-                  {selectedBus || "No assignment"}
-                  <ChevronDown size={18} />
+                  Save Changes
                 </button>
-
-                {isDropdownOpen && (
-                  <div className="absolute w-full bg-white border rounded-2xl mt-1 shadow-lg text-black ">
-                    {["", "Bus 01", "Bus 02", "Bus 03"].map(bus => (
-                      <button
-                        key={bus}
-                        onClick={() => {
-                          setSelectedBus(bus);
-                          setIsDropdownOpen(false);
-                        }}
-                        className="block w-full px-4 py-3 hover:bg-gray-100 text-left text-black"
-                      >
-                        {bus || "No assignment"}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 bg-gray-200 py-3 rounded-xl text-black hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
+          </div>,
+          document.body
+        )}
 
-            {/* ACTIONS */}
-            <div className="flex gap-4 mt-8">
-              <button
-                onClick={handleSaveChanges}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700"
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="flex-1 bg-gray-200 py-3 rounded-xl text-black hover:bg-gray-300"
-              >
-                Cancel
-              </button>
+      {/* ================= DELETE MODAL ================= */}
+      {showDeleteModal &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 w-full max-w-md">
+              <div className="flex items-center gap-3 mb-6">
+                <AlertTriangle className="text-red-600" />
+                <h2 className="text-xl font-bold text-black">Delete Driver</h2>
+              </div>
+
+              <p className="text-sm text-gray-700 mb-6">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-black">{driver.name}</span>?
+              </p>
+
+              <div className="flex gap-3">
+                <button className="flex-1 bg-red-600 text-white py-3 rounded-lg">
+                  Delete
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 bg-gray-200 py-3 rounded-lg text-black"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= DELETE MODAL (UNCHANGED) ================= */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 w-full max-w-md">
-            <div className="flex items-center gap-3 mb-6">
-              <AlertTriangle className="text-red-600" />
-              <h2 className="text-xl font-bold text-black">Delete Driver</h2>
-            </div>
-
-            <p className="text-sm text-gray-700 mb-6">
-              Are you sure you want to delete{" "}
-              <span className="font-semibold text-black">{driver.name}</span>?
-            </p>
-
-            <div className="flex gap-3">
-              <button className="flex-1 bg-red-600 text-white py-3 rounded-lg">
-                Delete
-              </button>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 bg-gray-200 py-3 rounded-lg text-black"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
