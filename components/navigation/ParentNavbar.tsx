@@ -30,6 +30,7 @@ function ParentNavbar() {
         
         <Link href='/parent/dashboard/settings' className={pathname === '/parent/dashboard/settings' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Settings</Link>
         
+         <Link href='/parent/dashboard/notifications' className={pathname === '/parent/dashboard/notifications' ? 'text-blue-600 bg-blue-100 border border-blue-200 rounded-lg py-1 px-3 sm:py-2 sm:px-4' : 'text-gray-600 hover:text-black rounded-lg py-1 px-3 sm:py-2 sm:px-4'}>Notification</Link>
         <div className='h-6 w-px bg-gray-300'></div>
         
         <Link href='/login' className='flex items-center gap-2 text-gray-600 hover:text-red-500 border border-transparent transition-all duration-300 hover:bg-red-100 rounded-lg py-1 px-3 sm:py-2 sm:px-5'>
