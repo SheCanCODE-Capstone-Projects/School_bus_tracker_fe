@@ -209,16 +209,7 @@ const BusesPage = () => {
                   <label className="block text-xs text-black mb-1">Route</label>
                   <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
-                <div>
-                  <label className="block text-xs text-black mb-1">Assign Driver</label>
-                  <select value={driver} onChange={e => setDriver(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required>
-                    <option value="">No Assignment</option>
-                    <option value="Michael Johnson">Michael Johnson</option>
-                    <option value="Sarah Williams">Sarah Williams</option>
-                    <option value="John Doe">John Doe</option>
-                    <option value="Alice Brown">Alice Brown</option>
-                  </select>
-                </div>
+               
                 <div className="flex gap-3 pt-2">
                   <button type="submit" className="flex-1 px-4 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors">Add Bus</button>
                   <button type="button" onClick={() => setShowAddForm(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
