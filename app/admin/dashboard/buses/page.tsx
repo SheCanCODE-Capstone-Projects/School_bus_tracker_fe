@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import AdminFooter from "@/components/navigation/AdminFooter";
 import BusesNavbar from "@/components/navigation/dashboard/BusStatusCard";
-import { Search, X, Bus } from "lucide-react";
+import { Search, X, Bus, UserPlus } from "lucide-react";
 import { FiEdit } from "react-icons/fi";
 import { IoPersonOutline } from "react-icons/io5";
 import { LiaEyeSolid } from "react-icons/lia";
@@ -150,8 +150,15 @@ const BusesPage = () => {
             />
           </div>
           <button 
+           onClick={() => setShowAddForm(!showAddForm)} 
+           className="flex items-center gap-2 px-4 py-2 bg-purple-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
+           >
+          <UserPlus size={16} />
+             Assign driver
+        </button>
+          <button 
             onClick={() => setShowAddForm(!showAddForm)} 
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg whitespace-nowrap"
+            className="px-4 py-2 bg-blue-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
           >
             + Add Bus
           </button>
