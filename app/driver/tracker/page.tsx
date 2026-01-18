@@ -1,47 +1,111 @@
-'use client';
+"use client";
 
-import DriverFooter from '@/components/navigation/DriverFooter';
-import DriverNavbar from '@/components/navigation/DriverNavbar';
-import DriverHeaderCard from '../../../components/DriverHeaderCard';
-import GpsTrackingCard from '../../../components/GPSTrackingCard';
-import EmergencyCard from '../../../components/EmergenceCard';
-import React from 'react';
-import dynamic from 'next/dynamic';
-import 'leaflet/dist/leaflet.css';
+import React, { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import "leaflet/dist/leaflet.css";
 
-// Dynamic Leaflet Map
-const Map = dynamic(() => import('react-leaflet').then(mod => {
-  const { MapContainer, TileLayer } = mod;
-  return {
-    default: () => (
-      <MapContainer
-        center={[-1.9441, 30.0619]}
-        zoom={14}
-        scrollWheelZoom={true}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
-        />
-      </MapContainer>
-    )
-  };
-}), { ssr: false });
+import DriverFooter from "@/components/navigation/DriverFooter";
+import DriverNavbar from "@/components/navigation/DriverNavbar";
+import DriverHeaderCard from "../../../components/DriverHeaderCard";
+import GpsTrackingCard from "../../../components/GPSTrackingCard";
+import EmergencyCard from "../../../components/EmergenceCard";
+
+/* ============================
+   DYNAMIC MAP COMPONENT
+============================ */
+const Map = dynamic(
+  () =>
+    import("react-leaflet").then((mod) => {
+      const { MapContainer, TileLayer, Marker, useMap } = mod;
+      
+      // Initialize Leaflet icons on client side
+      if (typeof window !== "undefined") {
+        import("leaflet").then((L) => {
+          // @ts-expect-error - Leaflet internal property not in type definitions
+          delete L.Icon.Default.prototype._getIconUrl;
+          
+          L.Icon.Default.mergeOptions({
+            iconUrl: "/leaflet/marker-icon.png",
+            iconRetinaUrl: "/leaflet/marker-icon-2x.png",
+            shadowUrl: "/leaflet/marker-shadow.png",
+            iconSize: [25, 41],
+            shadowSize: [41, 41],
+          });
+        });
+      }
+
+      function Recenter({ position }: { position: [number, number] }) {
+        const map = useMap();
+        map.setView(position);
+        return null;
+      }
+
+      return {
+        default: ({ position }: { position: [number, number] }) => (
+          <MapContainer
+            center={position}
+            zoom={15}
+            scrollWheelZoom
+            style={{ width: "100%", height: "100%" }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
+            />
+            <Marker position={position} />
+            <Recenter position={position} />
+          </MapContainer>
+        ),
+      };
+    }),
+  { ssr: false }
+);
 
 export default function DriverTracker() {
+  /* ============================
+     GPS STATE
+  ============================ */
+  const [position, setPosition] = useState<[number, number] | null>(null);
+
+  /* ============================
+     GPS TRACKING
+  ============================ */
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported in this browser.");
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        console.log("📍 Driver location:", lat, lng);
+        setPosition([lat, lng]);
+      },
+      (err) => {
+        console.error("GPS error:", err);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 5000,
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <DriverNavbar />
 
       <main className="flex-1">
-
-        {/* Header */}
         <div className="mb-4 sm:mb-6 px-2 sm:px-4">
           <DriverHeaderCard />
         </div>
 
-        {/* Cards Section */}
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 mb-10">
           <div className="flex flex-col lg:flex-row justify-center items-center lg:items-stretch gap-4 max-w-7xl mx-auto">
             <div className="w-[500px] max-w-full">
@@ -53,18 +117,23 @@ export default function DriverTracker() {
           </div>
         </div>
 
-        {/* Map Section */}
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 mb-10">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 hover:shadow-xl hover:border-gray-300 hover:-translate-y-1 hover:scale-[1.02] transition-all max-w-7xl mx-auto" style={{width: '1000px', maxWidth: '100%'}}>
+          <div
+            className="bg-white border border-gray-200 rounded-lg shadow-lg p-4"
+            style={{ width: "1000px", maxWidth: "100%" }}
+          >
             <div className="flex items-center gap-2 mb-4">
               <div className="h-4 w-1 bg-blue-700 rounded-lg"></div>
-              <h3 className="text-xl text-black">Current Location Preview</h3>
+              <h3 className="text-xl text-black">
+                Current Location Preview
+              </h3>
             </div>
 
             <div className="flex items-end gap-4 rounded-lg p-4 bg-blue-300">
-              {/* Status Legend */}
               <div className="flex flex-col gap-2 text-xs p-3 w-32 bg-white border border-gray-300 rounded-lg shadow-lg">
-                <h3 className="font-semibold mb-1 text-gray-700">Status Legend</h3>
+                <h3 className="font-semibold mb-1 text-gray-700">
+                  Status Legend
+                </h3>
 
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -82,14 +151,18 @@ export default function DriverTracker() {
                 </div>
               </div>
 
-              {/* Map */}
               <div className="flex-1 h-[300px]">
-                <Map />
+                {position ? (
+                  <Map position={position} />
+                ) : (
+                  <p className="text-sm text-gray-700">
+                    Getting GPS location...
+                  </p>
+                )}
               </div>
             </div>
           </div>
         </div>
-
       </main>
 
       <DriverFooter />
