@@ -99,6 +99,7 @@ export default function DriverTracker() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      
       <DriverNavbar />
 
       <main className="flex-1">
