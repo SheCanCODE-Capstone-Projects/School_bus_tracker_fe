@@ -81,7 +81,7 @@ export default function DriverTracker() {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        console.log("📍 Driver location:", lat, lng);
+       console.log("Driver location:", { latitude: lat, longitude: lng });
         setPosition([lat, lng]);
       },
       (err) => {
