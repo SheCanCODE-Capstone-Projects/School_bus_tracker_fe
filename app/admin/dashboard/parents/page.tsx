@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Plus,
@@ -16,13 +17,64 @@ import {
 } from "lucide-react";
 import AdminNavbar from "@/components/navigation/AdminNavbar";
 import AdminFooter from "@/components/navigation/AdminFooter";
+import { isAuthenticated, getUserRole } from "@/lib/auth";
+
+interface Parent {
+  id: number;
+  name: string;
+  address: string;
+  email: string;
+  phone: string;
+  childName: string;
+  assignedBus: string;
+}
 
 export default function ParentsPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Role-based protection - only allow admin access
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        router.push('/login');
+        return;
+      }
+      
+      const role = getUserRole();
+      if (role !== 'admin') {
+        if (role === 'parent') {
+          router.push('/parent/dashboard');
+        } else if (role === 'driver') {
+          router.push('/driver/tracker');
+        } else {
+          router.push('/login');
+        }
+        return;
+      }
+      
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, [router]);
+  
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddParentModal, setShowAddParentModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [parentToDelete, setParentToDelete] = useState(null);
+  const [parentToDelete, setParentToDelete] = useState<Parent | null>(null);
 
   const [parentName, setParentName] = useState("");
   const [email, setEmail] = useState("");
@@ -265,9 +317,9 @@ export default function ParentsPage() {
     setAssignedBus("");
   };
 
-  const handleEdit = (parent: any) => {
+  const handleEdit = (parent: Parent) => {
     setEditParent({
-      id: parent.id,
+      id: parent.id.toString(),
       name: parent.name,
       email: parent.email,
       phone: parent.phone,
@@ -287,15 +339,17 @@ export default function ParentsPage() {
     setShowEditModal(false);
   };
 
-  const handleDeleteClick = (parent: any) => {
+  const handleDeleteClick = (parent: Parent) => {
     setParentToDelete(parent);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = () => {
-    setParents(parents.filter((p) => p.id !== parentToDelete.id));
-    setShowDeleteModal(false);
-    setParentToDelete(null);
+    if (parentToDelete) {
+      setParents(parents.filter((p) => p.id !== parentToDelete.id));
+      setShowDeleteModal(false);
+      setParentToDelete(null);
+    }
   };
 
   const handleDelete = (id: number) => {
