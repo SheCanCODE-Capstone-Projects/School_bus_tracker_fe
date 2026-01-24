@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Bus, Users, User, UserCog, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { setAuthData, isAuthenticated, redirectByRole } from '@/lib/auth';
 
 interface Role {
   id: 'parent' | 'driver' | 'admin';
@@ -19,6 +20,13 @@ export default function SchoolBusLogin() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const router = useRouter();
+
+  // Check if already logged in
+  useEffect(() => {
+    if (isAuthenticated()) {
+      redirectByRole();
+    }
+  }, []);
 
   const roles: Role[] = [
     { id: 'parent', label: 'Parent', icon: Users },
@@ -62,14 +70,9 @@ export default function SchoolBusLogin() {
         throw new Error(data.message || 'Login failed. Please check your credentials.');
       }
 
-      // Store authentication token
+      // Store authentication data using enhanced auth system
       if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userRole', selectedRole);
-        localStorage.setItem('userEmail', email);
-        if (data.user) {
-          localStorage.setItem('userData', JSON.stringify(data.user));
-        }
+        setAuthData(data.token, selectedRole, data.user);
       }
 
       // Navigate based on role
@@ -81,8 +84,9 @@ export default function SchoolBusLogin() {
         router.push('/admin/dashboard');
       }
 
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during login. Please try again.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during login. Please try again.';
+      setError(errorMessage);
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);

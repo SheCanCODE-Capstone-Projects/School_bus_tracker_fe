@@ -5,10 +5,15 @@ import React, { useState } from 'react'
 import { FaSignOutAlt } from 'react-icons/fa'
 import { LuBus } from 'react-icons/lu'
 import { HiMenu, HiX } from 'react-icons/hi'
+import { logout } from '@/lib/auth'
 
 function DriverNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div className='relative'>
@@ -32,11 +37,11 @@ function DriverNavbar() {
         
         <div className='h-6 w-px bg-gray-300'></div>
         
-        <Link href='/login' className='flex items-center gap-2 text-gray-600 hover:text-red-500 border border-transparent transition-all duration-300 hover:bg-red-100 rounded-lg py-1 px-3 sm:py-2 sm:px-5'>
+        <button onClick={handleLogout} className='flex items-center gap-2 text-gray-600 hover:text-red-500 border border-transparent transition-all duration-300 hover:bg-red-100 rounded-lg py-1 px-3 sm:py-2 sm:px-5'>
         <FaSignOutAlt/>
         Logout
         
-        </Link>
+        </button>
         </div>
        
         </nav>

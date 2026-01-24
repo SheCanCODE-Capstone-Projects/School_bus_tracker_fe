@@ -1,7 +1,8 @@
 "use client";
 import AdminFooter from "@/components/navigation/AdminFooter";
 import AdminNavbar from "@/components/navigation/AdminNavbar";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bus,
   Activity,
@@ -13,6 +14,7 @@ import {
   Navigation,
 } from "lucide-react";
 import Link from "next/link";
+import { isAuthenticated, getUserRole } from "@/lib/auth";
 
 interface BusData {
   id: string;
@@ -33,6 +35,46 @@ interface ActivityItem {
 }
 
 export default function AdminDashboardContent() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Role-based protection - only allow admin access
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        router.push('/login');
+        return;
+      }
+      
+      const role = getUserRole();
+      if (role !== 'admin') {
+        if (role === 'parent') {
+          router.push('/parent/dashboard');
+        } else if (role === 'driver') {
+          router.push('/driver/tracker');
+        } else {
+          router.push('/login');
+        }
+        return;
+      }
+      
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, [router]);
+  
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
   const stats = [
     {
       label: "Total Buses",

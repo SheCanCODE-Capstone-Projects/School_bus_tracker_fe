@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 
@@ -9,6 +10,7 @@ import DriverNavbar from "@/components/navigation/DriverNavbar";
 import DriverHeaderCard from "../../../components/DriverHeaderCard";
 import GpsTrackingCard from "../../../components/GPSTrackingCard";
 import EmergencyCard from "../../../components/EmergenceCard";
+import { isAuthenticated, getUserRole } from "@/lib/auth";
 
 /* ============================
    DYNAMIC MAP COMPONENT
@@ -62,13 +64,43 @@ const Map = dynamic(
 );
 
 export default function DriverTracker() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [address, setAddress] = useState<string>("");
+
+  // Role-based protection - only allow driver access
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        router.push('/login');
+        return;
+      }
+      
+      const role = getUserRole();
+      if (role !== 'driver') {
+        if (role === 'admin') {
+          router.push('/admin/dashboard');
+        } else if (role === 'parent') {
+          router.push('/parent/dashboard');
+        } else {
+          router.push('/login');
+        }
+        return;
+      }
+      
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, [router]);
 
   /* ============================
      GPS TRACKING
   ============================ */
   useEffect(() => {
+    if (isLoading) return; // Don't start GPS until auth is complete
+    
     if (!navigator.geolocation) {
       alert("Geolocation is not supported in this browser.");
       return;
@@ -99,7 +131,19 @@ export default function DriverTracker() {
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+  }, [isLoading]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
