@@ -97,10 +97,11 @@ export default function ChildrenRegistration() {
       }
 
       const parentData = JSON.parse(parentDataString);
+      console.log('Parent data from storage:', parentData);
 
       // Prepare API payload
       const payload = {
-        schoolId: 1, // You might want to make this dynamic
+        schoolId: 1,
         name: parentData.fullName,
         email: parentData.email,
         password: parentData.password,
@@ -115,6 +116,8 @@ export default function ChildrenRegistration() {
         }))
       };
 
+      console.log('Registration payload:', JSON.stringify(payload, null, 2));
+
       // Make API call
       const response = await fetch('https://school-bus-tracker-be.onrender.com/api/auth/register/parent', {
         method: 'POST',
@@ -124,21 +127,49 @@ export default function ChildrenRegistration() {
         body: JSON.stringify(payload)
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      let data;
+      try {
+        data = await response.json();
+        console.log('Response data:', data);
+      } catch (jsonError) {
+        console.error('Failed to parse response as JSON:', jsonError);
+        const textResponse = await response.text();
+        console.log('Raw response:', textResponse);
+        setApiError('Server returned invalid response. Please try again.');
+        return;
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+        console.error('Registration failed:', response.status, data);
+        if (response.status === 400) {
+          setApiError(data.message || 'Invalid registration data. Please check all fields.');
+        } else if (response.status === 409) {
+          setApiError('Email already exists. Please use a different email.');
+        } else {
+          setApiError(data.message || 'Registration failed. Please try again.');
+        }
+        return;
       }
 
       // Clear sessionStorage
       sessionStorage.removeItem('parentRegistrationData');
 
       // Redirect to success page or login
-      router.push('/login?registered=true');
+      router.replace('/login?registered=true');
       
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      setApiError(error.message || 'An error occurred during registration. Please try again.');
+    } catch (error: unknown) {
+      console.error('Registration error details:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        setApiError(error.message);
+      } else {
+        console.error('Unknown error type:', typeof error, error);
+        setApiError('An unexpected error occurred during registration. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -299,10 +330,9 @@ export default function ChildrenRegistration() {
                     }`}
                   >
                     <option value="" className="text-xs sm:text-sm md:text-base truncate">Select Bus Stop</option>
-                    <option value="0" className="text-xs sm:text-sm md:text-base truncate">Bus Stop 1</option>
-                    <option value="1" className="text-xs sm:text-sm md:text-base truncate">Bus Stop 2</option>
-                    <option value="2" className="text-xs sm:text-sm md:text-base truncate">Bus Stop 3</option>
-                    {/* Add more bus stops as needed */}
+                    <option value="1" className="text-xs sm:text-sm md:text-base truncate">Main Street Stop</option>
+                    <option value="2" className="text-xs sm:text-sm md:text-base truncate">School Gate Stop</option>
+                    <option value="3" className="text-xs sm:text-sm md:text-base truncate">Park Avenue Stop</option>
                   </select>
                   {errors[`child${index}_busStopId`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`child${index}_busStopId`]}</p>

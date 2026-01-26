@@ -52,42 +52,77 @@ export default function SchoolBusLogin() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://school-bus-tracker-be.onrender.com/api/auth/login', {
+      // Create a timeout promise that rejects after 15 seconds (longer wait)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 15000)
+      );
+
+      // Create the fetch promise
+      const fetchPromise = fetch('https://school-bus-tracker-be.onrender.com/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: email,
-          password: password,
-      
+          password: password
         }),
       });
 
-      const data = await response.json();
+      // Race between fetch and timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed. Please check your credentials.');
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        throw new Error('server_error');
       }
 
-      // Store authentication data using enhanced auth system
+      if (!response.ok) {
+        throw new Error(data?.message || 'server_error');
+      }
+
+      // Backend success - use dynamic response
+      const userRole = data.user?.role?.toLowerCase() || data.role?.toLowerCase();
+      
+      if (userRole && userRole !== selectedRole) {
+        setError(`This email is registered for ${userRole} access. Please select the correct account type.`);
+        return;
+      }
+
+      if (!userRole) {
+        setError(`No ${selectedRole} account found with this email.`);
+        return;
+      }
+
       if (data.token) {
-        setAuthData(data.token, selectedRole, data.user);
+        setAuthData(data.token, userRole || selectedRole, data.user);
       }
 
       // Navigate based on role
-      if (selectedRole === 'parent') {
+      const finalRole = userRole || selectedRole;
+      if (finalRole === 'parent') {
         router.push('/parent/dashboard');
-      } else if (selectedRole === 'driver') {
+      } else if (finalRole === 'driver') {
         router.push('/driver/tracker');
-      } else if (selectedRole === 'admin') {
+      } else if (finalRole === 'admin') {
         router.push('/admin/dashboard');
       }
 
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred during login. Please try again.';
-      setError(errorMessage);
-      console.error('Login error:', err);
+      console.log('Backend unavailable');
+      
+      // No hardcoded fallbacks - all roles must use database authentication
+      if (err instanceof Error) {
+        if (err.message.includes('timeout') || err.message.includes('Failed to fetch')) {
+          setError('Server is taking too long to respond. Please try again later.');
+        } else {
+          setError('Unable to connect to server. Please check your internet connection and try again.');
+        }
+      } else {
+        setError('Login failed. Please try again when server is available.');
+      }
     } finally {
       setIsLoading(false);
     }
