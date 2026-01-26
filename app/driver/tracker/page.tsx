@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 
@@ -9,6 +10,7 @@ import DriverNavbar from "@/components/navigation/DriverNavbar";
 import DriverHeaderCard from "../../../components/DriverHeaderCard";
 import GpsTrackingCard from "../../../components/GPSTrackingCard";
 import EmergencyCard from "../../../components/EmergenceCard";
+import { isAuthenticated, getUserRole } from "@/lib/auth";
 
 /* ============================
    DYNAMIC MAP COMPONENT
@@ -25,9 +27,9 @@ const Map = dynamic(
           delete L.Icon.Default.prototype._getIconUrl;
 
           L.Icon.Default.mergeOptions({
-            iconUrl: "/leaflet/marker-icon.png",
-            iconRetinaUrl: "/leaflet/marker-icon-2x.png",
-            shadowUrl: "/leaflet/marker-shadow.png",
+            iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+            iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
             iconSize: [25, 41],
             shadowSize: [41, 41],
           });
@@ -62,13 +64,43 @@ const Map = dynamic(
 );
 
 export default function DriverTracker() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [address, setAddress] = useState<string>("");
+
+  // Role-based protection - only allow driver access
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        router.push('/login');
+        return;
+      }
+      
+      const role = getUserRole();
+      if (role !== 'driver') {
+        if (role === 'admin') {
+          router.push('/admin/dashboard');
+        } else if (role === 'parent') {
+          router.push('/parent/dashboard');
+        } else {
+          router.push('/login');
+        }
+        return;
+      }
+      
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, [router]);
 
   /* ============================
      GPS TRACKING
   ============================ */
   useEffect(() => {
+    if (isLoading) return; // Don't start GPS until auth is complete
+    
     if (!navigator.geolocation) {
       alert("Geolocation is not supported in this browser.");
       return;
@@ -85,21 +117,45 @@ export default function DriverTracker() {
         // Reverse geocode coordinates to address
         try {
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
           );
-          const data = await res.json();
-          setAddress(data.display_name || "Unknown location");
+          if (res.ok) {
+            const data = await res.json();
+            setAddress(data.locality || data.city || data.countryName || "Unknown location");
+          } else {
+            setAddress("Unknown location");
+          }
         } catch (err) {
           console.error("Failed to fetch address:", err);
           setAddress("Unknown location");
         }
       },
-      (err) => console.error("GPS error:", err),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+      (err) => {
+        console.log("GPS error:", err);
+        // Show error message instead of fallback location
+        setAddress("GPS unavailable - please enable location services");
+      },
+      { 
+        enableHighAccuracy: false, // Less strict for better compatibility
+        maximumAge: 30000, // Accept cached location up to 30 seconds old
+        timeout: 15000 // Increase timeout to 15 seconds
+      }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+  }, [isLoading]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -153,7 +209,13 @@ export default function DriverTracker() {
                   {position ? (
                     <Map position={position} />
                   ) : (
-                    <p className="text-sm text-gray-700">Getting GPS location...</p>
+                    <div className="flex items-center justify-center h-full text-gray-600">
+                      <div className="text-center">
+                        <div className="animate-pulse mb-2">📍</div>
+                        <p className="text-sm">Waiting for GPS location...</p>
+                        <p className="text-xs mt-1">Please enable location services</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

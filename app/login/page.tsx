@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Bus, Users, User, UserCog, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { setAuthData, isAuthenticated, redirectByRole } from '@/lib/auth';
 
 interface Role {
   id: 'parent' | 'driver' | 'admin';
@@ -19,6 +20,13 @@ export default function SchoolBusLogin() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const router = useRouter();
+
+  // Check if already logged in
+  useEffect(() => {
+    if (isAuthenticated()) {
+      redirectByRole();
+    }
+  }, []);
 
   const roles: Role[] = [
     { id: 'parent', label: 'Parent', icon: Users },
@@ -44,46 +52,77 @@ export default function SchoolBusLogin() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://school-bus-tracker-be.onrender.com/api/auth/login', {
+      // Create a timeout promise that rejects after 15 seconds (longer wait)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 15000)
+      );
+
+      // Create the fetch promise
+      const fetchPromise = fetch('https://school-bus-tracker-be.onrender.com/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: email,
-          password: password,
-      
+          password: password
         }),
       });
 
-      const data = await response.json();
+      // Race between fetch and timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed. Please check your credentials.');
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        throw new Error('server_error');
       }
 
-      // Store authentication token
+      if (!response.ok) {
+        throw new Error(data?.message || 'server_error');
+      }
+
+      // Backend success - use dynamic response
+      const userRole = data.user?.role?.toLowerCase() || data.role?.toLowerCase();
+      
+      if (userRole && userRole !== selectedRole) {
+        setError(`This email is registered for ${userRole} access. Please select the correct account type.`);
+        return;
+      }
+
+      if (!userRole) {
+        setError(`No ${selectedRole} account found with this email.`);
+        return;
+      }
+
       if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userRole', selectedRole);
-        localStorage.setItem('userEmail', email);
-        if (data.user) {
-          localStorage.setItem('userData', JSON.stringify(data.user));
-        }
+        setAuthData(data.token, userRole || selectedRole, data.user);
       }
 
       // Navigate based on role
-      if (selectedRole === 'parent') {
+      const finalRole = userRole || selectedRole;
+      if (finalRole === 'parent') {
         router.push('/parent/dashboard');
-      } else if (selectedRole === 'driver') {
+      } else if (finalRole === 'driver') {
         router.push('/driver/tracker');
-      } else if (selectedRole === 'admin') {
+      } else if (finalRole === 'admin') {
         router.push('/admin/dashboard');
       }
 
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during login. Please try again.');
-      console.error('Login error:', err);
+    } catch (err: unknown) {
+      console.log('Backend unavailable');
+      
+      // No hardcoded fallbacks - all roles must use database authentication
+      if (err instanceof Error) {
+        if (err.message.includes('timeout') || err.message.includes('Failed to fetch')) {
+          setError('Server is taking too long to respond. Please try again later.');
+        } else {
+          setError('Unable to connect to server. Please check your internet connection and try again.');
+        }
+      } else {
+        setError('Login failed. Please try again when server is available.');
+      }
     } finally {
       setIsLoading(false);
     }
