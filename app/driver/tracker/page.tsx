@@ -17,13 +17,13 @@ const Map = dynamic(
   () =>
     import("react-leaflet").then((mod) => {
       const { MapContainer, TileLayer, Marker, useMap } = mod;
-      
-      // Initialize Leaflet icons on client side
+
       if (typeof window !== "undefined") {
         import("leaflet").then((L) => {
-          // @ts-expect-error - Leaflet internal property not in type definitions
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-expect-error
           delete L.Icon.Default.prototype._getIconUrl;
-          
+
           L.Icon.Default.mergeOptions({
             iconUrl: "/leaflet/marker-icon.png",
             iconRetinaUrl: "/leaflet/marker-icon-2x.png",
@@ -62,10 +62,8 @@ const Map = dynamic(
 );
 
 export default function DriverTracker() {
-  /* ============================
-     GPS STATE
-  ============================ */
   const [position, setPosition] = useState<[number, number] | null>(null);
+  const [address, setAddress] = useState<string>("");
 
   /* ============================
      GPS TRACKING
@@ -77,21 +75,27 @@ export default function DriverTracker() {
     }
 
     const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
+      async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-       console.log("Driver location:", { latitude: lat, longitude: lng });
+        console.log("Driver location:", { latitude: lat, longitude: lng });
         setPosition([lat, lng]);
+
+        // Reverse geocode coordinates to address
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+          );
+          const data = await res.json();
+          setAddress(data.display_name || "Unknown location");
+        } catch (err) {
+          console.error("Failed to fetch address:", err);
+          setAddress("Unknown location");
+        }
       },
-      (err) => {
-        console.error("GPS error:", err);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 5000,
-      }
+      (err) => console.error("GPS error:", err),
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
@@ -99,7 +103,6 @@ export default function DriverTracker() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      
       <DriverNavbar />
 
       <main className="flex-1">
@@ -110,7 +113,7 @@ export default function DriverTracker() {
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 mb-10">
           <div className="flex flex-col lg:flex-row justify-center items-center lg:items-stretch gap-4 max-w-7xl mx-auto">
             <div className="w-[500px] max-w-full">
-              <GpsTrackingCard />
+              <GpsTrackingCard position={position} address={address} />
             </div>
             <div className="w-[500px] max-w-full">
               <EmergencyCard />
@@ -119,47 +122,40 @@ export default function DriverTracker() {
         </div>
 
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 mb-10">
-          <div
-            className="bg-white border border-gray-200 rounded-lg shadow-lg p-4"
-            style={{ width: "1000px", maxWidth: "100%" }}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-4 w-1 bg-blue-700 rounded-lg"></div>
-              <h3 className="text-xl text-black">
-                Current Location Preview
-              </h3>
-            </div>
-
-            <div className="flex items-end gap-4 rounded-lg p-4 bg-blue-300">
-              <div className="flex flex-col gap-2 text-xs p-3 w-32 bg-white border border-gray-300 rounded-lg shadow-lg">
-                <h3 className="font-semibold mb-1 text-gray-700">
-                  Status Legend
-                </h3>
-
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-600">On Route</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                  <span className="text-gray-600">Stopped</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-gray-600">Emergency</span>
-                </div>
+          <div className="flex justify-center">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-[1000px] max-w-full">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-4 w-1 bg-blue-700 rounded-lg"></div>
+                <h3 className="text-xl text-black">Current Location Preview</h3>
               </div>
 
-              <div className="flex-1 h-[300px]">
-                {position ? (
-                  <Map position={position} />
-                ) : (
-                  <p className="text-sm text-gray-700">
-                    Getting GPS location...
-                  </p>
-                )}
+              <div className="flex items-end gap-4 rounded-lg p-4 bg-blue-300">
+                <div className="flex flex-col gap-2 text-xs p-3 w-32 bg-white border border-gray-300 rounded-lg shadow-lg">
+                  <h3 className="font-semibold mb-1 text-gray-700">Status Legend</h3>
+
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-600">On Route</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                    <span className="text-gray-600">Stopped</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="text-gray-600">Emergency</span>
+                  </div>
+                </div>
+
+                <div className="flex-1 h-[300px]">
+                  {position ? (
+                    <Map position={position} />
+                  ) : (
+                    <p className="text-sm text-gray-700">Getting GPS location...</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

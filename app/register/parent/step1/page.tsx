@@ -54,6 +54,8 @@ export default function ParentRegistration() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
+      // Store parent data in sessionStorage to pass to step 2
+      sessionStorage.setItem('parentRegistrationData', JSON.stringify(formData));
       router.push("/register/parent/step1/step2");
     }
   };
@@ -77,7 +79,7 @@ export default function ParentRegistration() {
           </h2>
 
           <p className="text-gray-600 text-sm">
-            Create your account to track your children’s bus
+            Create your account to track your children's bus
           </p>
         </div>
 
