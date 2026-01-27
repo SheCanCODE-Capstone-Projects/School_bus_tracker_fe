@@ -13,10 +13,20 @@ interface Child {
   busStopId: string;
 }
 
+interface BusStop {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  schoolId: number;
+}
+
 export default function ChildrenRegistration() {
   const [children, setChildren] = useState<Child[]>([
     { id: 1, fullName: "", studentNumber: "", age: "", gender: "", busStopId: "" }
   ]);
+  const [busStops, setBusStops] = useState<BusStop[]>([]);
+  const [loadingBusStops, setLoadingBusStops] = useState(true);
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -30,6 +40,35 @@ export default function ChildrenRegistration() {
       router.push("/register/parent/step1");
     }
   }, [router]);
+
+  // Fetch bus stops from API
+  useEffect(() => {
+    const fetchBusStops = async () => {
+      try {
+        setLoadingBusStops(true);
+        const response = await fetch('https://school-bus-tracker-be.onrender.com/api/bus-stops');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch bus stops');
+        }
+
+        const data = await response.json();
+        setBusStops(Array.isArray(data) ? data : data.data || []);
+      } catch (error) {
+        console.error('Error fetching bus stops:', error);
+        // Fallback to default stops on error
+        setBusStops([
+          { id: 1, name: "Main Street Stop", latitude: 0, longitude: 0, schoolId: 1 },
+          { id: 2, name: "School Gate Stop", latitude: 0, longitude: 0, schoolId: 1 },
+          { id: 3, name: "Park Avenue Stop", latitude: 0, longitude: 0, schoolId: 1 }
+        ]);
+      } finally {
+        setLoadingBusStops(false);
+      }
+    };
+
+    fetchBusStops();
+  }, []);
 
   const addChild = () => {
     setChildren([
@@ -323,16 +362,25 @@ export default function ChildrenRegistration() {
                   <select 
                     value={child.busStopId}
                     onChange={(e) => updateChild(child.id, 'busStopId', e.target.value)}
+                    disabled={loadingBusStops}
                     className={`w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base ${
                       errors[`child${index}_busStopId`] 
                         ? 'border-red-500 focus:ring-red-400' 
                         : 'border-gray-300 focus:ring-blue-500'
                     }`}
                   >
-                    <option value="" className="text-xs sm:text-sm md:text-base truncate">Select Bus Stop</option>
-                    <option value="1" className="text-xs sm:text-sm md:text-base truncate">Main Street Stop</option>
-                    <option value="2" className="text-xs sm:text-sm md:text-base truncate">School Gate Stop</option>
-                    <option value="3" className="text-xs sm:text-sm md:text-base truncate">Park Avenue Stop</option>
+                    <option value="" className="text-xs sm:text-sm md:text-base truncate">
+                      {loadingBusStops ? 'Loading...' : 'Select Bus Stop'}
+                    </option>
+                    {busStops.map((stop) => (
+                      <option 
+                        key={stop.id} 
+                        value={stop.id} 
+                        className="text-xs sm:text-sm md:text-base truncate"
+                      >
+                        {stop.name}
+                      </option>
+                    ))}
                   </select>
                   {errors[`child${index}_busStopId`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`child${index}_busStopId`]}</p>
