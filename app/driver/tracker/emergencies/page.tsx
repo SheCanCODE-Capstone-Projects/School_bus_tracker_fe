@@ -307,14 +307,6 @@ const EmergenciesPage = () => {
                     </div>
                   </div>
                 </div>
-                {emergency.status === 'active' && (
-                  <button 
-                    onClick={() => handleManageClick(emergency)}
-                    className="w-full sm:w-auto px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                  >
-                    Manage
-                  </button>
-                )}
               </div>
 
               <div className="bg-white rounded-xl p-4">
