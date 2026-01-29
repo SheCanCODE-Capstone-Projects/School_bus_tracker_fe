@@ -29,11 +29,29 @@ export default function PasswordResetFlow() {
     setIsLoading(true);
     setError('');
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await fetch("https://school-bus-tracker-be.onrender.com/api/auth/password-reset/request", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setCurrentStep('verification');
+        console.log('Verification code sent to:', email);
+      } else {
+        setError(data.message || 'Failed to send verification code');
+      }
+    } catch (error) {
+      setError('Network error. Please check your connection.');
+      console.error('Send code error:', error);
+    } finally {
       setIsLoading(false);
-      setCurrentStep('verification');
-    }, 1500);
+    }
   };
 
   const handleVerifyCode = async (): Promise<void> => {
@@ -63,17 +81,85 @@ export default function PasswordResetFlow() {
     setIsLoading(true);
     setError('');
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const requestBody = { 
+        code: verificationCode,
+        newPassword 
+      };
+      
+      console.log('Sending reset request:', requestBody);
+      
+      const response = await fetch("https://school-bus-tracker-be.onrender.com/api/auth/password-reset/confirm", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      if (response.ok) {
+        if (responseText) {
+          try {
+            const data = JSON.parse(responseText);
+            console.log('Parsed response:', data);
+          } catch (e) {
+            console.log('Response is not JSON, but request succeeded');
+          }
+        }
+        setCurrentStep('success');
+        console.log('Password reset successfully');
+      } else {
+        let errorMessage = `Server error: ${response.status}`;
+        if (responseText) {
+          try {
+            const data = JSON.parse(responseText);
+            errorMessage = data.message || data.error || errorMessage;
+          } catch (e) {
+            errorMessage = responseText || errorMessage;
+          }
+        }
+        setError(errorMessage);
+      }
+    } catch (error) {
+      console.error('Reset password error details:', error);
+      setError(`Request failed: ${error.message}`);
+    } finally {
       setIsLoading(false);
-      setCurrentStep('success');
-    }, 1500);
+    }
   };
 
-  const handleResendCode = (): void => {
+  const handleResendCode = async (): Promise<void> => {
     setError('');
-    // Simulate resending code
-    alert('Verification code sent to ' + email);
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch("https://school-bus-tracker-be.onrender.com/api/auth/password-reset/request", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        console.log('New verification code sent to:', email);
+      } else {
+        setError(data.message || 'Failed to resend verification code');
+      }
+    } catch (error) {
+      setError('Network error. Please check your connection.');
+      console.error('Resend code error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -93,7 +179,7 @@ export default function PasswordResetFlow() {
         {/* Reset Card */}
         <div className="bg-white rounded-3xl shadow-xl p-8">
           {/* Back Button */}
-          {currentStep !== 'success' && (
+          {(currentStep === 'email' || currentStep === 'resetForm') && (
             <a 
               href="/login" 
               className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6 transition-colors"
@@ -112,7 +198,7 @@ export default function PasswordResetFlow() {
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Forgot Password?</h2>
                 <p className="text-gray-600">
-                  Enter your email address and we&apos;ll send you a verification code to reset your password.
+                  Enter your email address and we'll send you a verification code to reset your password.
                 </p>
               </div>
 
@@ -130,6 +216,7 @@ export default function PasswordResetFlow() {
                 />
               </div>
 
+              {/* Line 40: Show error from our hook */}
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                   {error}
@@ -138,10 +225,11 @@ export default function PasswordResetFlow() {
 
               <button
                 onClick={handleSendCode}
-                disabled={isLoading}
+                disabled={isLoading || !email}
                 className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
               >
-                {isLoading ? 'Sending...' : 'Send Verification Code'}
+                {/* Line 51: Show loading state from our hook */}
+                {isLoading ? 'Sending Code...' : 'Send Verification Code'}
               </button>
             </div>
           )}
@@ -155,7 +243,7 @@ export default function PasswordResetFlow() {
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
                 <p className="text-gray-600">
-                  We&apos;ve sent a 6-digit verification code to
+                  We've sent a 6-digit verification code to
                 </p>
                 <p className="text-blue-600 font-medium mt-1">{email}</p>
               </div>
@@ -193,7 +281,7 @@ export default function PasswordResetFlow() {
               </button>
 
               <p className="text-center text-sm text-gray-600">
-                Didn&apos;t receive the code?{' '}
+                Didn't receive the code?{' '}
                 <button 
                   onClick={handleResendCode}
                   className="text-blue-500 hover:text-blue-600 font-medium hover:underline"
@@ -242,6 +330,7 @@ export default function PasswordResetFlow() {
                     )}
                   </button>
                 </div>
+                {/* Line 39: Password validation feedback */}
                 {newPassword.length > 0 && !isPasswordLongEnough && (
                   <p className="text-xs text-red-500 mt-1 flex items-center">
                     <span className="mr-1">⚠</span> Password must be at least 8 characters
@@ -265,7 +354,7 @@ export default function PasswordResetFlow() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-all text-gray-900 placeholder:text-gray-400"
                   />
                   <button
                     type="button"
@@ -279,6 +368,7 @@ export default function PasswordResetFlow() {
                     )}
                   </button>
                 </div>
+                {/* Line 70: Password match validation feedback */}
                 {showPasswordMismatch && (
                   <p className="text-xs text-red-500 mt-1 flex items-center">
                     <span className="mr-1">⚠</span> Passwords do not match
@@ -291,6 +381,7 @@ export default function PasswordResetFlow() {
                 )}
               </div>
 
+              {/* Line 81: Show error from our hook */}
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                   {error}
@@ -299,10 +390,11 @@ export default function PasswordResetFlow() {
 
               <button
                 onClick={handleResetPassword}
-                disabled={isLoading}
+                disabled={isLoading || !isPasswordLongEnough || !doPasswordsMatch}
                 className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
               >
-                {isLoading ? 'Resetting...' : 'Reset Password'}
+                {/* Line 91: Show loading state from our hook */}
+                {isLoading ? 'Resetting Password...' : 'Reset Password'}
               </button>
             </div>
           )}
