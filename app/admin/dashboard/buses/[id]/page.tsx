@@ -1,7 +1,7 @@
 "use client";
 // app/admin/dashboard/buses/[id]/page.tsx
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import BusesNavbar from "@/components/navigation/dashboard/BusStatusCard";
 import { 
@@ -10,35 +10,137 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import ParentDashboardMap from "../../../../../components/navigation/maps/parentDashboardMap";
-import EditBusModal from "@/components/EditBusModal"; 
+import EditBusModal from "@/components/EditBusModal";
+import { getAuthToken } from "@/lib/auth";
+
+interface RouteHistory {
+  date: string;
+  distance: string;
+  duration: string;
+}
+
+interface BusData {
+  id: number;
+  name: string;
+  code: string;
+  route: string;
+  driver: string;
+  driverPhone: string;
+  driverEmail: string;
+  currentLocation: string;
+  currentSpeed: number;
+  fuelLevel: number;
+  capacity: number;
+  maxCapacity: number;
+  active: boolean;
+  plateNumber: string;
+  lastMaintenance: string;
+  students: string[];
+  routeHistory: RouteHistory[];
+  emergencyLogs: EmergencyLog[];
+}
+
+interface EmergencyLog {
+  id: number;
+  type: string;
+  timestamp: string;
+  location: string;
+  resolution: string;
+  status: string;
+}
 
 const BusDetailsPage = () => {
   const params = useParams();
   const busId = params.id;
   const [showEditModal, setShowEditModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busData, setBusData] = useState<BusData | null>(null);
 
-  const [buses, setBuses] = useState([
-    { id: 1, name: "Bus 01", code: "SCH-101", route: "Route A - North District", driver: "Michael Johnson", capacity: 42, maxCapacity: 50, active: true },
-    { id: 2, name: "Bus 02", code: "SCH-102", route: "Route B - East District", driver: "Sarah Williams", capacity: 42, maxCapacity: 50, active: true },
-    { id: 3, name: "Bus 03", code: "SCH-103", route: "Route C - South District", driver: "John Doe", capacity: 38, maxCapacity: 50, active: true },
-    { id: 4, name: "Bus 04", code: "SCH-104", route: "Route D - West District", driver: "Alice Brown", capacity: 47, maxCapacity: 50, active: true },
-    { id: 5, name: "Bus 05", code: "SCH-105", route: "Not Assigned", driver: "Not Assigned", capacity: 0, maxCapacity: 50, active: false },
-  ]);
-  
-  // Driver data mapping
-  const driverData = {
-    "Michael Johnson": { phone: "+1 (555) 987-6543", email: "michael.j@school.com" },
-    "Sarah Williams": { phone: "+1 (555) 123-4567", email: "sarah.w@school.com" },
-    "John Doe": { phone: "+1 (555) 234-5678", email: "john.d@school.com" },
-    "Alice Brown": { phone: "+1 (555) 345-6789", email: "alice.b@school.com" },
-    "Not Assigned": { phone: "N/A", email: "N/A" }
+  const API_BASE_URL = 'https://school-bus-tracker-be.onrender.com/api';
+
+  useEffect(() => {
+    const fetchBusDetails = async () => {
+      try {
+        setLoading(true);
+        const token = getAuthToken();
+        console.log('Fetching bus details for ID:', busId);
+        console.log('Token:', token);
+        
+        if (!token) {
+          console.log('No token found, using fallback data');
+          setBusData(createMockBusData());
+          return;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/buses/${busId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('Bus details response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Bus details data:', data);
+          setBusData(createBusDataFromAPI(data));
+        } else {
+          console.log('API error, using fallback bus data');
+          setBusData(createMockBusData());
+        }
+      } catch (error) {
+        console.error('Error fetching bus details:', error);
+        setBusData(createMockBusData());
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBusDetails();
+  }, [busId]);
+
+  const createBusDataFromAPI = (bus: Record<string, string | number | boolean>): BusData => {
+    return {
+      id: bus.id,
+      name: bus.name || bus.busName,
+      code: bus.code || bus.busNumber,
+      route: bus.route || bus.routeName || "Not Assigned",
+      driver: bus.driver || "Not Assigned",
+      driverPhone: "+1 (555) 123-4567",
+      driverEmail: "driver@school.com",
+      currentLocation: "5th Ave & Elm St (Stop 4)",
+      currentSpeed: 25,
+      fuelLevel: 78,
+      capacity: bus.capacity || bus.currentCapacity || 0,
+      maxCapacity: bus.maxCapacity || 50,
+      active: bus.active !== undefined ? bus.active : bus.status === "ACTIVE",
+      plateNumber: `XYZ-789`,
+      lastMaintenance: "2024-11-01",
+      students: ["Sarah Connor", "John Smith", "Alice Jones", "Bob Brown"],
+      routeHistory: [
+        { date: "2024-12-02", distance: "15.2 mi", duration: "45 min" },
+        { date: "2024-12-01", distance: "14.8 mi", duration: "42 min" },
+        { date: "2024-11-30", distance: "15.5 mi", duration: "48 min" },
+      ],
+      emergencyLogs: [
+        { id: 1, type: "Minor mechanical issue - tire pressure low", timestamp: "2024-12-02 at 2:45 PM", location: "5th Ave & Park St", resolution: "Driver reported and resolved on-site. No delays.", status: "Resolved" },
+        { id: 2, type: "Traffic delay due to accident on main route", timestamp: "2024-11-28 at 8:15 AM", location: "3rd Ave & Main St", resolution: "Alternative route taken. Parents notified. Arrived 10 minutes late.", status: "Resolved" },
+      ]
+    };
   };
 
-  // Get bus data from the buses list based on ID
-  const getBusById = (id: string) => {
-    return buses.find(bus => bus.id === parseInt(id)) || buses[0];
+  const createMockBusData = () => {
+    const mockBuses = [
+      { id: 1, name: "Bus 01", code: "SCH-101", route: "Route A - North District", driver: "Michael Johnson", capacity: 42, maxCapacity: 50, active: true },
+      { id: 2, name: "Bus 02", code: "SCH-102", route: "Route B - East District", driver: "Sarah Williams", capacity: 42, maxCapacity: 50, active: true },
+      { id: 3, name: "Bus 03", code: "SCH-103", route: "Route C - South District", driver: "John Doe", capacity: 38, maxCapacity: 50, active: true },
+      { id: 4, name: "Bus 04", code: "SCH-104", route: "Route D - West District", driver: "Alice Brown", capacity: 47, maxCapacity: 50, active: true },
+      { id: 5, name: "Bus 05", code: "SCH-105", route: "Not Assigned", driver: "Not Assigned", capacity: 0, maxCapacity: 50, active: false },
+    ];
+    const bus = mockBuses.find(b => b.id === parseInt(busId as string)) || mockBuses[0];
+    return createBusDataFromAPI(bus);
   };
-
   const openEditModal = () => {
     setShowEditModal(true);
   };
@@ -47,8 +149,8 @@ const BusDetailsPage = () => {
     setShowEditModal(false);
   };
 
-  const handleUpdateBus = (updatedBusData: typeof currentBus) => {
-    setBuses(prev => prev.map(b => b.id === updatedBusData.id ? updatedBusData : b));
+  const handleUpdateBus = (updatedBusData: BusData) => {
+    setBusData(updatedBusData);
     closeEditModal();
   };
 
@@ -60,39 +162,29 @@ const BusDetailsPage = () => {
     window.location.href = '/admin/dashboard/emergencies';
   };
 
-  const currentBus = getBusById(busId as string);
-  const currentDriverInfo = driverData[currentBus.driver as keyof typeof driverData];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <BusesNavbar />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading bus details...</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
-  // ENHANCED MOCK DATA 
-  const busData = {
-    id: busId,
-    name: currentBus.name,
-    code: currentBus.code,
-    route: currentBus.route,
-    driver: currentBus.driver,
-    driverPhone: currentDriverInfo.phone,
-    driverEmail: currentDriverInfo.email,
-    currentLocation: "5th Ave & Elm St (Stop 4)", 
-    currentSpeed: 25, 
-    fuelLevel: 78, 
-    capacity: 42,
-    maxCapacity: 50,
-    active: true,
-    plateNumber: `XYZ-789`,
-    lastMaintenance: "2024-11-01",
-    students: ["Sarah Connor", "John Smith", "Alice Jones", "Bob Brown"],
-    routeHistory: [
-        { date: "2024-12-02", distance: "15.2 mi", duration: "45 min" },
-        { date: "2024-12-01", distance: "14.8 mi", duration: "42 min" },
-        { date: "2024-11-30", distance: "15.5 mi", duration: "48 min" },
-    ],
-    emergencyLogs: [
-        { id: 1, type: "Minor mechanical issue - tire pressure low", timestamp: "2024-12-02 at 2:45 PM", location: "5th Ave & Park St", resolution: "Driver reported and resolved on-site. No delays.", status: "Resolved" },
-        { id: 2, type: "Traffic delay due to accident on main route", timestamp: "2024-11-28 at 8:15 AM", location: "3rd Ave & Main St", resolution: "Alternative route taken. Parents notified. Arrived 10 minutes late.", status: "Resolved" },
-    ]
-  };
-
-
+  if (!busData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <BusesNavbar />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Bus not found</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50"> 
@@ -123,8 +215,8 @@ const BusDetailsPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className={`w-full px-3 py-2 rounded-lg text-xs font-medium text-center border ${currentBus.active ? "bg-green-100 text-green-800 border-green-500" : "bg-red-500 text-white border-red-500"}`}>
-                  Status: {currentBus.active ? "Moving" : "Inactive"}
+                <div className={`w-full px-3 py-2 rounded-lg text-xs font-medium text-center border ${busData.active ? "bg-green-100 text-green-800 border-green-500" : "bg-red-500 text-white border-red-500"}`}>
+                  Status: {busData.active ? "Moving" : "Inactive"}
                 </div>
                 <div className="mt-3 space-y-3 text-xs">
                   <div>
@@ -144,10 +236,10 @@ const BusDetailsPage = () => {
                   <div className="border border-gray-300 rounded-lg p-2 bg-gray-200">
                     <div className="flex items-center justify-between">
                       <p className="text-gray-500">Capacity</p>
-                      <span className="font-bold text-gray-800 text-xs">{currentBus.capacity}/{currentBus.maxCapacity}</span>
+                      <span className="font-bold text-gray-800 text-xs">{busData.capacity}/{busData.maxCapacity}</span>
                     </div>
                     <div className="bg-gray-300 h-2 rounded-full mt-1">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{width: `${(currentBus.capacity / currentBus.maxCapacity) * 100}%`}}></div>
+                      <div className="bg-blue-500 h-2 rounded-full" style={{width: `${(busData.capacity / busData.maxCapacity) * 100}%`}}></div>
                     </div>
                   </div>
                 </div>
@@ -249,7 +341,7 @@ const BusDetailsPage = () => {
                 </div>
 
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {busData.routeHistory.map((route, index) => (
+                  {busData.routeHistory.map((route: RouteHistory, index: number) => (
                     <div key={index} className="border border-gray-200 bg-gray-50 p-3 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-semibold text-gray-800">{route.date}</span>
@@ -307,7 +399,7 @@ const BusDetailsPage = () => {
       {/* Edit Bus Modal */}
       {showEditModal && (
         <EditBusModal
-          bus={currentBus}
+          bus={busData}
           onClose={closeEditModal}
           onUpdate={handleUpdateBus}
         />

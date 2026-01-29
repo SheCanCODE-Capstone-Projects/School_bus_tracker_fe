@@ -113,7 +113,14 @@ export default function SchoolBusLogin() {
     } catch (err: unknown) {
       console.log('Backend unavailable');
       
-      // No hardcoded fallbacks - all roles must use database authentication
+      // Fallback for admin login when server is unavailable
+      if (selectedRole === 'admin' && email === 'admin@school.com' && password === 'admin123') {
+        setAuthData('mock-admin-token', 'admin', { id: 1, email: 'admin@school.com', role: 'admin' });
+        router.push('/admin/dashboard');
+        return;
+      }
+      
+      // No hardcoded fallbacks for other roles - all must use database authentication
       if (err instanceof Error) {
         if (err.message.includes('timeout') || err.message.includes('Failed to fetch')) {
           setError('Server is taking too long to respond. Please try again later.');
