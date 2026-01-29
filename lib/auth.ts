@@ -1,9 +1,11 @@
 export function getAuthToken(): string | null {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('authToken') || getCookie('authToken');
-  }
-  return null;
+  if (typeof window === 'undefined') return null;
+
+  const token = localStorage.getItem('authToken') || getCookie('authToken');
+
+  return token || null;
 }
+
 
 export function getUserRole(): string | null {
   if (typeof window !== 'undefined') {
