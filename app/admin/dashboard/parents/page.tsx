@@ -41,7 +41,6 @@ interface Student {
   school_id: number;
 }
 
-
 interface ParentData {
   parentId: number;
   parentName: string;
@@ -160,7 +159,7 @@ export default function ParentsPage() {
             try {
               // Get all children names and buses, filtering out any undefined/null values
               const childrenNames = parentData.students
-                .map((s) => s?.name) // ✅ correct field from API
+                .map((s) => s?.studentName) // ✅ correct field from API
                 .filter((name) => name && name.trim() !== "")
                 .join(", ");
 
