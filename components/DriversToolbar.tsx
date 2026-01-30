@@ -144,6 +144,7 @@ export default function DriversToolbar() {
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${cleanToken}`,
+          
         },
         body: JSON.stringify({
           email: driverForm.email,
