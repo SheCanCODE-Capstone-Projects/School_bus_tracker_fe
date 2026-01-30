@@ -84,7 +84,8 @@ export default function PasswordResetFlow() {
     try {
       const requestBody = { 
         code: verificationCode,
-        newPassword 
+        newPassword ,
+        confirmPassword
       };
       
       console.log('Sending reset request:', requestBody);
