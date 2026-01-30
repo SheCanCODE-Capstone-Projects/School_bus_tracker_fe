@@ -13,6 +13,17 @@ import ParentDashboardMap from "../../../../../components/navigation/maps/parent
 import EditBusModal from "@/components/EditBusModal";
 import { getAuthToken } from "@/lib/auth";
 
+interface Bus {
+  id: number;
+  name: string;
+  code: string;
+  route: string;
+  driver: string;
+  capacity: number;
+  maxCapacity: number;
+  active: boolean;
+}
+
 interface RouteHistory {
   date: string;
   distance: string;
@@ -102,19 +113,19 @@ const BusDetailsPage = () => {
 
   const createBusDataFromAPI = (bus: Record<string, string | number | boolean>): BusData => {
     return {
-      id: bus.id,
-      name: bus.name || bus.busName,
-      code: bus.code || bus.busNumber,
-      route: bus.route || bus.routeName || "Not Assigned",
-      driver: bus.driver || "Not Assigned",
+      id: Number(bus.id) || 0,
+      name: String(bus.name || bus.busName || ""),
+      code: String(bus.code || bus.busNumber || ""),
+      route: String(bus.route || bus.routeName || "Not Assigned"),
+      driver: String(bus.driver || "Not Assigned"),
       driverPhone: "+1 (555) 123-4567",
       driverEmail: "driver@school.com",
       currentLocation: "5th Ave & Elm St (Stop 4)",
       currentSpeed: 25,
       fuelLevel: 78,
-      capacity: bus.capacity || bus.currentCapacity || 0,
-      maxCapacity: bus.maxCapacity || 50,
-      active: bus.active !== undefined ? bus.active : bus.status === "ACTIVE",
+      capacity: Number(bus.capacity || bus.currentCapacity || 0),
+      maxCapacity: Number(bus.maxCapacity || 50),
+      active: Boolean(bus.active !== undefined ? bus.active : bus.status === "ACTIVE"),
       plateNumber: `XYZ-789`,
       lastMaintenance: "2024-11-01",
       students: ["Sarah Connor", "John Smith", "Alice Jones", "Bob Brown"],
@@ -131,15 +142,26 @@ const BusDetailsPage = () => {
   };
 
   const createMockBusData = () => {
-    const mockBuses = [
-      { id: 1, name: "Bus 01", code: "SCH-101", route: "Route A - North District", driver: "Michael Johnson", capacity: 42, maxCapacity: 50, active: true },
-      { id: 2, name: "Bus 02", code: "SCH-102", route: "Route B - East District", driver: "Sarah Williams", capacity: 42, maxCapacity: 50, active: true },
-      { id: 3, name: "Bus 03", code: "SCH-103", route: "Route C - South District", driver: "John Doe", capacity: 38, maxCapacity: 50, active: true },
-      { id: 4, name: "Bus 04", code: "SCH-104", route: "Route D - West District", driver: "Alice Brown", capacity: 47, maxCapacity: 50, active: true },
-      { id: 5, name: "Bus 05", code: "SCH-105", route: "Not Assigned", driver: "Not Assigned", capacity: 0, maxCapacity: 50, active: false },
-    ];
-    const bus = mockBuses.find(b => b.id === parseInt(busId as string)) || mockBuses[0];
-    return createBusDataFromAPI(bus);
+    return {
+      id: parseInt(busId as string) || 1,
+      name: "Bus Details",
+      code: "Loading...",
+      route: "Not Available",
+      driver: "Not Assigned",
+      driverPhone: "+1 (555) 123-4567",
+      driverEmail: "driver@school.com",
+      currentLocation: "5th Ave & Elm St (Stop 4)",
+      currentSpeed: 25,
+      fuelLevel: 78,
+      capacity: 0,
+      maxCapacity: 50,
+      active: false,
+      plateNumber: "XYZ-789",
+      lastMaintenance: "2024-11-01",
+      students: [],
+      routeHistory: [],
+      emergencyLogs: []
+    };
   };
   const openEditModal = () => {
     setShowEditModal(true);
@@ -149,8 +171,35 @@ const BusDetailsPage = () => {
     setShowEditModal(false);
   };
 
-  const handleUpdateBus = (updatedBusData: BusData) => {
-    setBusData(updatedBusData);
+  const handleUpdateBus = (updatedBusData: Bus) => {
+    const transformedBusData: BusData = {
+      id: updatedBusData.id,
+      name: updatedBusData.name,
+      code: updatedBusData.code,
+      route: updatedBusData.route,
+      driver: updatedBusData.driver,
+      driverPhone: "+1 (555) 123-4567",
+      driverEmail: "driver@school.com",
+      currentLocation: "5th Ave & Elm St (Stop 4)",
+      currentSpeed: 25,
+      fuelLevel: 78,
+      capacity: updatedBusData.capacity,
+      maxCapacity: updatedBusData.maxCapacity,
+      active: updatedBusData.active,
+      plateNumber: "XYZ-789",
+      lastMaintenance: "2024-11-01",
+      students: ["Sarah Connor", "John Smith", "Alice Jones", "Bob Brown"],
+      routeHistory: [
+        { date: "2024-12-02", distance: "15.2 mi", duration: "45 min" },
+        { date: "2024-12-01", distance: "14.8 mi", duration: "42 min" },
+        { date: "2024-11-30", distance: "15.5 mi", duration: "48 min" },
+      ],
+      emergencyLogs: [
+        { id: 1, type: "Minor mechanical issue - tire pressure low", timestamp: "2024-12-02 at 2:45 PM", location: "5th Ave & Park St", resolution: "Driver reported and resolved on-site. No delays.", status: "Resolved" },
+        { id: 2, type: "Traffic delay due to accident on main route", timestamp: "2024-11-28 at 8:15 AM", location: "3rd Ave & Main St", resolution: "Alternative route taken. Parents notified. Arrived 10 minutes late.", status: "Resolved" },
+      ]
+    };
+    setBusData(transformedBusData);
     closeEditModal();
   };
 
@@ -164,10 +213,12 @@ const BusDetailsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <BusesNavbar />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading bus details...</div>
+        <div className="flex-1 p-12 sm:p-16">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">Loading bus details...</div>
+          </div>
         </div>
         <Footer />
       </div>
@@ -187,10 +238,10 @@ const BusDetailsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50"> 
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <BusesNavbar />
       
-      <div className="p-12 sm:p-16">
+      <div className="flex-1 p-12 sm:p-16">
         {/* Back Button */}
         <Link href="/admin/dashboard/buses" className="flex items-center gap-2 text-blue-500 mb-6 font-medium hover:text-blue-700 transition-colors">
           <ArrowLeft size={20} /> Back to Buses 
@@ -401,7 +452,7 @@ const BusDetailsPage = () => {
         <EditBusModal
           bus={busData}
           onClose={closeEditModal}
-          onUpdate={handleUpdateBus}
+          onSave={handleUpdateBus}
         />
       )}
       

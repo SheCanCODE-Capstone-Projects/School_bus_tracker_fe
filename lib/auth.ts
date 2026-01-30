@@ -2,8 +2,31 @@ export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
 
   const token = localStorage.getItem('authToken') || getCookie('authToken');
+  
+  // Validate token format
+  if (token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        // Check if token is expired
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          console.log('Token expired, removing from storage');
+          localStorage.removeItem('authToken');
+          document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          return null;
+        }
+        return token;
+      }
+    } catch (error) {
+      console.error('Invalid token format:', error);
+      localStorage.removeItem('authToken');
+      document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      return null;
+    }
+  }
 
-  return token || null;
+  return null;
 }
 
 
@@ -33,9 +56,11 @@ export function setAuthData(token: string, role: string, userData?: UserData): v
       localStorage.setItem('userData', JSON.stringify(userData));
     }
     
-    // Also set cookies for middleware
-    setCookie('authToken', token, 7); // 7 days
-    setCookie('userRole', role, 7);
+    // Set cookies for middleware with longer expiry
+    setCookie('authToken', token, 30); // 30 days
+    setCookie('userRole', role, 30);
+    
+    console.log('Auth data set successfully:', { role, hasToken: !!token });
   }
 }
 

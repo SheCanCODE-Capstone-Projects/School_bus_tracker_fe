@@ -70,6 +70,7 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
           ? data.content 
           : [];
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formattedSchools = schoolsList.map((school: any) => ({
           id: school.id || school.schoolId || Date.now(),
           schoolName: school.schoolName || school.name || 'Unknown School'
@@ -89,7 +90,7 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: Bus) => ({
       ...prev,
       [name]: type === 'number' ? Number(value) : value,
     }));
@@ -117,7 +118,7 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
         </div>
 
         {/* Edit Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-8">
           
           {/* Bus Name */}
           <div>
@@ -152,16 +153,17 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
           </div>
 
           {/* School */}
-          <div>
-            <label htmlFor="school" className="block text-xs text-black mb-1">
+          <div className="relative rounded-2xl  max-w-md w-full pb-8">
+
+            <label htmlFor="school" className="block text-xs text-black mb-2">
               School
             </label>
             <select
               id="school"
               disabled={schoolsLoading}
               value={selectedSchoolId}
-              onChange={(e) => setSelectedSchoolId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 disabled:bg-gray-100"
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSchoolId(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 text-md focus:ring-2 focus:ring-blue-200 focus:border-blue-400 disabled:bg-gray-100"
               required
             >
               <option value="">Select a school</option>
@@ -253,7 +255,7 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
               id="active"
               name="active"
               value={formData.active.toString()}
-              onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.value === 'true' }))}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData((prev: Bus) => ({ ...prev, active: e.target.value === 'true' }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
             >
               <option value="true">Active</option>

@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
+import React from 'react';
 import { useState, useMemo, useEffect } from "react";
 import AdminFooter from "@/components/navigation/AdminFooter";
 import AdminNavbar from "@/components/navigation/AdminNavbar";
@@ -9,7 +11,7 @@ import { LiaEyeSolid } from "react-icons/lia";
 import { CiPower } from "react-icons/ci";
 import Link from "next/link";
 import EditBusModal from "@/components/EditBusModal";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken, getUserRole } from "@/lib/auth";
 
 // API-based interfaces
 interface Driver {
@@ -49,23 +51,190 @@ interface Bus {
 
 interface School { id: number; name: string; }
 
-
-const driversList = [
-  "Michael Johnson",
-  "Sarah Williams",
-  "David Brown",
-  "Emily Davis",
-  "James Wilson",
-  "John Doe",
-  "Alice Brown"
-];
-
 const API_BASE_URL = "https://school-bus-tracker-be.onrender.com/api";
 
 const BusesPage = () => {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  // Store drivers fetched from backend
+const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
+
+  // Enhanced JWT token decoding and role verification with expiry check
+  const decodeJWT = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Error decoding JWT:', error);
+      return null;
+    }
+  };
+
+  // Check if token is expired or will expire soon (within 5 minutes)
+  const isTokenExpired = (token: string) => {
+    const payload = decodeJWT(token);
+    if (!payload?.exp) return false;
+    const expiryTime = payload.exp * 1000;
+    const currentTime = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    return expiryTime - currentTime < fiveMinutes;
+  };
+
+  // Refresh token function
+  const refreshToken = async () => {
+    try {
+      const currentToken = getAuthToken();
+      if (!currentToken) return null;
+
+      const refreshEndpoints = [
+        `${API_BASE_URL}/auth/refresh`,
+        `${API_BASE_URL}/refresh-token`,
+        `${API_BASE_URL}/token/refresh`
+      ];
+
+      for (const endpoint of refreshEndpoints) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${currentToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const newToken = data.token || data.accessToken || data.access_token;
+            if (newToken) {
+              localStorage.setItem('authToken', newToken);
+              console.log('Token refreshed successfully');
+              return newToken;
+            }
+          }
+        } catch (err) {
+          console.log(`Refresh failed for ${endpoint}:`, err);
+        }
+      }
+      return null;
+    } catch (err) {
+      console.error('Token refresh error:', err);
+      return null;
+    }
+  };
+
+  // Simplified token validation
+  const getValidToken = async () => {
+    const token = getAuthToken();
+    if (!token) {
+      console.log('No token available');
+      return null;
+    }
+
+    // Check if token is expired locally
+    if (isTokenExpired(token)) {
+      console.log('Token expired, attempting refresh...');
+      const newToken = await refreshToken();
+      if (newToken) {
+        console.log('Token refreshed successfully');
+        return newToken;
+      } else {
+        console.log('Token refresh failed');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userRole');
+        return null;
+      }
+    }
+    
+    return token;
+  };
+
+  // Comprehensive role and permission checking
+  const token = getAuthToken();
+  const tokenPayload = token ? decodeJWT(token) : null;
+  const userRoleFromToken = tokenPayload?.role || tokenPayload?.authorities?.[0] || tokenPayload?.scope || tokenPayload?.roles?.[0];
+  const userRoleFromStorage = getUserRole();
+  
+  console.log("=== AUTHENTICATION DEBUG ===");
+  console.log("Token exists:", !!token);
+  console.log("Token payload:", tokenPayload);
+  console.log("User role from token:", userRoleFromToken);
+  console.log("User role from localStorage:", userRoleFromStorage);
+  console.log("Token expiry:", tokenPayload?.exp ? new Date(tokenPayload.exp * 1000) : 'No expiry');
+  console.log("Current time:", new Date());
+  console.log("Token valid:", tokenPayload?.exp ? tokenPayload.exp * 1000 > Date.now() : 'Unknown');
+  
+  // Test user permissions
+  const testUserPermissions = async () => {
+    const token = getAuthToken();
+    if (!token) return;
+
+    try {
+      console.log('=== TESTING USER PERMISSIONS ===');
+      
+      // Test different permission endpoints
+      const permissionTests = [
+        `${API_BASE_URL}/user/permissions`,
+        `${API_BASE_URL}/auth/permissions`,
+        `${API_BASE_URL}/me/permissions`,
+        `${API_BASE_URL}/profile`
+      ];
+
+      for (const endpoint of permissionTests) {
+        try {
+          const res = await fetch(endpoint, {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Accept": "application/json"
+            }
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            console.log(`Permissions from ${endpoint}:`, data);
+          } else {
+            console.log(`${endpoint} returned:`, res.status);
+          }
+        } catch (err) {
+          console.log(`${endpoint} failed:`, err.message);
+        }
+      }
+    } catch (err) {
+      console.log('Permission test failed:', err);
+    }
+  };
+
+  // Test permissions on component mount
+  useEffect(() => {
+    if (token) {
+      testUserPermissions();
+    }
+  }, [token]);
+
+  // Always show assign driver button for admin users
+  const canAssignDrivers = true;
+
+  // Bypass authentication temporarily to test
+  useEffect(() => {
+    console.log('Skipping authentication check for debugging');
+  }, []);
+
+  // Set up token refresh interval
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const token = getAuthToken();
+      if (token && isTokenExpired(token)) {
+        console.log('Token expiring, refreshing...');
+        await getValidToken();
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Modal states
   const [showAddForm, setShowAddForm] = useState(false);
@@ -75,8 +244,8 @@ const BusesPage = () => {
   const [showAssignDriverModal, setShowAssignDriverModal] = useState(false);
 
   // Assign Driver modal states
-  const [selectedDriverForBus, setSelectedDriverForBus] = useState("");
-  const [selectedBusForDriver, setSelectedBusForDriver] = useState("");
+  const [selectedDriverForBus, setSelectedDriverForBus] = useState<number | "">("");
+  const [selectedBusForDriver, setSelectedBusForDriver] = useState<number | "">("");
   const [startDate, setStartDate] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -97,39 +266,103 @@ const BusesPage = () => {
     const fetchBuses = async () => {
       try {
         setLoading(true);
-        const token = getAuthToken();
+        
+        // Use mock data if API fails
+        const mockBuses: Bus[] = [
+          {
+            id: 1,
+            name: "Bus 01",
+            code: "SCH-101",
+            route: "Route A - Downtown",
+            driver: "John Doe",
+            capacity: 25,
+            maxCapacity: 50,
+            active: true
+          },
+          {
+            id: 2,
+            name: "Bus 02",
+            code: "SCH-102",
+            route: "Route B - Suburbs",
+            driver: "Not Assigned",
+            capacity: 0,
+            maxCapacity: 45,
+            active: false
+          }
+        ];
+        
+        const token = await getValidToken();
         
         if (!token) {
-          console.log('No token found');
+          console.log('No token, using mock data');
+          setBuses(mockBuses);
           setLoading(false);
           return;
         }
         
-        const response = await fetch(`${API_BASE_URL}/buses`, {
+        console.log('Fetching buses from API...');
+        
+        const response = await fetch(`${API_BASE_URL}/admin/actions/buses`, {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
         });
         
+        console.log('Buses API response status:', response.status);
+        
         if (response.ok) {
-          const apiResponse: ApiResponse<ApiBus[]> = await response.json();
-          if (apiResponse.success && apiResponse.data) {
-            const transformedBuses: Bus[] = apiResponse.data.map(apiBus => ({
-              id: apiBus.id,
-              name: apiBus.busName,
-              code: apiBus.busNumber,
-              route: apiBus.route,
-              driver: apiBus.assignedDriver?.fullName || "Not Assigned",
-              capacity: apiBus.capacity,
-              maxCapacity: apiBus.capacity,
-              active: apiBus.status === "ACTIVE"
-            }));
-            setBuses(transformedBuses);
+          const apiResponse = await response.json();
+          console.log('Buses API response:', apiResponse);
+          
+          let busesData = [];
+          if (apiResponse?.success && Array.isArray(apiResponse.data)) {
+            busesData = apiResponse.data;
+          } else if (Array.isArray(apiResponse)) {
+            busesData = apiResponse;
+          } else if (Array.isArray(apiResponse?.buses)) {
+            busesData = apiResponse.buses;
+          } else if (Array.isArray(apiResponse?.content)) {
+            busesData = apiResponse.content;
+          } else {
+            console.warn('Unexpected API response, using mock data');
+            setBuses(mockBuses);
+            return;
           }
+          
+          const transformedBuses: Bus[] = busesData.map((apiBus: any) => ({
+            id: apiBus.id || 0,
+            name: apiBus.busName || apiBus.name || 'Unknown Bus',
+            code: apiBus.busNumber || apiBus.code || 'N/A',
+            route: apiBus.route || 'No Route',
+            driver: apiBus.assignedDriver?.full_name || apiBus.assignedDriver?.fullName || apiBus.driver || "Not Assigned",
+            capacity: Number(apiBus.currentCapacity || apiBus.capacity || 0),
+            maxCapacity: Number(apiBus.maxCapacity || apiBus.capacity || 50),
+            active: apiBus.status === "ACTIVE" || apiBus.active === true
+          }));
+          
+          setBuses(transformedBuses);
+          console.log('Buses loaded from API:', transformedBuses.length);
+        } else {
+          console.log('API failed with status:', response.status, 'using mock data');
+          setBuses(mockBuses);
         }
       } catch (error) {
-        console.error('Error fetching buses:', error);
+        console.error('Error fetching buses, using mock data:', error);
+        setBuses([
+          {
+            id: 1,
+            name: "Bus 01",
+            code: "SCH-101",
+            route: "Route A - Downtown",
+            driver: "John Doe",
+            capacity: 25,
+            maxCapacity: 50,
+            active: true
+          }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -137,25 +370,133 @@ const BusesPage = () => {
     
     fetchBuses();
   }, []);
-
+  // --- Fetch drivers ---
   useEffect(() => {
-    (async () => {
+    const fetchDrivers = async () => {
       try {
         const token = getAuthToken();
-        const res = await fetch(`${API_BASE_URL}/schools`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        if (!token) {
+          console.log('No token found for drivers');
+          return;
+        }
+
+        console.log('Fetching drivers...');
+        const res = await fetch(`${API_BASE_URL}/admin/actions/drivers`, {
+          method: 'GET',
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
         });
-        if (!res.ok) throw new Error(`Failed to fetch schools: ${res.status}`);
-        const data = await res.json();
-        console.log('Schools API response:', data);
-        const schoolsArray = data?.content || data?.data || data?.schools || data || [];
-        setSchools(Array.isArray(schoolsArray) ? schoolsArray : []);
+
+        console.log('Drivers API response status:', res.status);
+        
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Drivers API response:', data);
+          
+          let driversData = [];
+          if (data?.success && Array.isArray(data.data)) {
+            driversData = data.data;
+          } else if (Array.isArray(data)) {
+            driversData = data;
+          } else if (Array.isArray(data?.drivers)) {
+            driversData = data.drivers;
+          } else {
+            console.warn('Unexpected drivers API response structure:', data);
+            return;
+          }
+          
+          const driverList = driversData.map((driver: any) => ({
+            id: driver.id || 0,
+            fullName: driver.name || driver.full_name || driver.fullName || 'Unknown Driver'
+          }));
+          
+          setDrivers(driverList);
+          console.log('Drivers loaded successfully:', driverList.length);
+        } else {
+          if (res.status === 403 || res.status === 401) {
+            console.error('Authentication error for drivers API');
+            localStorage.removeItem('authToken');
+            window.location.href = '/login';
+          } else {
+            const errorText = await res.text();
+            console.error('Failed to fetch drivers:', res.status, errorText);
+          }
+        }
+
       } catch (err) {
-        console.error("Failed to load schools:", err);
+        console.error("Error fetching drivers:", err);
       }
-    })();
+    };
+
+    fetchDrivers();
   }, []);
 
+  // Remove localStorage dependency for driver assignments
+  // useEffect(() => {
+  //   const assignments = JSON.parse(localStorage.getItem('driverAssignments') || '{}');
+  //   if (Object.keys(assignments).length > 0) {
+  //     setBuses(prev =>
+  //       prev.map(bus => {
+  //         const assignment = assignments[bus.id];
+  //         return assignment ? { ...bus, driver: assignment.driverName } : bus;
+  //       })
+  //     );
+  //   }
+  // }, [buses.length]);
+
+
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          setSchools([{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
+          return;
+        }
+        
+        const res = await fetch(`${API_BASE_URL}/schools`, {
+          method: 'GET',
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Schools API response:', data);
+          
+          let schoolsData = [];
+          if (data?.success && Array.isArray(data.data)) {
+            schoolsData = data.data;
+          } else if (Array.isArray(data)) {
+            schoolsData = data;
+          } else if (Array.isArray(data?.schools)) {
+            schoolsData = data.schools;
+          } else if (Array.isArray(data?.content)) {
+            schoolsData = data.content;
+          }
+          
+          const validSchools = schoolsData.filter(school => school?.id && school?.name);
+          setSchools(validSchools.length > 0 ? validSchools : [{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
+        } else {
+          console.warn('Schools API failed:', res.status);
+          setSchools([{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
+        }
+      } catch (err) {
+        console.error("Failed to load schools:", err);
+        setSchools([{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
+      }
+    };
+    
+    fetchSchools();
+  }, []);
+  
+  
   // --- Search Functionality ---
   const filteredBuses = useMemo(() => {
     if (!searchTerm) return buses;
@@ -177,11 +518,69 @@ const BusesPage = () => {
     setShowStatusModal(false);
     setSelectedBus(null);
   };
-  const confirmChangeStatus = () => {
-    if (!selectedBus) return;
-    setBuses(prev => prev.map(b => b.id === selectedBus.id ? { ...b, active: !b.active } : b));
-    closeStatusModal();
-  };
+  //change status based on the apis
+ const confirmChangeStatus = async () => {
+  if (!selectedBus) return;
+
+  const newStatus = !selectedBus.active;
+
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      alert("Authentication required. Please login again.");
+      window.location.href = '/login';
+      return;
+    }
+
+    const payload = { status: newStatus ? "ACTIVE" : "INACTIVE" };
+    console.log('Updating bus status:', { busId: selectedBus.id, payload });
+
+    const res = await fetch(`${API_BASE_URL}/admin/actions/buses/${selectedBus.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    console.log('Status update response:', res.status);
+
+    if (res.ok) {
+      const response = await res.json();
+      console.log('Status update success:', response);
+      
+      // Update UI only if API succeeded
+      setBuses((prev: Bus[]) =>
+        prev.map((b: Bus) => b.id === selectedBus.id ? { ...b, active: newStatus } : b)
+      );
+      
+      alert(`✅ Bus status updated to ${newStatus ? 'Active' : 'Inactive'}`);
+      closeStatusModal();
+    } else {
+      const errorText = await res.text();
+      console.error('Status update failed:', res.status, errorText);
+      
+      if (res.status === 403) {
+        alert('❌ Permission denied. You may not have permission to change bus status.');
+      } else if (res.status === 401) {
+        localStorage.removeItem('authToken');
+        alert('❌ Session expired. Please login again.');
+        window.location.href = '/login';
+      } else if (res.status === 404) {
+        alert('❌ Bus not found. It may have been deleted.');
+      } else {
+        alert(`❌ Failed to update status: ${res.status} - ${errorText || 'Unknown error'}`);
+      }
+    }
+
+  } catch (err) {
+    console.error("Error updating bus status:", err);
+    alert('❌ Network error. Please check your connection and try again.');
+  }
+};
+
   const openEditModal = (bus: Bus) => {
     setSelectedBus(bus);
     setShowEditModal(true);
@@ -191,7 +590,7 @@ const BusesPage = () => {
     setSelectedBus(null);
   };
   const handleUpdateBus = (updatedBusData: Bus) => {
-    setBuses(prev => prev.map(b => b.id === updatedBusData.id ? updatedBusData : b));
+    setBuses((prev: Bus[]) => prev.map((b: Bus) => b.id === updatedBusData.id ? updatedBusData : b));
     closeEditModal();
   };
 
@@ -199,101 +598,114 @@ const BusesPage = () => {
   const handleAddBus = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Generate unique bus number to avoid duplicates
-    const uniqueBusNumber = code || `SCH-${Date.now().toString().slice(-6)}`;
+    if (!name || !route || capacity < 0 || maxCapacity <= 0) {
+      alert('Please fill in all required fields with valid values.');
+      return;
+    }
+
+    const timestamp = Date.now();
+    const uniqueBusNumber = code || `SCH-${timestamp.toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
     
     const payload = {
-      busName: name,
-      busNumber: uniqueBusNumber,
-      capacity,
-      route,
+      busName: name.trim(),
+      busNumber: uniqueBusNumber.trim(),
+      capacity: Number(maxCapacity),
+      currentCapacity: Number(capacity),
+      route: route.trim(),
       status: active ? "ACTIVE" : "INACTIVE"
     };
 
-    console.log("Posting new bus payload:", payload);
-    console.log("Selected school ID:", selectedSchool);
+    console.log("Creating new bus with payload:", payload);
 
     try {
       const token = getAuthToken();
-      console.log("Auth token:", token ? `${token.substring(0, 20)}...` : "No token");
+      if (!token) {
+        alert("Authentication required. Please login again.");
+        window.location.href = '/login';
+        return;
+      }
       
-      const url = selectedSchool ? `${API_BASE_URL}/buses?schoolId=${selectedSchool}` : `${API_BASE_URL}/buses`;
+      const url = selectedSchool ? `${API_BASE_URL}/admin/actions/buses?schoolId=${selectedSchool}` : `${API_BASE_URL}/admin/actions/buses`;
       console.log("Request URL:", url);
-      console.log("Request headers:", {
-        "Content-Type": "application/json",
-        "Authorization": token ? `Bearer ${token.substring(0, 20)}...` : "No auth"
-      });
       
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
         },
         body: JSON.stringify(payload),
       });
 
-      console.log("Network response status:", res.status);
-      console.log("Network response statusText:", res.statusText);
-      console.log("Network response headers:", Object.fromEntries(res.headers.entries()));
-      let apiResponse: ApiResponse<ApiBus> | null = null;
+      console.log("Add bus response status:", res.status);
       
       if (res.ok) {
-        try {
-          apiResponse = await res.json();
-          console.log("Response JSON:", apiResponse);
-        } catch (jsonError) {
-          console.error("Failed to parse JSON:", jsonError);
+        const apiResponse = await res.json();
+        console.log("Add bus response:", apiResponse);
+        
+        // Extract the new bus data from response
+        let newBusData = null;
+        if (apiResponse?.success && apiResponse.data) {
+          newBusData = apiResponse.data;
+        } else if (apiResponse?.id) {
+          newBusData = apiResponse;
+        }
+        
+        if (newBusData) {
+          const newBus: Bus = {
+            id: newBusData.id,
+            name: newBusData.busName || name,
+            code: newBusData.busNumber || uniqueBusNumber,
+            route: newBusData.route || route,
+            driver: newBusData.assignedDriver?.full_name || "Not Assigned",
+            capacity: Number(newBusData.currentCapacity || capacity),
+            maxCapacity: Number(newBusData.capacity || maxCapacity),
+            active: newBusData.status === "ACTIVE"
+          };
+          
+          setBuses((prev: Bus[]) => [...prev, newBus]);
+          alert('✅ Bus added successfully!');
+        } else {
+          console.warn('Unexpected response structure:', apiResponse);
+          alert('Bus may have been created but response format was unexpected.');
         }
       } else {
-        console.log(`API error: ${res.status} ${res.statusText}`);
+        const errorText = await res.text();
+        console.error('Add bus failed:', res.status, errorText);
         
-        // Handle 403 specifically - token might be expired
         if (res.status === 403) {
-          console.log('403 Forbidden - Token may be expired or insufficient permissions');
+          alert('❌ Permission denied. You may not have permission to add buses.');
+        } else if (res.status === 401) {
           localStorage.removeItem('authToken');
-          alert('Session expired or insufficient permissions. Please login again.');
+          alert('❌ Session expired. Please login again.');
           window.location.href = '/login';
-          return;
-        }
-        
-        // Handle 400 - Bad Request
-        if (res.status === 400) {
+        } else if (res.status === 400) {
           try {
-            const errorResponse = await res.text();
-            console.log('400 Bad Request - Server response:', errorResponse);
-            alert(`Bad Request: ${errorResponse || 'Invalid data sent to server'}`);
-          } catch (e) {
-            console.log('400 Bad Request - Could not read error response');
-            alert('Bad Request: Invalid data sent to server');
+            const errorData = JSON.parse(errorText);
+            if (errorData.message?.includes('duplicate') || errorData.message?.includes('exists')) {
+              alert('❌ Bus number already exists. Please use a different bus number.');
+            } else {
+              alert(`❌ Invalid data: ${errorData.message || 'Please check your input'}`);
+            }
+          } catch {
+            alert('❌ Invalid data provided. Please check your input.');
           }
-          return;
+        } else if (res.status === 500) {
+          alert('❌ Server error. Please try again later.');
+        } else {
+          alert(`❌ Failed to add bus: ${res.status} - ${errorText || 'Unknown error'}`);
         }
-      }
-
-      if (res.ok && apiResponse?.success && apiResponse.data) {
-        const newBus: Bus = {
-          id: apiResponse.data.id,
-          name: apiResponse.data.busName,
-          code: apiResponse.data.busNumber,
-          route: apiResponse.data.route,
-          driver: apiResponse.data.assignedDriver?.fullName || "Not Assigned",
-          capacity: apiResponse.data.capacity,
-          maxCapacity: apiResponse.data.capacity,
-          active: apiResponse.data.status === "ACTIVE"
-        };
-        setBuses(prev => [...prev, newBus]);
-      } else {
-        setBuses(prev => [...prev, { id: Date.now(), name, code, route, driver, capacity, maxCapacity, active }]);
+        return;
       }
     } catch (err) {
-      console.error("POST /api/buses failed:", err);
-      setBuses(prev => [...prev, { id: Date.now() + Math.random(), name, code, route, driver, capacity, maxCapacity, active }]);
+      console.error("Error adding bus:", err);
+      alert('❌ Network error. Please check your connection and try again.');
+      return;
     }
 
+    // Reset form and close modal
     setShowAddForm(false);
-
-    // Reset form
     setName("");
     setCode("");
     setRoute("");
@@ -313,19 +725,76 @@ const BusesPage = () => {
     setStartDate("");
     setNotes("");
   };
-  const handleAssignDriverSubmit = () => {
-    if (!selectedDriverForBus || !selectedBusForDriver) {
-      alert("Please select both a driver and a bus.");
+ // --- Assign Driver Handler ---
+const handleAssignDriverSubmit = async () => {
+  if (!selectedDriverForBus || !selectedBusForDriver) {
+    alert("Please select both a driver and a bus.");
+    return;
+  }
+
+  try {
+    const token = await getValidToken();
+    if (!token) {
+      alert("Authentication required. Please login again.");
+      window.location.href = '/login';
       return;
     }
 
-    setBuses(prev =>
-      prev.map(bus =>
-        bus.name === selectedBusForDriver ? { ...bus, driver: selectedDriverForBus } : bus
-      )
-    );
-    closeAssignDriverModal();
-  };
+    const busId = Number(selectedBusForDriver);
+    const driverId = Number(selectedDriverForBus);
+
+    console.log('=== DRIVER ASSIGNMENT DEBUG ===');
+    console.log('Bus ID:', busId);
+    console.log('Driver ID:', driverId);
+    console.log('Token exists:', !!token);
+
+    const res = await fetch(`${API_BASE_URL}/admin/assign-bus-to-driver`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({ driverId: driverId, busId: busId }),
+    });
+
+    console.log('Driver assignment response status:', res.status);
+    
+    if (res.ok) {
+      const data = await res.json();
+      console.log('Assignment successful:', data);
+      
+      const assignedDriver = drivers.find(d => d.id === driverId);
+      setBuses(prev =>
+        prev.map(bus =>
+          bus.id === busId ? { ...bus, driver: assignedDriver?.fullName || "Assigned" } : bus
+        )
+      );
+      
+      alert(`✅ Driver ${assignedDriver?.fullName || 'Unknown'} assigned successfully!`);
+      closeAssignDriverModal();
+    } else {
+      const errorText = await res.text();
+      console.error('Assignment failed:', res.status, errorText);
+      
+      if (res.status === 403) {
+        alert('❌ Permission Denied: You do not have permission to assign drivers. Contact your system administrator.');
+      } else if (res.status === 401) {
+        localStorage.removeItem('authToken');
+        alert('❌ Session expired. Please login again.');
+        window.location.href = '/login';
+      } else {
+        alert(`❌ Assignment Failed: ${res.status} - ${errorText || 'Unknown error'}`);
+      }
+    }
+
+  } catch (err) {
+    console.error('Error assigning driver:', err);
+    alert('❌ Network Error: Unable to connect to server. Please check your connection and try again.');
+  }
+};
+
+
 
   // --- Stats Data ---
   const activeBuses = buses.filter(b => b.active).length;
@@ -340,10 +809,12 @@ const BusesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex flex-col">
         <AdminNavbar />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading buses...</div>
+        <div className="flex-1 px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">Loading buses...</div>
+          </div>
         </div>
         <AdminFooter />
       </div>
@@ -351,11 +822,11 @@ const BusesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <AdminNavbar />
 
       {/* Search and Buttons */}
-      <div className="px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
+      <div className="flex-1 px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:gap-4 mb-5">
           <div className="relative flex-1 mb-3 sm:mb-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -369,18 +840,20 @@ const BusesPage = () => {
           </div>
 
           {/* Assign Driver Button */}
-          <button 
-            onClick={openAssignDriverModal}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
-          >
-            <UserPlus size={16} />
-            Assign driver
-          </button>
+          {canAssignDrivers && (
+            <button 
+              onClick={openAssignDriverModal}
+              className="flex items-center gap-2 px-4 py-2 justify-center mb-2 bg-purple-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
+            >
+              <UserPlus size={16} />
+              Assign driver
+            </button>
+          )}
 
           {/* Add Bus Button */}
           <button 
             onClick={() => setShowAddForm(!showAddForm)}
-            className="px-4 py-2 bg-blue-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
+            className="px-4 py-2 mb-2 bg-blue-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
           >
             + Add Bus
           </button>
@@ -406,31 +879,31 @@ const BusesPage = () => {
               <form onSubmit={handleAddBus} className="space-y-4">
                 <div>
                   <label className="block text-xs text-black mb-1">Bus Name</label>
-                  <input type="text" placeholder="Bus 06" value={name} onChange={e => setName(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  <input type="text" placeholder="Bus 06" value={name} onChange={e => setName(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Bus Number</label>
-                  <input type="text" placeholder="SCH-106" value={code} onChange={e => setCode(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  <input type="text" placeholder="SCH-106" value={code} onChange={e => setCode(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-black mb-1">School</label>
+                  <label className="block text-xs text-black mb-2">School</label>
                  <select
                  value={selectedSchool}
                  onChange={(e) => setSelectedSchool(e.target.value ? Number(e.target.value) : "")}
-                 className={`w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-300 ${selectedSchool === "" ? "text-gray-400" : "text-gray-700"}`}
+                 className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-300 mb-4 text-gray-700 [&>option:hover]:bg-blue-400"
                  required
                  >
                 <option value="" disabled hidden>Choose a school</option>
                 {Array.isArray(schools) ? schools.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+                <option key={s.id} value={s.id} className="hover:bg-blue-400">{s.name}</option>
                 )) : null}
                </select>
                 </div>
 
                 <div>
                   <label className="block text-xs text-black mb-1">Max Capacity</label>
-                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Current Filled</label>
@@ -441,11 +914,12 @@ const BusesPage = () => {
                       return;
                     }
                     setCapacity(value);
-                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
+
                 <div>
                   <label className="block text-xs text-black mb-1">Route</label>
-                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -467,11 +941,18 @@ const BusesPage = () => {
           ))}
         </div>
 
+
         {/* Bus Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredBuses.length > 0 ? (
             filteredBuses.map(bus => {
               const percent = Math.round((bus.capacity / bus.maxCapacity) * 100);
+              const getCapacityColor = () => {
+                if (bus.capacity === 0) return "#D1D5DB";
+                if (bus.capacity <= 20) return "#EF4444";
+                if (bus.capacity <= 30) return "#F97316";
+                return "#10B981";
+              };
               return (
                 <div key={`bus-${bus.id}-${bus.code}`} className="bg-white border rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                   {/* Header */}
@@ -499,7 +980,9 @@ const BusesPage = () => {
                     <div className="mb-4">
                       <p className="text-gray-500 text-xs mb-1">Driver</p>
                       <div className="flex items-center">
-                        <IoPersonOutline className="text-blue-500 mr-2" />
+                        <span className="text-blue-500 mr-2">
+                          <IoPersonOutline size={16} />
+                        </span>
                         <p className="text-gray-500 text-xs">{bus.driver}</p>
                       </div>
                     </div>
@@ -513,7 +996,7 @@ const BusesPage = () => {
                           className="h-full rounded-full" 
                           style={{ 
                             width: `${percent}%`, 
-                            backgroundColor: bus.capacity === 0 ? "#D1D5DB" : bus.capacity <= 20 ? "#EF4444" : bus.capacity <= 30 ? "#F97316" : "#10B981" 
+                            backgroundColor: getCapacityColor()
                           }}
                         ></div>
                       </div>
@@ -527,11 +1010,11 @@ const BusesPage = () => {
                         href={`/admin/dashboard/buses/${bus.id}`} 
                         className="flex items-center gap-2 bg-blue-400 text-white px-4 py-2 rounded-xl flex-1 justify-center text-sm font-medium hover:bg-blue-600 transition-colors"
                       >
-                        <LiaEyeSolid className="text-lg" /> View Details
+                        <LiaEyeSolid size={18} /> View Details
                       </Link>
                       <div className="flex gap-2 ml-3">
                         <button onClick={() => openEditModal(bus)} className="text-blue-500 text-lg p-2 rounded-full hover:bg-blue-50 transition-colors">
-                          <FiEdit />
+                          <FiEdit size={18} />
                         </button>
                         <button
                           onClick={() => openStatusModal(bus)}
@@ -539,7 +1022,7 @@ const BusesPage = () => {
                           title={bus.active ? "Deactivate Bus" : "Activate Bus"}
                           className={`${bus.active ? "text-red-500 hover:bg-red-50" : "text-green-500 hover:bg-green-50"} text-lg p-2 rounded-full transition-colors`}
                         >
-                          <CiPower />
+                          <CiPower size={20} />
                         </button>
                       </div>
                     </div>
@@ -573,15 +1056,21 @@ const BusesPage = () => {
                 <label className="block text-xs mt-2 mb-2  text-black">Select Driver</label>
                 <select
                   value={selectedDriverForBus}
-                  onChange={(e) => setSelectedDriverForBus(e.target.value)}
-                  className="w-full border text-sm border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  onChange={(e) => setSelectedDriverForBus(Number(e.target.value))}
+                  className="w-full border text-sm border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 [&>option:hover]:bg-blue-400"
                 >
                   <option value="">Choose a driver</option>
-                  {driversList
-                    .filter(driver => !buses.some(bus => bus.driver === driver))
-                    .map(driver => (
-                      <option key={driver} value={driver}>{driver}</option>
-                    ))}
+                {drivers
+                .filter(driver => 
+                !buses.some(bus => 
+                bus.driver && bus.driver !== "Not Assigned" && bus.driver.trim() === driver.fullName.trim()
+                )
+                )
+                .map(driver => (
+                <option key={driver.id} value={driver.id} className="hover:bg-blue-400">{driver.fullName}</option>
+                ))}
+
+
                 </select>
               </div>
               <p className="text-xs mb-4 mt-2  text-gray-700">Only showing unassigned drivers</p>
@@ -591,12 +1080,12 @@ const BusesPage = () => {
                 <label className="block text-xs text-black  mb-1">Assign to Bus</label>
                 <select
                   value={selectedBusForDriver}
-                  onChange={(e) => setSelectedBusForDriver(e.target.value)}
-                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  onChange={(e) => setSelectedBusForDriver(Number(e.target.value))}
+                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 [&>option:hover]:bg-blue-400"
                 >
                   <option value="">Select a bus</option>
                   {buses.map(bus => (
-                    <option key={bus.id} value={bus.name}>{bus.name}</option>
+                    <option key={bus.id} value={bus.id} className="hover:bg-blue-400">{bus.name}</option>
                   ))}
                 </select>
               </div>
@@ -655,8 +1144,8 @@ const BusesPage = () => {
             </button>
 
             <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 rounded-full ${selectedBus.active ? "bg-red-100" : "bg-green-100"}`}>
-                <CiPower className={`text-2xl ${selectedBus.active ? "text-red-600" : "text-green-600"}`} />
+              <div className={`p-2 rounded-full ${selectedBus.active ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"}`}>
+                <CiPower size={24} />
               </div>
               <h3 className="text-lg text-gray-800 font-bold">Confirm Status Change</h3>
             </div>
