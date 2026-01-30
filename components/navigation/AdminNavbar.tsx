@@ -5,6 +5,7 @@ import { Bus, LogOut } from "lucide-react";
 import { HiMenu, HiX } from "react-icons/hi";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { logout } from "@/lib/auth";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", title: "Admin Dashboard" },
@@ -34,6 +35,7 @@ export default function AdminNavbar() {
     ) ?? navItems[0];
 
   const handleLogout = () => {
+    logout();
     router.replace("/login");
   };
 
@@ -64,11 +66,11 @@ export default function AdminNavbar() {
         <nav
           className={`${
             isMenuOpen ? "flex" : "hidden"
-          } lg:flex flex-col lg:flex-row absolute lg:relative top-full lg:top-auto left-0
-          w-full lg:w-auto bg-white lg:bg-transparent shadow-lg lg:shadow-none
+          } lg:flex flex-col lg:flex-row absolute lg:relative top-full lg:top-auto left-0 right-0
+          w-full lg:w-auto bg-white lg:bg-transparent shadow-lg lg:shadow-none border-t lg:border-t-0 border-gray-200
           items-start lg:items-center gap-2 sm:gap-3 lg:gap-4
-          py-4 lg:py-0 pl-4 lg:pl-0
-          text-xs sm:text-sm lg:text-base font-medium`}
+          py-4 lg:py-0 px-4 lg:px-0
+          text-sm lg:text-base font-medium z-40`}
         >
           {navItems.map(item => {
             // ✅ Correct active logic (Dashboard handled specially)
@@ -94,13 +96,14 @@ export default function AdminNavbar() {
             );
           })}
 
+          {/* Mobile Divider */}
+          <div className="lg:hidden w-full h-px bg-gray-200 my-2" />
           <div className="hidden lg:block h-6 w-px bg-gray-300" />
 
           {/* Logout */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-gray-600 hover:text-red-500
-            hover:bg-red-50 rounded-lg px-3 py-2 transition-all duration-200"
+            className="flex items-center gap-2 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-lg px-3 py-2 transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout</span>

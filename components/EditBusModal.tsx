@@ -1,6 +1,6 @@
-"use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Bus } from 'lucide-react';
+import { getAuthToken } from '@/lib/auth';
 
 // Define the Bus type for consistency
 interface Bus {
@@ -14,6 +14,11 @@ interface Bus {
   active: boolean;
 }
 
+interface School {
+  id: number;
+  schoolName: string;
+}
+
 interface EditBusModalProps {
   bus: Bus;
   onClose: () => void;
@@ -23,6 +28,64 @@ interface EditBusModalProps {
 const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => {
   // Use state to manage the form data
   const [formData, setFormData] = useState(bus);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [schoolsLoading, setSchoolsLoading] = useState(false);
+  const [selectedSchoolId, setSelectedSchoolId] = useState<number | "">("");
+
+  const API_BASE_URL = 'https://school-bus-tracker-be.onrender.com/api';
+
+  // Fetch schools on component mount
+  useEffect(() => {
+    const fetchSchools = async () => {
+      setSchoolsLoading(true);
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          setSchools([]);
+          return;
+        }
+
+        const res = await fetch(`${API_BASE_URL}/schools`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+        });
+
+        if (!res.ok) {
+          console.warn(`Schools API error: ${res.status}`);
+          setSchools([]);
+          return;
+        }
+
+        const data = await res.json();
+        const schoolsList = Array.isArray(data) 
+          ? data 
+          : data?.data && Array.isArray(data.data)
+          ? data.data 
+          : data?.content && Array.isArray(data.content)
+          ? data.content 
+          : [];
+
+        const formattedSchools = schoolsList.map((school: any) => ({
+          id: school.id || school.schoolId || Date.now(),
+          schoolName: school.schoolName || school.name || 'Unknown School'
+        }));
+
+        setSchools(formattedSchools);
+      } catch (error) {
+        console.error("Error fetching schools:", error);
+        setSchools([]);
+      } finally {
+        setSchoolsLoading(false);
+      }
+    };
+
+    fetchSchools();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -88,6 +151,27 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
             />
           </div>
 
+          {/* School */}
+          <div>
+            <label htmlFor="school" className="block text-xs text-black mb-1">
+              School
+            </label>
+            <select
+              id="school"
+              disabled={schoolsLoading}
+              value={selectedSchoolId}
+              onChange={(e) => setSelectedSchoolId(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 disabled:bg-gray-100"
+              required
+            >
+              <option value="">Select a school</option>
+              {schools.map((school) => (
+                <option key={school.id} value={school.id}>
+                  {school.schoolName}
+                </option>
+              ))}
+            </select>
+          </div>
           {/* Max Capacity */}
           <div>
             <label htmlFor="maxCapacity" className="block text-xs text-black mb-1">
