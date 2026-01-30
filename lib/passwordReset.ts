@@ -15,6 +15,7 @@ export interface PasswordResetRequestResponse {
 export interface PasswordResetConfirmData {
   token: string;
   newPassword: string;
+  confirmPassword: string;
 }
 
 export interface PasswordResetConfirmResponse {
@@ -70,7 +71,8 @@ export const requestPasswordReset = async (
 // Line 60: Function to confirm password reset (Step 2: Reset with token)
 export const confirmPasswordReset = async (
   token: string,
-  newPassword: string
+  newPassword: string,
+  confirmPassword: string
 ): Promise<PasswordResetConfirmResponse> => {
   try {
     // Line 65: Make POST request to password reset confirm endpoint
@@ -78,7 +80,8 @@ export const confirmPasswordReset = async (
       'https://school-bus-tracker-be.onrender.com/api/auth/password-reset/confirm',
       { 
         token, 
-        newPassword 
+        newPassword,
+        confirmPassword
       }
     );
     
