@@ -13,32 +13,225 @@ import { createPortal } from "react-dom";
 
 // Driver type
 type Driver = {
+  id: number;
   name: string;
   email: string;
   phone: string;
   bus: string | null;
   status: "Active" | "Inactive";
+  license_number?: string;
 };
 
-export default function DriverRow({ driver }: { driver: Driver }) {
+type DriverRowProps = {
+  driver: Driver;
+  onUpdate?: () => void;
+  onDelete?: () => void;
+};
+
+export default function DriverRow({ driver, onUpdate, onDelete }: DriverRowProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [selectedBus, setSelectedBus] = useState(driver.bus ?? "");
   const [formData, setFormData] = useState({
     name: driver.name,
     email: driver.email,
     phone: driver.phone,
-    license: "DL123456789"
+    license: driver.license_number || "DL123456789"
   });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveChanges = () => {
-    setShowEditModal(false);
+  // Get authentication token
+  const getAuthToken = () => {
+    let token = localStorage.getItem("token");
+    if (!token) {
+      const possibleKeys = ['accessToken', 'authToken', 'jwtToken', 'jwt', 'auth_token'];
+      for (const key of possibleKeys) {
+        token = localStorage.getItem(key) || sessionStorage.getItem(key);
+        if (token) break;
+      }
+    }
+    if (!token) {
+      const userString = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (userString) {
+        try {
+          const userData = JSON.parse(userString);
+          token = userData.token || userData.accessToken || userData.authToken;
+        } catch (e) {
+          console.log("Could not parse user data");
+        }
+      }
+    }
+    return token ? token.replace(/^Bearer\s+/i, '') : null;
+  };
+
+  const handleSaveChanges = async () => {
+    setLoading(true);
+    setError("");
+    
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        setError("Please log in first");
+        return;
+      }
+
+      console.log('Attempting to update driver with ID:', driver.id);
+      
+      // Try multiple possible update endpoints
+      const possibleEndpoints = [
+        `https://school-bus-tracker-be.onrender.com/api/admin/update-driver/${driver.id}`,
+        `https://school-bus-tracker-be.onrender.com/api/admin/drivers/${driver.id}`,
+        `https://school-bus-tracker-be.onrender.com/api/drivers/${driver.id}`
+      ];
+      
+      // Try different data formats that the backend might expect
+      const possibleDataFormats = [
+        {
+          email: formData.email,
+          name: formData.name,
+          phone_number: formData.phone,
+          license_number: formData.license,
+        },
+        {
+          email: formData.email,
+          fullName: formData.name,
+          phoneNumber: formData.phone,
+          licenseNumber: formData.license,
+        },
+        {
+          email: formData.email,
+          full_name: formData.name,
+          phone: formData.phone,
+          license: formData.license,
+        }
+      ];
+      
+      let response;
+      let lastError;
+      
+      for (let i = 0; i < possibleEndpoints.length; i++) {
+        const endpoint = possibleEndpoints[i];
+        
+        for (let j = 0; j < possibleDataFormats.length; j++) {
+          const updateData = possibleDataFormats[j];
+          
+          try {
+            console.log(`Trying update endpoint: ${endpoint} with data format ${j + 1}:`, updateData);
+            response = await fetch(endpoint, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+                "Cache-Control": "no-cache",
+              },
+              body: JSON.stringify(updateData),
+            });
+            
+            console.log(`${endpoint} (format ${j + 1}) - Response status:`, response.status);
+            
+            if (response.ok) {
+              console.log('Success with endpoint:', endpoint, 'and data format:', j + 1);
+              break; // Success, exit inner loop
+            } else {
+              const errorText = await response.text();
+              console.log(`${endpoint} (format ${j + 1}) - Error response:`, errorText);
+              lastError = `Error ${response.status}: ${errorText || 'Failed to update driver'}`;
+            }
+          } catch (err) {
+            console.log(`${endpoint} (format ${j + 1}) - Network error:`, err);
+            lastError = `Network error: ${err}`;
+          }
+        }
+        
+        if (response && response.ok) {
+          break; // Success, exit outer loop
+        }
+      }
+      
+      if (!response || !response.ok) {
+        throw new Error(lastError || 'All update endpoints failed');
+      }
+
+      console.log("Driver updated successfully");
+      setShowEditModal(false);
+      onUpdate?.(); // Refresh the drivers list
+    } catch (error: any) {
+      console.error("Error updating driver:", error);
+      setError(error.message || "Failed to update driver");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteDriver = async () => {
+    setLoading(true);
+    setError("");
+    
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        setError("Please log in first");
+        return;
+      }
+
+      console.log('Attempting to delete driver with ID:', driver.id);
+      
+      // Try multiple possible delete endpoints
+      const possibleEndpoints = [
+        `https://school-bus-tracker-be.onrender.com/api/admin/delete-driver/${driver.id}`,
+        `https://school-bus-tracker-be.onrender.com/api/admin/drivers/${driver.id}`,
+        `https://school-bus-tracker-be.onrender.com/api/drivers/${driver.id}`
+      ];
+      
+      let response;
+      let lastError;
+      
+      for (const endpoint of possibleEndpoints) {
+        try {
+          console.log('Trying delete endpoint:', endpoint);
+          response = await fetch(endpoint, {
+            method: "DELETE",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Cache-Control": "no-cache",
+            },
+          });
+          
+          console.log(`${endpoint} - Response status:`, response.status);
+          
+          if (response.ok) {
+            break; // Success, exit loop
+          } else {
+            const errorText = await response.text();
+            console.log(`${endpoint} - Error response:`, errorText);
+            lastError = `Error ${response.status}: ${errorText || 'Failed to delete driver'}`;
+          }
+        } catch (err) {
+          console.log(`${endpoint} - Network error:`, err);
+          lastError = `Network error: ${err}`;
+        }
+      }
+      
+      if (!response || !response.ok) {
+        throw new Error(lastError || 'All delete endpoints failed');
+      }
+
+      console.log("Driver deleted successfully");
+      setShowDeleteModal(false);
+      onDelete?.(); // Refresh the drivers list
+    } catch (error: any) {
+      console.error("Error deleting driver:", error);
+      setError(error.message || "Failed to delete driver");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -105,6 +298,12 @@ export default function DriverRow({ driver }: { driver: Driver }) {
                 Edit Driver
               </h2>
 
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
               <div className="space-y-5">
                 <input
                   value={formData.name}
@@ -165,12 +364,24 @@ export default function DriverRow({ driver }: { driver: Driver }) {
               <div className="flex gap-4 mt-8">
                 <button
                   onClick={handleSaveChanges}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700"
+                  disabled={loading}
+                  className={`flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 flex items-center justify-center ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  Save Changes
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Updating...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </button>
                 <button
                   onClick={() => setShowEditModal(false)}
+                  disabled={loading}
                   className="flex-1 bg-gray-200 py-3 rounded-xl text-black hover:bg-gray-300"
                 >
                   Cancel
@@ -192,18 +403,41 @@ export default function DriverRow({ driver }: { driver: Driver }) {
                 <h2 className="text-xl font-bold text-black">Delete Driver</h2>
               </div>
 
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
               <p className="text-sm text-gray-700 mb-6">
                 Are you sure you want to delete{" "}
                 <span className="font-semibold text-black">{driver.name}</span>?
+                <br />
+                <span className="text-red-600 font-medium">This action cannot be undone.</span>
               </p>
 
               <div className="flex gap-3">
-                <button className="flex-1 bg-red-600 text-white py-3 rounded-lg">
-                  Delete
+                <button 
+                  onClick={handleDeleteDriver}
+                  disabled={loading}
+                  className={`flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 flex items-center justify-center ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete"
+                  )}
                 </button>
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 bg-gray-200 py-3 rounded-lg text-black"
+                  disabled={loading}
+                  className="flex-1 bg-gray-200 py-3 rounded-lg text-black hover:bg-gray-300"
                 >
                   Cancel
                 </button>
