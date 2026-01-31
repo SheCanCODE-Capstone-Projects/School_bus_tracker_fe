@@ -40,20 +40,26 @@ export default function AdminDashboardContent() {
   
   // Role-based protection - only allow admin access
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
+      // Add small delay to ensure auth data is set
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       if (!isAuthenticated()) {
-        router.push('/login');
+        console.log('Not authenticated, redirecting to login');
+        window.location.href = '/login';
         return;
       }
       
       const role = getUserRole();
+      console.log('User role:', role);
+      
       if (role !== 'admin') {
         if (role === 'parent') {
-          router.push('/parent/dashboard');
+          window.location.href = '/parent/dashboard';
         } else if (role === 'driver') {
-          router.push('/driver/tracker');
+          window.location.href = '/driver/tracker';
         } else {
-          router.push('/login');
+          window.location.href = '/login';
         }
         return;
       }
@@ -62,7 +68,7 @@ export default function AdminDashboardContent() {
     };
     
     checkAuth();
-  }, [router]);
+  }, []);
   
   // Show loading state while checking authentication
   if (isLoading) {
