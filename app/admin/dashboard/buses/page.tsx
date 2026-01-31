@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import React from 'react';
 import { useState, useMemo, useEffect } from "react";
@@ -11,7 +10,7 @@ import { LiaEyeSolid } from "react-icons/lia";
 import { CiPower } from "react-icons/ci";
 import Link from "next/link";
 import EditBusModal from "@/components/EditBusModal";
-import { getAuthToken, getUserRole } from "@/lib/auth";
+import { getAuthToken } from "@/lib/auth";
 
 // API-based interfaces
 interface Driver {
@@ -60,180 +59,13 @@ const BusesPage = () => {
   // Store drivers fetched from backend
 const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
 
-  // Enhanced JWT token decoding and role verification with expiry check
-  const decodeJWT = (token: string) => {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('Error decoding JWT:', error);
-      return null;
-    }
-  };
-
-  // Check if token is expired or will expire soon (within 5 minutes)
-  const isTokenExpired = (token: string) => {
-    const payload = decodeJWT(token);
-    if (!payload?.exp) return false;
-    const expiryTime = payload.exp * 1000;
-    const currentTime = Date.now();
-    const fiveMinutes = 5 * 60 * 1000;
-    return expiryTime - currentTime < fiveMinutes;
-  };
-
-  // Refresh token function
-  const refreshToken = async () => {
-    try {
-      const currentToken = getAuthToken();
-      if (!currentToken) return null;
-
-      const refreshEndpoints = [
-        `${API_BASE_URL}/auth/refresh`,
-        `${API_BASE_URL}/refresh-token`,
-        `${API_BASE_URL}/token/refresh`
-      ];
-
-      for (const endpoint of refreshEndpoints) {
-        try {
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${currentToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            const newToken = data.token || data.accessToken || data.access_token;
-            if (newToken) {
-              localStorage.setItem('authToken', newToken);
-              console.log('Token refreshed successfully');
-              return newToken;
-            }
-          }
-        } catch (err) {
-          console.log(`Refresh failed for ${endpoint}:`, err);
-        }
-      }
-      return null;
-    } catch (err) {
-      console.error('Token refresh error:', err);
-      return null;
-    }
-  };
-
-  // Simplified token validation
-  const getValidToken = async () => {
+  // Authentication check
+  useEffect(() => {
     const token = getAuthToken();
     if (!token) {
-      console.log('No token available');
-      return null;
+      window.location.href = '/login';
+      return;
     }
-
-    // Check if token is expired locally
-    if (isTokenExpired(token)) {
-      console.log('Token expired, attempting refresh...');
-      const newToken = await refreshToken();
-      if (newToken) {
-        console.log('Token refreshed successfully');
-        return newToken;
-      } else {
-        console.log('Token refresh failed');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userRole');
-        return null;
-      }
-    }
-    
-    return token;
-  };
-
-  // Comprehensive role and permission checking
-  const token = getAuthToken();
-  const tokenPayload = token ? decodeJWT(token) : null;
-  const userRoleFromToken = tokenPayload?.role || tokenPayload?.authorities?.[0] || tokenPayload?.scope || tokenPayload?.roles?.[0];
-  const userRoleFromStorage = getUserRole();
-  
-  console.log("=== AUTHENTICATION DEBUG ===");
-  console.log("Token exists:", !!token);
-  console.log("Token payload:", tokenPayload);
-  console.log("User role from token:", userRoleFromToken);
-  console.log("User role from localStorage:", userRoleFromStorage);
-  console.log("Token expiry:", tokenPayload?.exp ? new Date(tokenPayload.exp * 1000) : 'No expiry');
-  console.log("Current time:", new Date());
-  console.log("Token valid:", tokenPayload?.exp ? tokenPayload.exp * 1000 > Date.now() : 'Unknown');
-  
-  // Test user permissions
-  const testUserPermissions = async () => {
-    const token = getAuthToken();
-    if (!token) return;
-
-    try {
-      console.log('=== TESTING USER PERMISSIONS ===');
-      
-      // Test different permission endpoints
-      const permissionTests = [
-        `${API_BASE_URL}/user/permissions`,
-        `${API_BASE_URL}/auth/permissions`,
-        `${API_BASE_URL}/me/permissions`,
-        `${API_BASE_URL}/profile`
-      ];
-
-      for (const endpoint of permissionTests) {
-        try {
-          const res = await fetch(endpoint, {
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Accept": "application/json"
-            }
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            console.log(`Permissions from ${endpoint}:`, data);
-          } else {
-            console.log(`${endpoint} returned:`, res.status);
-          }
-        } catch (err) {
-          console.log(`${endpoint} failed:`, err.message);
-        }
-      }
-    } catch (err) {
-      console.log('Permission test failed:', err);
-    }
-  };
-
-  // Test permissions on component mount
-  useEffect(() => {
-    if (token) {
-      testUserPermissions();
-    }
-  }, [token]);
-
-  // Always show assign driver button for admin users
-  const canAssignDrivers = true;
-
-  // Bypass authentication temporarily to test
-  useEffect(() => {
-    console.log('Skipping authentication check for debugging');
-  }, []);
-
-  // Set up token refresh interval
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const token = getAuthToken();
-      if (token && isTokenExpired(token)) {
-        console.log('Token expiring, refreshing...');
-        await getValidToken();
-      }
-    }, 60000); // Check every minute
-
-    return () => clearInterval(interval);
   }, []);
 
   // Modal states
@@ -266,103 +98,41 @@ const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
     const fetchBuses = async () => {
       try {
         setLoading(true);
-        
-        // Use mock data if API fails
-        const mockBuses: Bus[] = [
-          {
-            id: 1,
-            name: "Bus 01",
-            code: "SCH-101",
-            route: "Route A - Downtown",
-            driver: "John Doe",
-            capacity: 25,
-            maxCapacity: 50,
-            active: true
-          },
-          {
-            id: 2,
-            name: "Bus 02",
-            code: "SCH-102",
-            route: "Route B - Suburbs",
-            driver: "Not Assigned",
-            capacity: 0,
-            maxCapacity: 45,
-            active: false
-          }
-        ];
-        
-        const token = await getValidToken();
+        const token = getAuthToken();
         
         if (!token) {
-          console.log('No token, using mock data');
-          setBuses(mockBuses);
-          setLoading(false);
+          console.log('No token found');
+          window.location.href = '/login';
           return;
         }
         
-        console.log('Fetching buses from API...');
-        
-        const response = await fetch(`${API_BASE_URL}/admin/actions/buses`, {
-          method: 'GET',
+        const response = await fetch(`${API_BASE_URL}/buses`, {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Content-Type': 'application/json'
           }
         });
         
-        console.log('Buses API response status:', response.status);
-        
         if (response.ok) {
-          const apiResponse = await response.json();
-          console.log('Buses API response:', apiResponse);
-          
-          let busesData = [];
-          if (apiResponse?.success && Array.isArray(apiResponse.data)) {
-            busesData = apiResponse.data;
-          } else if (Array.isArray(apiResponse)) {
-            busesData = apiResponse;
-          } else if (Array.isArray(apiResponse?.buses)) {
-            busesData = apiResponse.buses;
-          } else if (Array.isArray(apiResponse?.content)) {
-            busesData = apiResponse.content;
-          } else {
-            console.warn('Unexpected API response, using mock data');
-            setBuses(mockBuses);
-            return;
+          const apiResponse: ApiResponse<ApiBus[]> = await response.json();
+          if (apiResponse.success && apiResponse.data) {
+            const transformedBuses: Bus[] = apiResponse.data.map(apiBus => ({
+              id: apiBus.id,
+              name: apiBus.busName,
+              code: apiBus.busNumber,
+              route: apiBus.route,
+              driver: apiBus.assignedDriver?.fullName || "Not Assigned",
+              capacity: apiBus.capacity,
+              maxCapacity: apiBus.capacity,
+              active: apiBus.status === "ACTIVE"
+            }));
+            setBuses(transformedBuses);
           }
-          
-          const transformedBuses: Bus[] = busesData.map((apiBus: any) => ({
-            id: apiBus.id || 0,
-            name: apiBus.busName || apiBus.name || 'Unknown Bus',
-            code: apiBus.busNumber || apiBus.code || 'N/A',
-            route: apiBus.route || 'No Route',
-            driver: apiBus.assignedDriver?.full_name || apiBus.assignedDriver?.fullName || apiBus.driver || "Not Assigned",
-            capacity: Number(apiBus.currentCapacity || apiBus.capacity || 0),
-            maxCapacity: Number(apiBus.maxCapacity || apiBus.capacity || 50),
-            active: apiBus.status === "ACTIVE" || apiBus.active === true
-          }));
-          
-          setBuses(transformedBuses);
-          console.log('Buses loaded from API:', transformedBuses.length);
         } else {
-          console.log('API failed with status:', response.status, 'using mock data');
-          setBuses(mockBuses);
+          console.log('API failed, no fallback data');
         }
       } catch (error) {
-        console.error('Error fetching buses, using mock data:', error);
-        setBuses([
-          {
-            id: 1,
-            name: "Bus 01",
-            code: "SCH-101",
-            route: "Route A - Downtown",
-            driver: "John Doe",
-            capacity: 25,
-            maxCapacity: 50,
-            active: true
-          }
-        ]);
+        console.error('Error fetching buses:', error);
       } finally {
         setLoading(false);
       }
@@ -371,129 +141,66 @@ const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
     fetchBuses();
   }, []);
   // --- Fetch drivers ---
-  useEffect(() => {
-    const fetchDrivers = async () => {
-      try {
-        const token = getAuthToken();
-        if (!token) {
-          console.log('No token found for drivers');
-          return;
-        }
-
-        console.log('Fetching drivers...');
-        const res = await fetch(`${API_BASE_URL}/admin/actions/drivers`, {
-          method: 'GET',
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-        });
-
-        console.log('Drivers API response status:', res.status);
-        
-        if (res.ok) {
-          const data = await res.json();
-          console.log('Drivers API response:', data);
-          
-          let driversData = [];
-          if (data?.success && Array.isArray(data.data)) {
-            driversData = data.data;
-          } else if (Array.isArray(data)) {
-            driversData = data;
-          } else if (Array.isArray(data?.drivers)) {
-            driversData = data.drivers;
-          } else {
-            console.warn('Unexpected drivers API response structure:', data);
-            return;
-          }
-          
-          const driverList = driversData.map((driver: any) => ({
-            id: driver.id || 0,
-            fullName: driver.name || driver.full_name || driver.fullName || 'Unknown Driver'
-          }));
-          
-          setDrivers(driverList);
-          console.log('Drivers loaded successfully:', driverList.length);
-        } else {
-          if (res.status === 403 || res.status === 401) {
-            console.error('Authentication error for drivers API');
-            localStorage.removeItem('authToken');
-            window.location.href = '/login';
-          } else {
-            const errorText = await res.text();
-            console.error('Failed to fetch drivers:', res.status, errorText);
-          }
-        }
-
-      } catch (err) {
-        console.error("Error fetching drivers:", err);
+useEffect(() => {
+  const fetchDrivers = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.log('No token found for drivers');
+        return;
       }
-    };
 
-    fetchDrivers();
-  }, []);
+      const res = await fetch(`${API_BASE_URL}/drivers`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+      });
 
-  // Remove localStorage dependency for driver assignments
-  // useEffect(() => {
-  //   const assignments = JSON.parse(localStorage.getItem('driverAssignments') || '{}');
-  //   if (Object.keys(assignments).length > 0) {
-  //     setBuses(prev =>
-  //       prev.map(bus => {
-  //         const assignment = assignments[bus.id];
-  //         return assignment ? { ...bus, driver: assignment.driverName } : bus;
-  //       })
-  //     );
-  //   }
-  // }, [buses.length]);
+      if (!res.ok) {
+        console.error('Failed to fetch drivers:', res.status);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success && data.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const driverList = data.data.map((driver: any) => ({
+          id: driver.id,
+          fullName: driver.full_name
+        }));
+        setDrivers(driverList);
+      }
+
+    } catch (err) {
+      console.error("Error fetching drivers:", err);
+    }
+  };
+
+  fetchDrivers();
+}, []);
 
 
   useEffect(() => {
-    const fetchSchools = async () => {
+    (async () => {
       try {
         const token = getAuthToken();
-        if (!token) {
+        const res = await fetch(`${API_BASE_URL}/schools`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (!res.ok) {
           setSchools([{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
           return;
         }
-        
-        const res = await fetch(`${API_BASE_URL}/schools`, {
-          method: 'GET',
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          console.log('Schools API response:', data);
-          
-          let schoolsData = [];
-          if (data?.success && Array.isArray(data.data)) {
-            schoolsData = data.data;
-          } else if (Array.isArray(data)) {
-            schoolsData = data;
-          } else if (Array.isArray(data?.schools)) {
-            schoolsData = data.schools;
-          } else if (Array.isArray(data?.content)) {
-            schoolsData = data.content;
-          }
-          
-          const validSchools = schoolsData.filter(school => school?.id && school?.name);
-          setSchools(validSchools.length > 0 ? validSchools : [{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
-        } else {
-          console.warn('Schools API failed:', res.status);
-          setSchools([{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
-        }
+        const data = await res.json();
+        console.log('Schools API response:', data);
+        const schoolsArray = data?.content || data?.data || data?.schools || data || [];
+        setSchools(Array.isArray(schoolsArray) ? schoolsArray : [{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
       } catch (err) {
         console.error("Failed to load schools:", err);
         setSchools([{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
       }
-    };
-    
-    fetchSchools();
+    })();
   }, []);
   
   
@@ -522,62 +229,39 @@ const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
  const confirmChangeStatus = async () => {
   if (!selectedBus) return;
 
-  const newStatus = !selectedBus.active;
+  const newStatus = !selectedBus.active; // the new status we want
 
   try {
     const token = getAuthToken();
     if (!token) {
-      alert("Authentication required. Please login again.");
-      window.location.href = '/login';
+      alert("No auth token found. Please login again.");
       return;
     }
 
-    const payload = { status: newStatus ? "ACTIVE" : "INACTIVE" };
-    console.log('Updating bus status:', { busId: selectedBus.id, payload });
-
-    const res = await fetch(`${API_BASE_URL}/admin/actions/buses/${selectedBus.id}`, {
-      method: "PATCH",
+    const res = await fetch(`${API_BASE_URL}/buses/${selectedBus.id}/status`, {
+      method: "PATCH", // or PUT depending on the backend
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json"
+        "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ status: newStatus ? "ACTIVE" : "INACTIVE" })
     });
 
-    console.log('Status update response:', res.status);
-
-    if (res.ok) {
-      const response = await res.json();
-      console.log('Status update success:', response);
-      
-      // Update UI only if API succeeded
-      setBuses((prev: Bus[]) =>
-        prev.map((b: Bus) => b.id === selectedBus.id ? { ...b, active: newStatus } : b)
-      );
-      
-      alert(`✅ Bus status updated to ${newStatus ? 'Active' : 'Inactive'}`);
-      closeStatusModal();
-    } else {
+    if (!res.ok) {
       const errorText = await res.text();
-      console.error('Status update failed:', res.status, errorText);
-      
-      if (res.status === 403) {
-        alert('❌ Permission denied. You may not have permission to change bus status.');
-      } else if (res.status === 401) {
-        localStorage.removeItem('authToken');
-        alert('❌ Session expired. Please login again.');
-        window.location.href = '/login';
-      } else if (res.status === 404) {
-        alert('❌ Bus not found. It may have been deleted.');
-      } else {
-        alert(`❌ Failed to update status: ${res.status} - ${errorText || 'Unknown error'}`);
-      }
+      alert("Failed to update bus status: " + errorText);
+      return;
     }
+
+    // Update UI only if API succeeded
+    setBuses((prev: Bus[]) =>
+      prev.map((b: Bus) => b.id === selectedBus.id ? { ...b, active: newStatus } : b)
+    );
+    closeStatusModal();
 
   } catch (err) {
     console.error("Error updating bus status:", err);
-    alert('❌ Network error. Please check your connection and try again.');
+    alert("Error updating bus status. See console for details.");
   }
 };
 
@@ -598,114 +282,108 @@ const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
   const handleAddBus = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !route || capacity < 0 || maxCapacity <= 0) {
-      alert('Please fill in all required fields with valid values.');
-      return;
-    }
-
+    // Generate truly unique bus number to avoid duplicates
     const timestamp = Date.now();
     const uniqueBusNumber = code || `SCH-${timestamp.toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
     
     const payload = {
-      busName: name.trim(),
-      busNumber: uniqueBusNumber.trim(),
-      capacity: Number(maxCapacity),
-      currentCapacity: Number(capacity),
-      route: route.trim(),
+      busName: name,
+      busNumber: uniqueBusNumber,
+      capacity,
+      route,
       status: active ? "ACTIVE" : "INACTIVE"
     };
 
-    console.log("Creating new bus with payload:", payload);
+    console.log("Posting new bus payload:", payload);
+    console.log("Selected school ID:", selectedSchool);
 
     try {
       const token = getAuthToken();
-      if (!token) {
-        alert("Authentication required. Please login again.");
-        window.location.href = '/login';
-        return;
-      }
+      console.log("Auth token:", token ? `${token.substring(0, 20)}...` : "No token");
       
-      const url = selectedSchool ? `${API_BASE_URL}/admin/actions/buses?schoolId=${selectedSchool}` : `${API_BASE_URL}/admin/actions/buses`;
+      const url = selectedSchool ? `${API_BASE_URL}/buses?schoolId=${selectedSchool}` : `${API_BASE_URL}/buses`;
       console.log("Request URL:", url);
+      console.log("Request headers:", {
+        "Content-Type": "application/json",
+        "Authorization": token ? `Bearer ${token.substring(0, 20)}...` : "No auth"
+      });
       
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/json"
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(payload),
       });
 
-      console.log("Add bus response status:", res.status);
+      console.log("Network response status:", res.status);
+      console.log("Network response statusText:", res.statusText);
+      console.log("Network response headers:", Object.fromEntries(res.headers.entries()));
+      let apiResponse: ApiResponse<ApiBus> | null = null;
       
       if (res.ok) {
-        const apiResponse = await res.json();
-        console.log("Add bus response:", apiResponse);
-        
-        // Extract the new bus data from response
-        let newBusData = null;
-        if (apiResponse?.success && apiResponse.data) {
-          newBusData = apiResponse.data;
-        } else if (apiResponse?.id) {
-          newBusData = apiResponse;
-        }
-        
-        if (newBusData) {
-          const newBus: Bus = {
-            id: newBusData.id,
-            name: newBusData.busName || name,
-            code: newBusData.busNumber || uniqueBusNumber,
-            route: newBusData.route || route,
-            driver: newBusData.assignedDriver?.full_name || "Not Assigned",
-            capacity: Number(newBusData.currentCapacity || capacity),
-            maxCapacity: Number(newBusData.capacity || maxCapacity),
-            active: newBusData.status === "ACTIVE"
-          };
-          
-          setBuses((prev: Bus[]) => [...prev, newBus]);
-          alert('✅ Bus added successfully!');
-        } else {
-          console.warn('Unexpected response structure:', apiResponse);
-          alert('Bus may have been created but response format was unexpected.');
+        try {
+          apiResponse = await res.json();
+          console.log("Response JSON:", apiResponse);
+        } catch (jsonError) {
+          console.error("Failed to parse JSON:", jsonError);
         }
       } else {
-        const errorText = await res.text();
-        console.error('Add bus failed:', res.status, errorText);
+        console.log(`API error: ${res.status} ${res.statusText}`);
         
+        // Handle 403 specifically - token might be expired
         if (res.status === 403) {
-          alert('❌ Permission denied. You may not have permission to add buses.');
-        } else if (res.status === 401) {
+          console.log('403 Forbidden - Token may be expired or insufficient permissions');
           localStorage.removeItem('authToken');
-          alert('❌ Session expired. Please login again.');
+          alert('Session expired or insufficient permissions. Please login again.');
           window.location.href = '/login';
-        } else if (res.status === 400) {
-          try {
-            const errorData = JSON.parse(errorText);
-            if (errorData.message?.includes('duplicate') || errorData.message?.includes('exists')) {
-              alert('❌ Bus number already exists. Please use a different bus number.');
-            } else {
-              alert(`❌ Invalid data: ${errorData.message || 'Please check your input'}`);
-            }
-          } catch {
-            alert('❌ Invalid data provided. Please check your input.');
-          }
-        } else if (res.status === 500) {
-          alert('❌ Server error. Please try again later.');
-        } else {
-          alert(`❌ Failed to add bus: ${res.status} - ${errorText || 'Unknown error'}`);
+          return;
         }
-        return;
+        
+        // Handle 400 - Bad Request
+        if (res.status === 400) {
+          try {
+            const errorResponse = await res.text();
+            console.log('400 Bad Request - Server response:', errorResponse);
+            const errorData = JSON.parse(errorResponse);
+            if (errorData.message && errorData.message.includes('duplicate key')) {
+              alert('Bus number already exists. Please use a different bus number.');
+            } else {
+              alert(`Bad Request: ${errorData.message || 'Invalid data sent to server'}`);
+            }
+          } catch (e) {
+            console.log('400 Bad Request - Could not read error response');
+            alert('Bad Request: Invalid data sent to server');
+          }
+          return;
+        }
+      }
+
+      if (res.ok && apiResponse?.success && apiResponse.data) {
+        const newBus: Bus = {
+          id: apiResponse.data.id,
+          name: apiResponse.data.busName,
+          code: apiResponse.data.busNumber,
+          route: apiResponse.data.route,
+          driver: apiResponse.data.assignedDriver?.fullName || "Not Assigned",
+          capacity: apiResponse.data.capacity,
+          maxCapacity: apiResponse.data.capacity,
+          active: apiResponse.data.status === "ACTIVE"
+        };
+        setBuses((prev: Bus[]) => [...prev, newBus]);
+        alert('Bus added successfully!');
+      } else {
+        setBuses((prev: Bus[]) => [...prev, { id: Date.now(), name, code: uniqueBusNumber, route, driver, capacity, maxCapacity, active }]);
       }
     } catch (err) {
-      console.error("Error adding bus:", err);
-      alert('❌ Network error. Please check your connection and try again.');
-      return;
+      console.error("POST /api/buses failed:", err);
+      setBuses((prev: Bus[]) => [...prev, { id: Date.now() + Math.random(), name, code: uniqueBusNumber, route, driver, capacity, maxCapacity, active }]);
     }
 
-    // Reset form and close modal
     setShowAddForm(false);
+
+    // Reset form
     setName("");
     setCode("");
     setRoute("");
@@ -733,9 +411,9 @@ const handleAssignDriverSubmit = async () => {
   }
 
   try {
-    const token = await getValidToken();
+    const token = getAuthToken();
     if (!token) {
-      alert("Authentication required. Please login again.");
+      alert("No auth token found. Please login again.");
       window.location.href = '/login';
       return;
     }
@@ -743,54 +421,70 @@ const handleAssignDriverSubmit = async () => {
     const busId = Number(selectedBusForDriver);
     const driverId = Number(selectedDriverForBus);
 
-    console.log('=== DRIVER ASSIGNMENT DEBUG ===');
-    console.log('Bus ID:', busId);
-    console.log('Driver ID:', driverId);
-    console.log('Token exists:', !!token);
+    // Check if bus is already assigned
+    const selectedBusData = buses.find(bus => bus.id === busId);
+    if (selectedBusData && selectedBusData.driver && selectedBusData.driver !== "Not Assigned") {
+      const confirmReassign = confirm(`Bus ${selectedBusData.name} is already assigned to ${selectedBusData.driver}. Do you want to reassign it?`);
+      if (!confirmReassign) {
+        return;
+      }
+    }
+
+    console.log('Assigning driver:', { busId, driverId });
 
     const res = await fetch(`${API_BASE_URL}/admin/assign-bus-to-driver`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
-        "Accept": "application/json"
       },
-      body: JSON.stringify({ driverId: driverId, busId: busId }),
+      body: JSON.stringify({ driverId, busId }),
     });
 
-    console.log('Driver assignment response status:', res.status);
-    
+    console.log(`Response status: ${res.status}`);
+
     if (res.ok) {
       const data = await res.json();
-      console.log('Assignment successful:', data);
+      console.log("Driver assigned successfully:", data);
       
       const assignedDriver = drivers.find(d => d.id === driverId);
+      const selectedBusData = buses.find(b => b.id === busId);
+      
       setBuses(prev =>
         prev.map(bus =>
           bus.id === busId ? { ...bus, driver: assignedDriver?.fullName || "Assigned" } : bus
         )
       );
       
-      alert(`✅ Driver ${assignedDriver?.fullName || 'Unknown'} assigned successfully!`);
+      alert(`Driver ${assignedDriver?.fullName || 'Unknown'} has been assigned to ${selectedBusData?.name || 'Bus'} successfully!`);
       closeAssignDriverModal();
     } else {
       const errorText = await res.text();
-      console.error('Assignment failed:', res.status, errorText);
+      console.error('Assignment failed:', errorText);
       
-      if (res.status === 403) {
-        alert('❌ Permission Denied: You do not have permission to assign drivers. Contact your system administrator.');
-      } else if (res.status === 401) {
-        localStorage.removeItem('authToken');
-        alert('❌ Session expired. Please login again.');
-        window.location.href = '/login';
-      } else {
-        alert(`❌ Assignment Failed: ${res.status} - ${errorText || 'Unknown error'}`);
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.message?.includes('duplicate key') || errorData.message?.includes('already exists')) {
+          alert('This bus is already assigned to another driver. Please unassign the current driver first or choose a different bus.');
+        } else {
+          alert(`Assignment failed: ${errorData.message || 'Unknown error'}`);
+        }
+      } catch {
+        if (res.status === 403) {
+          alert('Permission denied. You may not have admin privileges to assign drivers.');
+        } else if (res.status === 401) {
+          localStorage.removeItem('authToken');
+          alert('Session expired. Please login again.');
+          window.location.href = '/login';
+        } else {
+          alert(`Failed to assign driver: ${res.status} - ${errorText}`);
+        }
       }
     }
 
   } catch (err) {
     console.error('Error assigning driver:', err);
-    alert('❌ Network Error: Unable to connect to server. Please check your connection and try again.');
+    alert('Network error. Please try again.');
   }
 };
 
@@ -840,15 +534,13 @@ const handleAssignDriverSubmit = async () => {
           </div>
 
           {/* Assign Driver Button */}
-          {canAssignDrivers && (
-            <button 
-              onClick={openAssignDriverModal}
-              className="flex items-center gap-2 px-4 py-2 justify-center mb-2 bg-purple-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
-            >
-              <UserPlus size={16} />
-              Assign driver
-            </button>
-          )}
+          <button 
+            onClick={openAssignDriverModal}
+            className="flex items-center gap-2 px-4 py-2 justify-center mb-2 bg-purple-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
+          >
+            <UserPlus size={16} />
+            Assign driver
+          </button>
 
           {/* Add Bus Button */}
           <button 
@@ -1085,7 +777,9 @@ const handleAssignDriverSubmit = async () => {
                 >
                   <option value="">Select a bus</option>
                   {buses.map(bus => (
-                    <option key={bus.id} value={bus.id} className="hover:bg-blue-400">{bus.name}</option>
+                    <option key={bus.id} value={bus.id} className="hover:bg-blue-400">
+                      {bus.name} {bus.driver !== "Not Assigned" ? `(Currently: ${bus.driver})` : "(Available)"}
+                    </option>
                   ))}
                 </select>
               </div>
