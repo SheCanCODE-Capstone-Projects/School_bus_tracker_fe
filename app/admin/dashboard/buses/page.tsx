@@ -10,7 +10,7 @@ import { LiaEyeSolid } from "react-icons/lia";
 import { CiPower } from "react-icons/ci";
 import Link from "next/link";
 import EditBusModal from "@/components/EditBusModal";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken, getUserRole, redirectByRole } from "@/lib/auth";
 
 // Custom Dropdown Component
 function CustomDropdown({ schools, selectedSchool, setSelectedSchool }: {
@@ -98,10 +98,24 @@ const BusesPage = () => {
   // Store drivers fetched from backend
 const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
 
-  // Authentication check
+  // Authentication and role check
   useEffect(() => {
     const token = getAuthToken();
+    const role = getUserRole();
+    
     if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+    
+    // Redirect based on role if not admin
+    if (role && role !== 'admin') {
+      redirectByRole();
+      return;
+    }
+    
+    // If no role found, redirect to login
+    if (!role) {
       window.location.href = '/login';
       return;
     }
@@ -119,6 +133,8 @@ const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
   const [selectedBusForDriver, setSelectedBusForDriver] = useState<number | "">("");
   const [startDate, setStartDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [driverOpen, setDriverOpen] = useState(false);
+  const [busOpen, setBusOpen] = useState(false);
 
   // Add Bus form states
   const [name, setName] = useState("");
@@ -781,9 +797,9 @@ const handleAssignDriverSubmit = async () => {
       {showAssignDriverModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={closeAssignDriverModal}></div>
-       <div className="relative bg-white rounded-4xl shadow-2xl max-w-[400px] w-full h-[90vh] p-6">
+      <div className="relative bg-white rounded-4xl shadow-2xl max-w-[400px] w-full p-6 max-h-[80vh] overflow-y-auto">
 
-
+       
             <div className="flex items-center gap-2 mb-4">
               <UserPlus size={20} className="text-purple-600" />
               <h3 className="text-lg mt-4 mb-4 font-bold text-gray-700">Assign Driver to Bus</h3>
@@ -791,61 +807,98 @@ const handleAssignDriverSubmit = async () => {
 
             <div className="space-y-8">
               {/* Select Driver */}
-              <div className="mb-8">
-                <label className="block text-xs text-black mb-2">Select Driver</label>
-                <select
-                  value={selectedDriverForBus}
-                  onChange={(e) => setSelectedDriverForBus(e.target.value ? Number(e.target.value) : "")}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                >
-                  <option value="">Choose a driver</option>
-                  {drivers
-                    .filter(driver =>
-                      !buses.some(bus =>
-                        bus.driver &&
-                        bus.driver !== "Not Assigned" &&
-                        bus.driver.trim() === driver.fullName.trim()
-                      )
-                    )
-                    .map(driver => (
-                      <option key={driver.id} value={driver.id}>
-                        {driver.fullName}
-                      </option>
-                    ))
-                  }
-                </select>
-                <p className="text-xs mt-2 text-gray-700">Only showing unassigned drivers</p>
-              </div>
+           <div className="mb-8 relative">
+  <label className="block text-xs text-black mb-2">Select Driver</label>
+  <button
+    type="button"
+    onClick={() => setDriverOpen(!driverOpen)}
+    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm
+               bg-white text-gray-400 text-left
+               focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+  >
+    {selectedDriverForBus
+      ? drivers.find(d => d.id === selectedDriverForBus)?.fullName
+      : "Choose a driver"}
+  </button>
 
-              {/* Assign to Bus */}
-              <div className="mb-12">
-                <label className="block text-xs text-black mb-2">Assign to Bus</label>
-                <select
-                  value={selectedBusForDriver}
-                  onChange={(e) => setSelectedBusForDriver(e.target.value ? Number(e.target.value) : "")}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                >
-                  <option value="">Select a bus</option>
-                  {buses.map(bus => (
-                    <option key={bus.id} value={bus.id}>
-                      {bus.name} {bus.driver !== "Not Assigned" ? `(Currently: ${bus.driver})` : "(Available)"}
-                    </option>
-                  ))}
-                </select>
-              </div>
+  {driverOpen && (
+    <ul className="absolute mt-2 w-full bg-purple-500 rounded-lg shadow-lg z-10 border border-purple-500">
+      {drivers
+        .filter(driver =>
+          !buses.some(bus =>
+            bus.driver &&
+            bus.driver !== "Not Assigned" &&
+            bus.driver.trim() === driver.fullName.trim()
+          )
+        )
+        .map(driver => (
+          <li
+            key={driver.id}
+            onClick={() => {
+              setSelectedDriverForBus(driver.id);
+              setDriverOpen(false);
+            }}
+            className="px-3 py-2 cursor-pointer text-white hover:bg-purple-600 focus:bg-purple-600"
+          >
+            {driver.fullName}
+          </li>
+        ))}
+    </ul>
+  )}
+  <p className="text-xs mt-2 text-gray-700">Only showing unassigned drivers</p>
+</div>
+
+
+    <div className={`relative transition-all duration-300 ${busOpen ? "mb-8" : "mb-6"}`}>
+
+  <label className="block text-xs text-black mb-2">Assign to Bus</label>
+  <button
+    type="button"
+    onClick={() => setBusOpen(true)}
+    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm
+               bg-white text-gray-400 text-left 
+               focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+  >
+    {selectedBusForDriver
+      ? buses.find(b => b.id === selectedBusForDriver)?.name
+      : "Select a bus"}
+  </button>
+
+{busOpen && buses.length > 0 && (
+  <ul className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-300 text-sm">
+
+
+      {buses.map(bus => (
+        <li
+          key={bus.id}
+          onClick={() => {
+            setSelectedBusForDriver(bus.id);
+            setBusOpen(false);
+          }}
+          className="px-3 py-1 cursor-pointer text-gray-600 hover:bg-purple-400"
+        >
+          {bus.name}{" "}
+          {bus.driver !== "Not Assigned"
+            ? `(Currently: ${bus.driver})`
+            : "(Available)"}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
 
               {/* Start Date */}
               <div>
-                <label className="block mt-2 mb-2  text-xs text-black">Start Date</label>
+                <label className="block text-xs text-black mb-2">Start Date</label>
                 <input 
                   type="date" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)} 
-                  className="w-full mt-2 mb-2  text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
 
-              {/* Notes */}
+       {/* Notes */}
               <div>
                 <label className="block text-xs mt-2 mb-2  text-black">Notes (Optional)</label>
                 <textarea
