@@ -583,12 +583,12 @@ const handleAssignDriverSubmit = async () => {
                  <select
                  value={selectedSchool}
                  onChange={(e) => setSelectedSchool(e.target.value ? Number(e.target.value) : "")}
-                 className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-300 mb-4 text-gray-700 [&>option:hover]:bg-blue-400"
+                 className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-300 mb-4 text-gray-700 [&>option]:bg-white [&>option:hover]:bg-blue-400 [&>option:checked]:bg-blue-400"
                  required
                  >
                 <option value="" disabled hidden>Choose a school</option>
                 {Array.isArray(schools) ? schools.map(s => (
-                <option key={s.id} value={s.id} className="hover:bg-blue-400">{s.name}</option>
+                <option key={s.id} value={s.id}>{s.name}</option>
                 )) : null}
                </select>
                 </div>
@@ -749,7 +749,7 @@ const handleAssignDriverSubmit = async () => {
                 <select
                   value={selectedDriverForBus}
                   onChange={(e) => setSelectedDriverForBus(Number(e.target.value))}
-                  className="w-full border text-sm border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 [&>option:hover]:bg-blue-400"
+                  className="w-full border text-sm border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="">Choose a driver</option>
                 {drivers
@@ -759,7 +759,7 @@ const handleAssignDriverSubmit = async () => {
                 )
                 )
                 .map(driver => (
-                <option key={driver.id} value={driver.id} className="hover:bg-blue-400">{driver.fullName}</option>
+                <option key={driver.id} value={driver.id}>{driver.fullName}</option>
                 ))}
 
 
@@ -773,11 +773,11 @@ const handleAssignDriverSubmit = async () => {
                 <select
                   value={selectedBusForDriver}
                   onChange={(e) => setSelectedBusForDriver(Number(e.target.value))}
-                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 [&>option:hover]:bg-blue-400"
+                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="">Select a bus</option>
                   {buses.map(bus => (
-                    <option key={bus.id} value={bus.id} className="hover:bg-blue-400">
+                    <option key={bus.id} value={bus.id}>
                       {bus.name} {bus.driver !== "Not Assigned" ? `(Currently: ${bus.driver})` : "(Available)"}
                     </option>
                   ))}

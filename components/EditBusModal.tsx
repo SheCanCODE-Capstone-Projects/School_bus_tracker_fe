@@ -19,6 +19,11 @@ interface School {
   schoolName: string;
 }
 
+interface Driver {
+  id: number;
+  fullName: string;
+}
+
 interface EditBusModalProps {
   bus: Bus;
   onClose: () => void;
@@ -29,25 +34,27 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
   // Use state to manage the form data
   const [formData, setFormData] = useState(bus);
   const [schools, setSchools] = useState<School[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | "">("");
 
   const API_BASE_URL = 'https://school-bus-tracker-be.onrender.com/api';
 
-  // Fetch schools on component mount
+  // Fetch schools and drivers on component mount
   useEffect(() => {
-    const fetchSchools = async () => {
+    const fetchData = async () => {
       setSchoolsLoading(true);
       try {
         const token = getAuthToken();
         if (!token) {
           setSchools([]);
+          setDrivers([]);
           return;
         }
 
-        const res = await fetch(`${API_BASE_URL}/schools`, {
+        // Fetch schools
+        const schoolsRes = await fetch(`${API_BASE_URL}/schools`, {
           method: 'GET',
-          credentials: 'include',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -55,37 +62,63 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
           },
         });
 
-        if (!res.ok) {
-          console.warn(`Schools API error: ${res.status}`);
-          setSchools([]);
-          return;
+        if (schoolsRes.ok) {
+          const schoolsData = await schoolsRes.json();
+          const schoolsList = Array.isArray(schoolsData) 
+            ? schoolsData 
+            : schoolsData?.data && Array.isArray(schoolsData.data)
+            ? schoolsData.data 
+            : schoolsData?.content && Array.isArray(schoolsData.content)
+            ? schoolsData.content 
+            : [];
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const formattedSchools = schoolsList.map((school: any) => ({
+            id: school.id || school.schoolId || Date.now(),
+            schoolName: school.schoolName || school.name || 'Unknown School'
+          }));
+
+          setSchools(formattedSchools);
         }
 
-        const data = await res.json();
-        const schoolsList = Array.isArray(data) 
-          ? data 
-          : data?.data && Array.isArray(data.data)
-          ? data.data 
-          : data?.content && Array.isArray(data.content)
-          ? data.content 
-          : [];
+        // Fetch drivers
+        const driversRes = await fetch(`${API_BASE_URL}/drivers`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+        });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const formattedSchools = schoolsList.map((school: any) => ({
-          id: school.id || school.schoolId || Date.now(),
-          schoolName: school.schoolName || school.name || 'Unknown School'
-        }));
+        if (driversRes.ok) {
+          const driversData = await driversRes.json();
+          let driversList = [];
+          if (driversData?.success && Array.isArray(driversData.data)) {
+            driversList = driversData.data;
+          } else if (Array.isArray(driversData)) {
+            driversList = driversData;
+          }
 
-        setSchools(formattedSchools);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const formattedDrivers = driversList.map((driver: any) => ({
+            id: driver.id,
+            fullName: driver.full_name || driver.fullName || 'Unknown Driver'
+          }));
+
+          setDrivers(formattedDrivers);
+        }
+
       } catch (error) {
-        console.error("Error fetching schools:", error);
+        console.error("Error fetching data:", error);
         setSchools([]);
+        setDrivers([]);
       } finally {
         setSchoolsLoading(false);
       }
     };
 
-    fetchSchools();
+    fetchData();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -236,13 +269,13 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
               value={formData.driver}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-              required
             >
               <option value="">No Assignment</option>
-              <option value="Michael Johnson">Michael Johnson (#001)</option>
-              <option value="Sarah Williams">Sarah Williams (#002)</option>
-              <option value="John Doe">John Doe (#003)</option>
-              <option value="Alice Brown">Alice Brown (#004)</option>
+              {drivers.map((driver) => (
+                <option key={driver.id} value={driver.fullName}>
+                  {driver.fullName}
+                </option>
+              ))}
             </select>
           </div>
 
