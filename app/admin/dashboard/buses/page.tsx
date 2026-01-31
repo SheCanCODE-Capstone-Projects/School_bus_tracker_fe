@@ -12,6 +12,45 @@ import Link from "next/link";
 import EditBusModal from "@/components/EditBusModal";
 import { getAuthToken } from "@/lib/auth";
 
+// Custom Dropdown Component
+function CustomDropdown({ schools, selectedSchool, setSelectedSchool }: {
+  schools: School[];
+  selectedSchool: number | "";
+  setSelectedSchool: (value: number | "") => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative pb-8">
+      <label className="block text-xs text-black mb-2">School</label>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full bg-white text-gray-400 text-left  px-3 py-2  rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+      >
+        {selectedSchool ? schools.find(s => s.id === selectedSchool)?.name : "Choose a school"}
+      </button>
+
+      {open && (
+        <ul className="absolute mt-2 w-full bg-blue-400  rounded-lg shadow-lg z-10">
+          {schools.map((s) => (
+            <li
+              key={s.id}
+              onClick={() => {
+                setSelectedSchool(s.id);
+                setOpen(false);
+              }}
+              className="px-3 py-2 cursor-pointer text-white hover:bg-blue-400"
+            >
+              {s.name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // API-based interfaces
 interface Driver {
   fullName: string;
@@ -569,29 +608,37 @@ const handleAssignDriverSubmit = async () => {
               </div>
 
               <form onSubmit={handleAddBus} className="space-y-4">
-                <div>
-                  <label className="block text-xs text-black mb-1">Bus Name</label>
-                  <input type="text" placeholder="Bus 06" value={name} onChange={e => setName(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
-                </div>
-                <div>
-                  <label className="block text-xs text-black mb-1">Bus Number</label>
-                  <input type="text" placeholder="SCH-106" value={code} onChange={e => setCode(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
-                </div>
+               <div>
+  <label className="block text-xs text-black mb-1">Bus Name</label>
+  <input
+    type="text"
+    placeholder="Bus 06"
+    value={name}
+    onChange={e => setName(e.target.value)}
+    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 
+               focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+    required
+  />
+</div>
 
-                <div>
-                  <label className="block text-xs text-black mb-2">School</label>
-                 <select
-                 value={selectedSchool}
-                 onChange={(e) => setSelectedSchool(e.target.value ? Number(e.target.value) : "")}
-                 className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-300 mb-4 text-gray-700 [&>option]:bg-white [&>option:hover]:bg-blue-400 [&>option:checked]:bg-blue-400"
-                 required
-                 >
-                <option value="" disabled hidden>Choose a school</option>
-                {Array.isArray(schools) ? schools.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-                )) : null}
-               </select>
-                </div>
+<div>
+  <label className="block text-xs text-black mb-1">Bus Number</label>
+  <input
+    type="text"
+    placeholder="SCH-106"
+    value={code}
+    onChange={e => setCode(e.target.value)}
+    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 
+               focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+    required
+  />
+</div>
+
+                <CustomDropdown
+                  schools={schools}
+                  selectedSchool={selectedSchool}
+                  setSelectedSchool={setSelectedSchool}
+                />
 
                 <div>
                   <label className="block text-xs text-black mb-1">Max Capacity</label>
@@ -606,12 +653,12 @@ const handleAssignDriverSubmit = async () => {
                       return;
                     }
                     setCapacity(value);
-                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"/>
                 </div>
 
                 <div>
                   <label className="block text-xs text-black mb-1">Route</label>
-                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"/>
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -742,38 +789,41 @@ const handleAssignDriverSubmit = async () => {
               <h3 className="text-lg mt-4 mb-4 font-bold text-gray-700">Assign Driver to Bus</h3>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-8">
               {/* Select Driver */}
-              <div>
-                <label className="block text-xs mt-2 mb-2  text-black">Select Driver</label>
+              <div className="mb-8">
+                <label className="block text-xs text-black mb-2">Select Driver</label>
                 <select
                   value={selectedDriverForBus}
-                  onChange={(e) => setSelectedDriverForBus(Number(e.target.value))}
-                  className="w-full border text-sm border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  onChange={(e) => setSelectedDriverForBus(e.target.value ? Number(e.target.value) : "")}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="">Choose a driver</option>
-                {drivers
-                .filter(driver => 
-                !buses.some(bus => 
-                bus.driver && bus.driver !== "Not Assigned" && bus.driver.trim() === driver.fullName.trim()
-                )
-                )
-                .map(driver => (
-                <option key={driver.id} value={driver.id}>{driver.fullName}</option>
-                ))}
-
-
+                  {drivers
+                    .filter(driver =>
+                      !buses.some(bus =>
+                        bus.driver &&
+                        bus.driver !== "Not Assigned" &&
+                        bus.driver.trim() === driver.fullName.trim()
+                      )
+                    )
+                    .map(driver => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.fullName}
+                      </option>
+                    ))
+                  }
                 </select>
+                <p className="text-xs mt-2 text-gray-700">Only showing unassigned drivers</p>
               </div>
-              <p className="text-xs mb-4 mt-2  text-gray-700">Only showing unassigned drivers</p>
 
               {/* Assign to Bus */}
-              <div>
-                <label className="block text-xs text-black  mb-1">Assign to Bus</label>
+              <div className="mb-12">
+                <label className="block text-xs text-black mb-2">Assign to Bus</label>
                 <select
                   value={selectedBusForDriver}
-                  onChange={(e) => setSelectedBusForDriver(Number(e.target.value))}
-                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  onChange={(e) => setSelectedBusForDriver(e.target.value ? Number(e.target.value) : "")}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="">Select a bus</option>
                   {buses.map(bus => (
@@ -791,7 +841,7 @@ const handleAssignDriverSubmit = async () => {
                   type="date" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)} 
-                  className="w-full mt-2 mb-2  text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full mt-2 mb-2  text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
 
@@ -822,7 +872,6 @@ const handleAssignDriverSubmit = async () => {
                   Cancel
                 </button>
               </div>
-
             </div>
           </div>
         </div>
