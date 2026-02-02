@@ -26,7 +26,7 @@ function CustomDropdown({ schools, selectedSchool, setSelectedSchool }: {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full bg-white text-gray-400 text-left  px-3 py-2  rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+        className="w-full bg-white text-gray-400 text-left  px-3 py-2  rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"
       >
         {selectedSchool ? schools.find(s => s.id === selectedSchool)?.name : "Choose a school"}
       </button>
@@ -632,7 +632,7 @@ const handleAssignDriverSubmit = async () => {
     value={name}
     onChange={e => setName(e.target.value)}
     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 
-               focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+               focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"
     required
   />
 </div>
@@ -645,7 +645,7 @@ const handleAssignDriverSubmit = async () => {
     value={code}
     onChange={e => setCode(e.target.value)}
     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 
-               focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+               focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"
     required
   />
 </div>
@@ -658,7 +658,7 @@ const handleAssignDriverSubmit = async () => {
 
                 <div>
                   <label className="block text-xs text-black mb-1">Max Capacity</label>
-                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-1 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Current Filled</label>
@@ -669,12 +669,12 @@ const handleAssignDriverSubmit = async () => {
                       return;
                     }
                     setCapacity(value);
-                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"/>
+                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"/>
                 </div>
 
                 <div>
                   <label className="block text-xs text-black mb-1">Route</label>
-                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"/>
+                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"/>
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -814,7 +814,7 @@ const handleAssignDriverSubmit = async () => {
     onClick={() => setDriverOpen(!driverOpen)}
     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm
                bg-white text-gray-400 text-left
-               focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+               focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
   >
     {selectedDriverForBus
       ? drivers.find(d => d.id === selectedDriverForBus)?.fullName
@@ -822,7 +822,8 @@ const handleAssignDriverSubmit = async () => {
   </button>
 
   {driverOpen && (
-    <ul className="absolute mt-2 w-full bg-purple-500 rounded-lg shadow-lg z-10 border border-purple-500">
+   <ul className="mt-2 w-full bg-purple-500 rounded-lg shadow-lg border border-purple-500">
+
       {drivers
         .filter(driver =>
           !buses.some(bus =>
@@ -857,7 +858,7 @@ const handleAssignDriverSubmit = async () => {
     onClick={() => setBusOpen(true)}
     className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm
                bg-white text-gray-400 text-left 
-               focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+               focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
   >
     {selectedBusForDriver
       ? buses.find(b => b.id === selectedBusForDriver)?.name
@@ -875,7 +876,7 @@ const handleAssignDriverSubmit = async () => {
             setSelectedBusForDriver(bus.id);
             setBusOpen(false);
           }}
-          className="px-3 py-1 cursor-pointer text-gray-600 hover:bg-purple-400"
+          className="px-3 py-1 cursor-pointer text-gray-600 hover:bg-purple-400 hover:text-white"
         >
           {bus.name}{" "}
           {bus.driver !== "Not Assigned"
@@ -894,7 +895,7 @@ const handleAssignDriverSubmit = async () => {
                   type="date" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)} 
-                  className="w-full text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
 
@@ -905,7 +906,7 @@ const handleAssignDriverSubmit = async () => {
                   placeholder="Any additional notes about this assignment..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 h-30 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 h-30 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <hr className="mb-4"></hr>
