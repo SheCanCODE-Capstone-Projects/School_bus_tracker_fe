@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 import { useState, useMemo, useEffect } from "react";
 import AdminFooter from "@/components/navigation/AdminFooter";
 import AdminNavbar from "@/components/navigation/AdminNavbar";
@@ -9,7 +10,46 @@ import { LiaEyeSolid } from "react-icons/lia";
 import { CiPower } from "react-icons/ci";
 import Link from "next/link";
 import EditBusModal from "@/components/EditBusModal";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken, getUserRole, redirectByRole } from "@/lib/auth";
+
+// Custom Dropdown Component
+function CustomDropdown({ schools, selectedSchool, setSelectedSchool }: {
+  schools: School[];
+  selectedSchool: number | "";
+  setSelectedSchool: (value: number | "") => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative pb-8">
+      <label className="block text-xs text-black mb-2">School</label>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full bg-white text-gray-400 text-left  px-3 py-2  rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"
+      >
+        {selectedSchool ? schools.find(s => s.id === selectedSchool)?.name : "Choose a school"}
+      </button>
+
+      {open && (
+        <ul className="absolute mt-2 w-full bg-blue-400  rounded-lg shadow-lg z-10">
+          {schools.map((s) => (
+            <li
+              key={s.id}
+              onClick={() => {
+                setSelectedSchool(s.id);
+                setOpen(false);
+              }}
+              className="px-3 py-2 cursor-pointer text-white hover:bg-blue-400"
+            >
+              {s.name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // API-based interfaces
 interface Driver {
@@ -49,23 +89,37 @@ interface Bus {
 
 interface School { id: number; name: string; }
 
-
-const driversList = [
-  "Michael Johnson",
-  "Sarah Williams",
-  "David Brown",
-  "Emily Davis",
-  "James Wilson",
-  "John Doe",
-  "Alice Brown"
-];
-
 const API_BASE_URL = "https://school-bus-tracker-be.onrender.com/api";
 
 const BusesPage = () => {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  // Store drivers fetched from backend
+const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
+
+  // Authentication and role check
+  useEffect(() => {
+    const token = getAuthToken();
+    const role = getUserRole();
+    
+    if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+    
+    // Redirect based on role if not admin
+    if (role && role !== 'admin') {
+      redirectByRole();
+      return;
+    }
+    
+    // If no role found, redirect to login
+    if (!role) {
+      window.location.href = '/login';
+      return;
+    }
+  }, []);
 
   // Modal states
   const [showAddForm, setShowAddForm] = useState(false);
@@ -75,10 +129,12 @@ const BusesPage = () => {
   const [showAssignDriverModal, setShowAssignDriverModal] = useState(false);
 
   // Assign Driver modal states
-  const [selectedDriverForBus, setSelectedDriverForBus] = useState("");
-  const [selectedBusForDriver, setSelectedBusForDriver] = useState("");
+  const [selectedDriverForBus, setSelectedDriverForBus] = useState<number | "">("");
+  const [selectedBusForDriver, setSelectedBusForDriver] = useState<number | "">("");
   const [startDate, setStartDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [driverOpen, setDriverOpen] = useState(false);
+  const [busOpen, setBusOpen] = useState(false);
 
   // Add Bus form states
   const [name, setName] = useState("");
@@ -101,7 +157,7 @@ const BusesPage = () => {
         
         if (!token) {
           console.log('No token found');
-          setLoading(false);
+          window.location.href = '/login';
           return;
         }
         
@@ -127,6 +183,8 @@ const BusesPage = () => {
             }));
             setBuses(transformedBuses);
           }
+        } else {
+          console.log('API failed, no fallback data');
         }
       } catch (error) {
         console.error('Error fetching buses:', error);
@@ -137,6 +195,46 @@ const BusesPage = () => {
     
     fetchBuses();
   }, []);
+  // --- Fetch drivers ---
+useEffect(() => {
+  const fetchDrivers = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.log('No token found for drivers');
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/drivers`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+      });
+
+      if (!res.ok) {
+        console.error('Failed to fetch drivers:', res.status);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success && data.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const driverList = data.data.map((driver: any) => ({
+          id: driver.id,
+          fullName: driver.full_name
+        }));
+        setDrivers(driverList);
+      }
+
+    } catch (err) {
+      console.error("Error fetching drivers:", err);
+    }
+  };
+
+  fetchDrivers();
+}, []);
+
 
   useEffect(() => {
     (async () => {
@@ -145,17 +243,22 @@ const BusesPage = () => {
         const res = await fetch(`${API_BASE_URL}/schools`, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
-        if (!res.ok) throw new Error(`Failed to fetch schools: ${res.status}`);
+        if (!res.ok) {
+          setSchools([{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
+          return;
+        }
         const data = await res.json();
         console.log('Schools API response:', data);
         const schoolsArray = data?.content || data?.data || data?.schools || data || [];
-        setSchools(Array.isArray(schoolsArray) ? schoolsArray : []);
+        setSchools(Array.isArray(schoolsArray) ? schoolsArray : [{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
       } catch (err) {
         console.error("Failed to load schools:", err);
+        setSchools([{ id: 1, name: "Main School" }, { id: 2, name: "Branch School" }]);
       }
     })();
   }, []);
-
+  
+  
   // --- Search Functionality ---
   const filteredBuses = useMemo(() => {
     if (!searchTerm) return buses;
@@ -177,11 +280,46 @@ const BusesPage = () => {
     setShowStatusModal(false);
     setSelectedBus(null);
   };
-  const confirmChangeStatus = () => {
-    if (!selectedBus) return;
-    setBuses(prev => prev.map(b => b.id === selectedBus.id ? { ...b, active: !b.active } : b));
+  //change status based on the apis
+ const confirmChangeStatus = async () => {
+  if (!selectedBus) return;
+
+  const newStatus = !selectedBus.active; // the new status we want
+
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      alert("No auth token found. Please login again.");
+      return;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/buses/${selectedBus.id}/status`, {
+      method: "PATCH", // or PUT depending on the backend
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ status: newStatus ? "ACTIVE" : "INACTIVE" })
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      alert("Failed to update bus status: " + errorText);
+      return;
+    }
+
+    // Update UI only if API succeeded
+    setBuses((prev: Bus[]) =>
+      prev.map((b: Bus) => b.id === selectedBus.id ? { ...b, active: newStatus } : b)
+    );
     closeStatusModal();
-  };
+
+  } catch (err) {
+    console.error("Error updating bus status:", err);
+    alert("Error updating bus status. See console for details.");
+  }
+};
+
   const openEditModal = (bus: Bus) => {
     setSelectedBus(bus);
     setShowEditModal(true);
@@ -191,7 +329,7 @@ const BusesPage = () => {
     setSelectedBus(null);
   };
   const handleUpdateBus = (updatedBusData: Bus) => {
-    setBuses(prev => prev.map(b => b.id === updatedBusData.id ? updatedBusData : b));
+    setBuses((prev: Bus[]) => prev.map((b: Bus) => b.id === updatedBusData.id ? updatedBusData : b));
     closeEditModal();
   };
 
@@ -199,8 +337,9 @@ const BusesPage = () => {
   const handleAddBus = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Generate unique bus number to avoid duplicates
-    const uniqueBusNumber = code || `SCH-${Date.now().toString().slice(-6)}`;
+    // Generate truly unique bus number to avoid duplicates
+    const timestamp = Date.now();
+    const uniqueBusNumber = code || `SCH-${timestamp.toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
     
     const payload = {
       busName: name,
@@ -262,7 +401,12 @@ const BusesPage = () => {
           try {
             const errorResponse = await res.text();
             console.log('400 Bad Request - Server response:', errorResponse);
-            alert(`Bad Request: ${errorResponse || 'Invalid data sent to server'}`);
+            const errorData = JSON.parse(errorResponse);
+            if (errorData.message && errorData.message.includes('duplicate key')) {
+              alert('Bus number already exists. Please use a different bus number.');
+            } else {
+              alert(`Bad Request: ${errorData.message || 'Invalid data sent to server'}`);
+            }
           } catch (e) {
             console.log('400 Bad Request - Could not read error response');
             alert('Bad Request: Invalid data sent to server');
@@ -282,13 +426,14 @@ const BusesPage = () => {
           maxCapacity: apiResponse.data.capacity,
           active: apiResponse.data.status === "ACTIVE"
         };
-        setBuses(prev => [...prev, newBus]);
+        setBuses((prev: Bus[]) => [...prev, newBus]);
+        alert('Bus added successfully!');
       } else {
-        setBuses(prev => [...prev, { id: Date.now(), name, code, route, driver, capacity, maxCapacity, active }]);
+        setBuses((prev: Bus[]) => [...prev, { id: Date.now(), name, code: uniqueBusNumber, route, driver, capacity, maxCapacity, active }]);
       }
     } catch (err) {
       console.error("POST /api/buses failed:", err);
-      setBuses(prev => [...prev, { id: Date.now() + Math.random(), name, code, route, driver, capacity, maxCapacity, active }]);
+      setBuses((prev: Bus[]) => [...prev, { id: Date.now() + Math.random(), name, code: uniqueBusNumber, route, driver, capacity, maxCapacity, active }]);
     }
 
     setShowAddForm(false);
@@ -313,19 +458,92 @@ const BusesPage = () => {
     setStartDate("");
     setNotes("");
   };
-  const handleAssignDriverSubmit = () => {
-    if (!selectedDriverForBus || !selectedBusForDriver) {
-      alert("Please select both a driver and a bus.");
+ // --- Assign Driver Handler ---
+const handleAssignDriverSubmit = async () => {
+  if (!selectedDriverForBus || !selectedBusForDriver) {
+    alert("Please select both a driver and a bus.");
+    return;
+  }
+
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      alert("No auth token found. Please login again.");
+      window.location.href = '/login';
       return;
     }
 
-    setBuses(prev =>
-      prev.map(bus =>
-        bus.name === selectedBusForDriver ? { ...bus, driver: selectedDriverForBus } : bus
-      )
-    );
-    closeAssignDriverModal();
-  };
+    const busId = Number(selectedBusForDriver);
+    const driverId = Number(selectedDriverForBus);
+
+    // Check if bus is already assigned
+    const selectedBusData = buses.find(bus => bus.id === busId);
+    if (selectedBusData && selectedBusData.driver && selectedBusData.driver !== "Not Assigned") {
+      const confirmReassign = confirm(`Bus ${selectedBusData.name} is already assigned to ${selectedBusData.driver}. Do you want to reassign it?`);
+      if (!confirmReassign) {
+        return;
+      }
+    }
+
+    console.log('Assigning driver:', { busId, driverId });
+
+    const res = await fetch(`${API_BASE_URL}/admin/assign-bus-to-driver`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ driverId, busId }),
+    });
+
+    console.log(`Response status: ${res.status}`);
+
+    if (res.ok) {
+      const data = await res.json();
+      console.log("Driver assigned successfully:", data);
+      
+      const assignedDriver = drivers.find(d => d.id === driverId);
+      const selectedBusData = buses.find(b => b.id === busId);
+      
+      setBuses(prev =>
+        prev.map(bus =>
+          bus.id === busId ? { ...bus, driver: assignedDriver?.fullName || "Assigned" } : bus
+        )
+      );
+      
+      alert(`Driver ${assignedDriver?.fullName || 'Unknown'} has been assigned to ${selectedBusData?.name || 'Bus'} successfully!`);
+      closeAssignDriverModal();
+    } else {
+      const errorText = await res.text();
+      console.error('Assignment failed:', errorText);
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.message?.includes('duplicate key') || errorData.message?.includes('already exists')) {
+          alert('This bus is already assigned to another driver. Please unassign the current driver first or choose a different bus.');
+        } else {
+          alert(`Assignment failed: ${errorData.message || 'Unknown error'}`);
+        }
+      } catch {
+        if (res.status === 403) {
+          alert('Permission denied. You may not have admin privileges to assign drivers.');
+        } else if (res.status === 401) {
+          localStorage.removeItem('authToken');
+          alert('Session expired. Please login again.');
+          window.location.href = '/login';
+        } else {
+          alert(`Failed to assign driver: ${res.status} - ${errorText}`);
+        }
+      }
+    }
+
+  } catch (err) {
+    console.error('Error assigning driver:', err);
+    alert('Network error. Please try again.');
+  }
+};
+
+
 
   // --- Stats Data ---
   const activeBuses = buses.filter(b => b.active).length;
@@ -340,10 +558,12 @@ const BusesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex flex-col">
         <AdminNavbar />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading buses...</div>
+        <div className="flex-1 px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">Loading buses...</div>
+          </div>
         </div>
         <AdminFooter />
       </div>
@@ -351,11 +571,11 @@ const BusesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <AdminNavbar />
 
       {/* Search and Buttons */}
-      <div className="px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
+      <div className="flex-1 px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:gap-4 mb-5">
           <div className="relative flex-1 mb-3 sm:mb-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -371,7 +591,7 @@ const BusesPage = () => {
           {/* Assign Driver Button */}
           <button 
             onClick={openAssignDriverModal}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2 justify-center mb-2 bg-purple-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
           >
             <UserPlus size={16} />
             Assign driver
@@ -380,7 +600,7 @@ const BusesPage = () => {
           {/* Add Bus Button */}
           <button 
             onClick={() => setShowAddForm(!showAddForm)}
-            className="px-4 py-2 bg-blue-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
+            className="px-4 py-2 mb-2 bg-blue-500 transition-transform duration-300 hover:scale-105 text-white rounded-lg whitespace-nowrap"
           >
             + Add Bus
           </button>
@@ -404,33 +624,41 @@ const BusesPage = () => {
               </div>
 
               <form onSubmit={handleAddBus} className="space-y-4">
-                <div>
-                  <label className="block text-xs text-black mb-1">Bus Name</label>
-                  <input type="text" placeholder="Bus 06" value={name} onChange={e => setName(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
-                </div>
-                <div>
-                  <label className="block text-xs text-black mb-1">Bus Number</label>
-                  <input type="text" placeholder="SCH-106" value={code} onChange={e => setCode(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
-                </div>
+               <div>
+  <label className="block text-xs text-black mb-1">Bus Name</label>
+  <input
+    type="text"
+    placeholder="Bus 06"
+    value={name}
+    onChange={e => setName(e.target.value)}
+    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 
+               focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"
+    required
+  />
+</div>
 
-                <div>
-                  <label className="block text-xs text-black mb-1">School</label>
-                 <select
-                 value={selectedSchool}
-                 onChange={(e) => setSelectedSchool(e.target.value ? Number(e.target.value) : "")}
-                 className={`w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-300 ${selectedSchool === "" ? "text-gray-400" : "text-gray-700"}`}
-                 required
-                 >
-                <option value="" disabled hidden>Choose a school</option>
-                {Array.isArray(schools) ? schools.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-                )) : null}
-               </select>
-                </div>
+<div>
+  <label className="block text-xs text-black mb-1">Bus Number</label>
+  <input
+    type="text"
+    placeholder="SCH-106"
+    value={code}
+    onChange={e => setCode(e.target.value)}
+    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 
+               focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"
+    required
+  />
+</div>
+
+                <CustomDropdown
+                  schools={schools}
+                  selectedSchool={selectedSchool}
+                  setSelectedSchool={setSelectedSchool}
+                />
 
                 <div>
                   <label className="block text-xs text-black mb-1">Max Capacity</label>
-                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  <input type="number" placeholder="50" value={maxCapacity} onChange={e => setMaxCapacity(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-1 focus:ring-blue-300 focus:border-blue-300" required />
                 </div>
                 <div>
                   <label className="block text-xs text-black mb-1">Current Filled</label>
@@ -441,11 +669,12 @@ const BusesPage = () => {
                       return;
                     }
                     setCapacity(value);
-                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"/>
                 </div>
+
                 <div>
                   <label className="block text-xs text-black mb-1">Route</label>
-                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-300 focus:border-blue-300" required />
+                  <input type="text" placeholder="Route E - Central District" value={route} onChange={e => setRoute(e.target.value)} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"/>
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -467,11 +696,18 @@ const BusesPage = () => {
           ))}
         </div>
 
+
         {/* Bus Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredBuses.length > 0 ? (
             filteredBuses.map(bus => {
               const percent = Math.round((bus.capacity / bus.maxCapacity) * 100);
+              const getCapacityColor = () => {
+                if (bus.capacity === 0) return "#D1D5DB";
+                if (bus.capacity <= 20) return "#EF4444";
+                if (bus.capacity <= 30) return "#F97316";
+                return "#10B981";
+              };
               return (
                 <div key={`bus-${bus.id}-${bus.code}`} className="bg-white border rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                   {/* Header */}
@@ -499,7 +735,9 @@ const BusesPage = () => {
                     <div className="mb-4">
                       <p className="text-gray-500 text-xs mb-1">Driver</p>
                       <div className="flex items-center">
-                        <IoPersonOutline className="text-blue-500 mr-2" />
+                        <span className="text-blue-500 mr-2">
+                          <IoPersonOutline size={16} />
+                        </span>
                         <p className="text-gray-500 text-xs">{bus.driver}</p>
                       </div>
                     </div>
@@ -513,7 +751,7 @@ const BusesPage = () => {
                           className="h-full rounded-full" 
                           style={{ 
                             width: `${percent}%`, 
-                            backgroundColor: bus.capacity === 0 ? "#D1D5DB" : bus.capacity <= 20 ? "#EF4444" : bus.capacity <= 30 ? "#F97316" : "#10B981" 
+                            backgroundColor: getCapacityColor()
                           }}
                         ></div>
                       </div>
@@ -527,11 +765,11 @@ const BusesPage = () => {
                         href={`/admin/dashboard/buses/${bus.id}`} 
                         className="flex items-center gap-2 bg-blue-400 text-white px-4 py-2 rounded-xl flex-1 justify-center text-sm font-medium hover:bg-blue-600 transition-colors"
                       >
-                        <LiaEyeSolid className="text-lg" /> View Details
+                        <LiaEyeSolid size={18} /> View Details
                       </Link>
                       <div className="flex gap-2 ml-3">
                         <button onClick={() => openEditModal(bus)} className="text-blue-500 text-lg p-2 rounded-full hover:bg-blue-50 transition-colors">
-                          <FiEdit />
+                          <FiEdit size={18} />
                         </button>
                         <button
                           onClick={() => openStatusModal(bus)}
@@ -539,7 +777,7 @@ const BusesPage = () => {
                           title={bus.active ? "Deactivate Bus" : "Activate Bus"}
                           className={`${bus.active ? "text-red-500 hover:bg-red-50" : "text-green-500 hover:bg-green-50"} text-lg p-2 rounded-full transition-colors`}
                         >
-                          <CiPower />
+                          <CiPower size={20} />
                         </button>
                       </div>
                     </div>
@@ -559,67 +797,116 @@ const BusesPage = () => {
       {showAssignDriverModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={closeAssignDriverModal}></div>
-       <div className="relative bg-white rounded-4xl shadow-2xl max-w-[400px] w-full h-[90vh] p-6">
+      <div className="relative bg-white rounded-4xl shadow-2xl max-w-[400px] w-full p-6 max-h-[80vh] overflow-y-auto">
 
-
+       
             <div className="flex items-center gap-2 mb-4">
               <UserPlus size={20} className="text-purple-600" />
               <h3 className="text-lg mt-4 mb-4 font-bold text-gray-700">Assign Driver to Bus</h3>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-8">
               {/* Select Driver */}
-              <div>
-                <label className="block text-xs mt-2 mb-2  text-black">Select Driver</label>
-                <select
-                  value={selectedDriverForBus}
-                  onChange={(e) => setSelectedDriverForBus(e.target.value)}
-                  className="w-full border text-sm border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                >
-                  <option value="">Choose a driver</option>
-                  {driversList
-                    .filter(driver => !buses.some(bus => bus.driver === driver))
-                    .map(driver => (
-                      <option key={driver} value={driver}>{driver}</option>
-                    ))}
-                </select>
-              </div>
-              <p className="text-xs mb-4 mt-2  text-gray-700">Only showing unassigned drivers</p>
+           <div className="mb-8 relative">
+  <label className="block text-xs text-black mb-2">Select Driver</label>
+  <button
+    type="button"
+    onClick={() => setDriverOpen(!driverOpen)}
+    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm
+               bg-white text-gray-400 text-left
+               focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+  >
+    {selectedDriverForBus
+      ? drivers.find(d => d.id === selectedDriverForBus)?.fullName
+      : "Choose a driver"}
+  </button>
 
-              {/* Assign to Bus */}
-              <div>
-                <label className="block text-xs text-black  mb-1">Assign to Bus</label>
-                <select
-                  value={selectedBusForDriver}
-                  onChange={(e) => setSelectedBusForDriver(e.target.value)}
-                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                >
-                  <option value="">Select a bus</option>
-                  {buses.map(bus => (
-                    <option key={bus.id} value={bus.name}>{bus.name}</option>
-                  ))}
-                </select>
-              </div>
+  {driverOpen && (
+   <ul className="mt-2 w-full bg-purple-500 rounded-lg shadow-lg border border-purple-500">
+
+      {drivers
+        .filter(driver =>
+          !buses.some(bus =>
+            bus.driver &&
+            bus.driver !== "Not Assigned" &&
+            bus.driver.trim() === driver.fullName.trim()
+          )
+        )
+        .map(driver => (
+          <li
+            key={driver.id}
+            onClick={() => {
+              setSelectedDriverForBus(driver.id);
+              setDriverOpen(false);
+            }}
+            className="px-3 py-2 cursor-pointer text-white hover:bg-purple-600 focus:bg-purple-600"
+          >
+            {driver.fullName}
+          </li>
+        ))}
+    </ul>
+  )}
+  <p className="text-xs mt-2 text-gray-700">Only showing unassigned drivers</p>
+</div>
+
+
+    <div className={`relative transition-all duration-300 ${busOpen ? "mb-8" : "mb-6"}`}>
+
+  <label className="block text-xs text-black mb-2">Assign to Bus</label>
+  <button
+    type="button"
+    onClick={() => setBusOpen(true)}
+    className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm
+               bg-white text-gray-400 text-left 
+               focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+  >
+    {selectedBusForDriver
+      ? buses.find(b => b.id === selectedBusForDriver)?.name
+      : "Select a bus"}
+  </button>
+
+{busOpen && buses.length > 0 && (
+  <ul className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-300 text-sm">
+
+
+      {buses.map(bus => (
+        <li
+          key={bus.id}
+          onClick={() => {
+            setSelectedBusForDriver(bus.id);
+            setBusOpen(false);
+          }}
+          className="px-3 py-1 cursor-pointer text-gray-600 hover:bg-purple-400 hover:text-white"
+        >
+          {bus.name}{" "}
+          {bus.driver !== "Not Assigned"
+            ? `(Currently: ${bus.driver})`
+            : "(Available)"}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
 
               {/* Start Date */}
               <div>
-                <label className="block mt-2 mb-2  text-xs text-black">Start Date</label>
+                <label className="block text-xs text-black mb-2">Start Date</label>
                 <input 
                   type="date" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)} 
-                  className="w-full mt-2 mb-2  text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
 
-              {/* Notes */}
+       {/* Notes */}
               <div>
                 <label className="block text-xs mt-2 mb-2  text-black">Notes (Optional)</label>
                 <textarea
                   placeholder="Any additional notes about this assignment..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 h-30 py-2 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 h-30 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <hr className="mb-4"></hr>
@@ -639,7 +926,6 @@ const BusesPage = () => {
                   Cancel
                 </button>
               </div>
-
             </div>
           </div>
         </div>
@@ -655,8 +941,8 @@ const BusesPage = () => {
             </button>
 
             <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 rounded-full ${selectedBus.active ? "bg-red-100" : "bg-green-100"}`}>
-                <CiPower className={`text-2xl ${selectedBus.active ? "text-red-600" : "text-green-600"}`} />
+              <div className={`p-2 rounded-full ${selectedBus.active ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"}`}>
+                <CiPower size={24} />
               </div>
               <h3 className="text-lg text-gray-800 font-bold">Confirm Status Change</h3>
             </div>
