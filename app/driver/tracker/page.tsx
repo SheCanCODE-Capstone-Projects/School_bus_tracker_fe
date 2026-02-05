@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
@@ -11,6 +11,7 @@ import DriverHeaderCard from "../../../components/DriverHeaderCard";
 import GpsTrackingCard from "../../../components/GPSTrackingCard";
 import EmergencyCard from "../../../components/EmergenceCard";
 import { isAuthenticated, getUserRole } from "@/lib/auth";
+import { driverSendLocation, driverStartTracking, driverStopTracking } from "@/lib/tracking-api";
 
 /* ============================
    DYNAMIC MAP COMPONENT
@@ -68,6 +69,15 @@ export default function DriverTracker() {
   const [isLoading, setIsLoading] = useState(true);
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [address, setAddress] = useState<string>("");
+  const [isTracking, setIsTracking] = useState(false);
+  const [isTrackingBusy, setIsTrackingBusy] = useState(false);
+  const [trackingError, setTrackingError] = useState<string>("");
+  const [lastSent, setLastSent] = useState<string>("--:--:--");
+  const lastSentAtRef = useRef<number>(0);
+  const isTrackingRef = useRef(false);
+  isTrackingRef.current = isTracking;
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
   // Role-based protection - only allow driver access
   useEffect(() => {
@@ -96,25 +106,62 @@ export default function DriverTracker() {
   }, [router]);
 
   /* ============================
-     GPS TRACKING
+     GPS TRACKING – same pattern as your working (non-integrated) code: watchPosition only, inline callback
+     + when tracking is on, send to POST /api/driver/tracking/location every 5s
   ============================ */
   useEffect(() => {
-    if (isLoading) return; // Don't start GPS until auth is complete
-    
+    if (isLoading) return;
+
     if (!navigator.geolocation) {
       alert("Geolocation is not supported in this browser.");
       return;
     }
+
+    // Try to get one position immediately (often uses cache; can trigger "Allow?" prompt)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPosition([pos.coords.latitude, pos.coords.longitude]);
+        setLocationError(null);
+      },
+      (err) => {
+        if (err.code === 1) setLocationError("Location blocked. Click «Use my location» below and choose Allow.");
+        else if (err.code === 3) setLocationError("Timed out. Click «Use my location» to try again.");
+      },
+      { enableHighAccuracy: false, maximumAge: 60000, timeout: 10000 }
+    );
 
     const watchId = navigator.geolocation.watchPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        console.log("Driver location:", { latitude: lat, longitude: lng });
         setPosition([lat, lng]);
+        setLocationError(null);
 
-        // Reverse geocode coordinates to address
+        // Send to backend only when driver has started tracking (throttled every 5s)
+        if (isTrackingRef.current) {
+          const now = Date.now();
+          const throttleMs = 5000;
+          if (now - lastSentAtRef.current >= throttleMs) {
+            try {
+              lastSentAtRef.current = now;
+              setTrackingError("");
+              await driverSendLocation({
+                latitude: lat,
+                longitude: lng,
+                speed: typeof pos.coords.speed === "number" ? pos.coords.speed : null,
+                heading: typeof pos.coords.heading === "number" ? pos.coords.heading : null,
+              });
+              setLastSent(new Date().toLocaleTimeString());
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "Failed to send location";
+              setTrackingError(msg);
+              lastSentAtRef.current = 0;
+            }
+          }
+        }
+
+        // Reverse geocode (same as your working code)
         try {
           const res = await fetch(
             `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
@@ -132,18 +179,88 @@ export default function DriverTracker() {
       },
       (err) => {
         console.log("GPS error:", err);
-        // Show error message instead of fallback location
         setAddress("GPS unavailable - please enable location services");
-      },
-      { 
-        enableHighAccuracy: false, // Less strict for better compatibility
-        maximumAge: 30000, // Accept cached location up to 30 seconds old
-        timeout: 15000 // Increase timeout to 15 seconds
+        const msg =
+          err.code === 1
+            ? "Location blocked. Click «Use my location» and allow when the browser asks."
+            : err.code === 3
+              ? "Location timed out. Click «Use my location» to try again."
+              : "Could not get location. Use the button below to try again.";
+        setLocationError(msg);
       }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, [isLoading]);
+
+  // Request location on button click (user gesture – often needed for browser to show "Allow?" prompt)
+  const requestLocation = () => {
+    if (!navigator.geolocation) return;
+    setIsRequestingLocation(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setPosition([lat, lng]);
+        setLocationError(null);
+        setIsRequestingLocation(false);
+        try {
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setAddress(data.locality || data.city || data.countryName || "Unknown location");
+          } else setAddress("Unknown location");
+        } catch {
+          setAddress("Unknown location");
+        }
+      },
+      (err) => {
+        setIsRequestingLocation(false);
+        const msg =
+          err.code === 1
+            ? "Location blocked. In the address bar click the lock/info icon → Site settings → set Location to Allow, then try again."
+            : err.code === 3
+              ? "Request timed out. Check your connection and try again."
+              : "Could not get location. Try again or check site settings.";
+        setLocationError(msg);
+      },
+      { enableHighAccuracy: false, maximumAge: 60000, timeout: 20000 }
+    );
+  };
+
+  const handleStartTracking = async () => {
+    setTrackingError("");
+    setIsTrackingBusy(true);
+    try {
+      await driverStartTracking();
+      setIsTracking(true);
+      lastSentAtRef.current = 0;
+      setLastSent("--:--:--");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to start tracking";
+      setTrackingError(msg);
+      setIsTracking(false);
+    } finally {
+      setIsTrackingBusy(false);
+    }
+  };
+
+  const handleStopTracking = async () => {
+    setTrackingError("");
+    setIsTrackingBusy(true);
+    try {
+      await driverStopTracking();
+      setIsTracking(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to stop tracking";
+      setTrackingError(msg);
+    } finally {
+      setIsTrackingBusy(false);
+    }
+  };
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -169,7 +286,16 @@ export default function DriverTracker() {
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 mb-10">
           <div className="flex flex-col lg:flex-row justify-center items-center lg:items-stretch gap-4 max-w-7xl mx-auto">
             <div className="w-[500px] max-w-full">
-              <GpsTrackingCard position={position} address={address} />
+              <GpsTrackingCard
+                position={position}
+                address={address}
+                isTracking={isTracking}
+                lastSent={lastSent}
+                isBusy={isTrackingBusy}
+                error={trackingError}
+                onStart={handleStartTracking}
+                onStop={handleStopTracking}
+              />
             </div>
             <div className="w-[500px] max-w-full">
               <EmergencyCard />
@@ -205,16 +331,41 @@ export default function DriverTracker() {
                   </div>
                 </div>
 
-                <div className="flex-1 h-[300px]">
-                  {position ? (
-                    <Map position={position} />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-600">
-                      <div className="text-center">
-                        <div className="animate-pulse mb-2">📍</div>
-                        <p className="text-sm">Waiting for GPS location...</p>
-                        <p className="text-xs mt-1">Please enable location services</p>
+                <div className="flex-1 flex flex-col gap-2">
+                  <div className="h-[300px]">
+                    {position ? (
+                      <Map position={position} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-700 bg-blue-100/50 rounded-lg p-4">
+                        <div className="text-center max-w-sm">
+                          <div className="text-3xl mb-2">📍</div>
+                          <p className="text-sm font-medium mb-1">Waiting for GPS location...</p>
+                          <p className="text-xs text-gray-600 mb-3">
+                            If nothing appears, the browser may be waiting for your permission. Click the button below — it often triggers the &quot;Allow location?&quot; prompt.
+                          </p>
+                          {locationError && (
+                            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-3">
+                              {locationError}
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            onClick={requestLocation}
+                            disabled={isRequestingLocation}
+                            className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                          >
+                            {isRequestingLocation ? "Requesting location…" : "Use my location"}
+                          </button>
+                        </div>
                       </div>
+                    )}
+                  </div>
+                  {position && (
+                    <div className="text-xs text-gray-700 bg-white/80 rounded px-3 py-2 border border-gray-200">
+                      <span className="font-semibold">Current position:</span> Lat {position[0].toFixed(6)}, Lng {position[1].toFixed(6)}
+                      {isTracking && (
+                        <span className="ml-2 text-green-700"> • Sending to server every 5s (last: {lastSent})</span>
+                      )}
                     </div>
                   )}
                 </div>

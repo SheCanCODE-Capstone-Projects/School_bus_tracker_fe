@@ -97,7 +97,12 @@ export default function SchoolBusLogin() {
       }
 
       if (data.token) {
-        setAuthData(data.token, userRole || selectedRole, data.user);
+        const userData = data.user ?? {
+          id: data.id,
+          email: data.email ?? data.user?.email,
+          role: data.role ?? data.user?.role,
+        };
+        setAuthData(data.token, userRole || selectedRole, userData);
       }
 
       // Navigate based on role

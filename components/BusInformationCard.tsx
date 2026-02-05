@@ -1,12 +1,26 @@
 'use client';
 
-const BusInformationCard = () => {
+import type { ParentStudent } from '@/lib/tracking-api';
+
+interface BusInformationCardProps {
+  students?: ParentStudent[];
+  busName?: string;
+  busNumber?: string;
+  parentName?: string;
+}
+
+const BusInformationCard = ({ students = [], busName, busNumber, parentName }: BusInformationCardProps) => {
+  const firstStudent = students[0];
+  const busDisplay = busName ?? busNumber ?? '—';
+  const busStopName = firstStudent?.busStop?.stopName;
+  const busStopAddress = firstStudent?.busStop?.address;
+
   return (
     <div className="bg-white rounded-xl md:rounded-2xl shadow-md p-4 md:p-6 mb-4 md:mb-6 min-h-[500px] transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02]">
       <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Bus Information</h2>
-      
+
       <div className="space-y-4 md:space-y-5">
-        {/* Your Child's Bus Section */}
+        {/* Your Child's Bus */}
         <div className="bg-sky-100 border border-sky-100 rounded-lg p-3 mb-2 transition-all duration-300 hover:bg-sky-200 hover:-translate-y-1">
           <div className="flex items-start">
             <div className="mr-3 w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -16,90 +30,87 @@ const BusInformationCard = () => {
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="text-gray-700 text-sm md:text-base mb-1">Your Childs Bus</span>
+              <span className="text-gray-700 text-sm md:text-base mb-1">Your child&apos;s bus</span>
               <span className="bg-blue-100 text-blue-800 text-xs md:text-sm font-bold py-1 px-2 md:py-1 md:px-3 rounded-full self-start">
-                Bus 01
+                {busDisplay}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Driver Section */}
+        {/* Students on this bus */}
+        {students.length > 0 && (
+          <div className="border border-gray-200 rounded-lg p-3 mb-2 transition-all duration-300 hover:border-gray-300 hover:bg-gray-50">
+            <div className="flex items-start">
+              <div className="mr-3 w-7 h-7 md:w-8 md:h-8 bg-amber-100 rounded-lg flex items-center justify-center text-lg">
+                👤
+              </div>
+              <div className="flex flex-col">
+                <span className="text-gray-700 text-sm md:text-base mb-1">Student{students.length > 1 ? 's' : ''}</span>
+                {students.map((s) => (
+                  <span key={s.id ?? s.studentName} className="font-semibold text-gray-800 text-sm md:text-base">
+                    {s.studentName ?? '—'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Parent / Contact */}
         <div className="border border-gray-200 rounded-lg p-3 mb-2 transition-all duration-300 hover:border-gray-300 hover:bg-gray-50 hover:-translate-y-1">
           <div className="flex items-start">
-            <div 
-              className="mr-3 w-7 h-7 md:w-8 md:h-8 rounded-full bg-cover bg-center bg-no-repeat"
-              style={{
-                backgroundImage: 'url(/image.png)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
-            ></div>
+            <div
+              className="mr-3 w-7 h-7 md:w-8 md:h-8 rounded-full bg-cover bg-center bg-no-repeat bg-gray-200"
+              style={{ backgroundImage: 'url(/image.png)' }}
+            />
             <div className="flex flex-col">
-              <span className="text-gray-700 text-sm md:text-base mb-1">Driver</span>
+              <span className="text-gray-700 text-sm md:text-base mb-1">Parent</span>
               <span className="font-semibold text-gray-800 text-sm md:text-base">
-                Michael Johnson
+                {parentName ?? firstStudent?.parentName ?? '—'}
               </span>
+              {firstStudent?.parentPhone && (
+                <span className="text-xs text-gray-600 mt-0.5">{firstStudent.parentPhone}</span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* School Section */}
-        <div className="border border-gray-200 rounded-lg p-3 mb-2 transition-all duration-300 hover:border-gray-300 hover:bg-gray-50 hover:-translate-y-1">
-          <div className="flex items-start">
-            <div className="mr-3 w-7 h-7 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 3L2 12H5V20H19V12H22L12 3ZM7 18V10.5L12 6L17 10.5V18H15V13H9V18H7Z"/>
-                <rect x="10" y="14" width="1" height="2" fill="currentColor"/>
-                <rect x="13" y="14" width="1" height="2" fill="currentColor"/>
-                <rect x="10" y="7" width="4" height="1" fill="currentColor"/>
-                <rect x="10" y="9" width="4" height="1" fill="currentColor"/>
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-gray-700 text-sm md:text-base mb-1">School</span>
-              <span className="font-semibold text-gray-800 text-sm md:text-base">
-                Lincoln Elementary School
-              </span>
+        {/* Pick-up / Bus stop */}
+        {(busStopName || busStopAddress) && (
+          <div className="border border-gray-200 rounded-lg p-3 mb-2 transition-all duration-300 hover:border-gray-300 hover:bg-gray-50">
+            <div className="flex items-start">
+              <div className="mr-3 w-7 h-7 md:w-8 md:h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 md:w-5 md:h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-gray-700 text-sm md:text-base mb-1">Bus stop</span>
+                <span className="font-semibold text-gray-800 text-sm">{busStopName ?? '—'}</span>
+                {busStopAddress && <span className="text-xs text-gray-600 mt-0.5">{busStopAddress}</span>}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <hr className="my-3 md:my-4 border-gray-200" />
 
-        {/* Status Section - Green background area */}
+        {/* Status – live map shows real location; here we keep a short note */}
         <div className="bg-[#10B981] rounded-lg md:rounded-xl p-3 md:p-4 mb-3 md:mb-4 text-center transition-all duration-300 hover:bg-[#059669] hover:-translate-y-1">
-          {/* Status row */}
-          <div className="flex items-center mb-3 md:mb-4">
-            <span className="w-2.5 h-2.5 md:w-3 md:h-3 bg-white rounded-full mr-2"></span>
-            <span className="text-white font-bold mr-2 text-sm md:text-base">Status:</span>
-            <span className="text-white font-bold text-xs md:text-sm">On Route</span>
+          <div className="flex items-center justify-center mb-2">
+            <span className="w-2.5 h-2.5 md:w-3 md:h-3 bg-white rounded-full mr-2" />
+            <span className="text-white font-bold text-sm md:text-base">Live tracking</span>
           </div>
-          
-          {/* Updated Time */}
-          <div className="bg-white/40 rounded-lg p-2 mb-2 md:mb-3 flex items-center justify-center">
-            <svg className="w-3 h-3 md:w-4 md:h-4 mr-2 md:mr-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-            </svg>
-            <span className="text-white text-xs md:text-sm font-medium">Updated 2:13:00 PM</span>
-          </div>
-          
-          {/* Location */}
-          <div className="bg-white/40  rounded-lg p-2 flex items-center justify-center">
-            <svg className="w-3 h-3 md:w-4 md:h-4 mr-2 md:mr-3 text-white flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 2a6 6 0 00-6 6c0 1.887-.454 3.665-1.257 5.234a.75.75 0 00.515 1.076 32.91 32.91 0 003.256.508 3.5 3.5 0 006.972 0 32.903 32.903 0 003.256-.508.75.75 0 00.515-1.076A11.448 11.448 0 0116 8a6 6 0 00-6-6zM8.05 14.943a33.54 33.54 0 003.9 0 2 2 0 01-3.9 0z" clipRule="evenodd" />
-            </svg>
-            <span className="text-white font-medium text-xs md:text-sm">5th Ave & Park St</span>
-          </div>
+          <p className="text-white/90 text-xs md:text-sm">See the map on the right for real-time bus location.</p>
         </div>
 
-        {/* Estimated Arrival Card */}
+        {/* Estimated Arrival – placeholder (backend could add ETA later) */}
         <div className="bg-gray-100 border border-gray-300 rounded-lg md:rounded-xl p-3 md:p-4 text-center transition-all duration-300 hover:bg-gray-200 hover:border-gray-400 hover:-translate-y-1">
-          <div className="flex items-center justify-center text-blue-700 mb-1 md:mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-900">ESTIMATED ARRIVAL</span>
+          <div className="text-blue-700 mb-1 md:mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-900">Live on map</span>
           </div>
-          <div className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-0.5 md:mb-1">3:45 PM</div>
-          <div className="text-gray-600 text-xs md:text-sm">Arriving in approximately 15 minutes</div>
+          <div className="text-gray-600 text-xs md:text-sm">Open the map to see where the bus is now.</div>
         </div>
       </div>
     </div>
