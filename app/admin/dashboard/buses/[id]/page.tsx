@@ -9,7 +9,7 @@ import {
     ShieldAlert 
 } from "lucide-react";
 import Link from "next/link";
-import ParentDashboardMap from "../../../../../components/navigation/maps/parentDashboardMap";
+import AdminBusTrackingMap from "../../../../../components/navigation/maps/AdminBusTrackingMap";
 import EditBusModal from "@/components/EditBusModal";
 import { getAuthToken } from "@/lib/auth";
 
@@ -371,11 +371,10 @@ const BusDetailsPage = () => {
 
             {/* Right Column */}
             <div className="lg:col-span-2 flex flex-col space-y-6">
-              {/* Map Card */}
+              {/* Map Card – live tracking from driver + GPS history */}
               <div className="bg-white border rounded-2xl p-6 shadow-sm">
-                <div className="h-[500px] w-full relative overflow-hidden rounded-lg">
-                  <ParentDashboardMap />
-                </div>
+                <h2 className="text-lg font-bold text-gray-800 mb-4">Tracking & location</h2>
+                <AdminBusTrackingMap busId={busId as string} busName={busData?.name} />
               </div>
 
               {/* Route History Card */}
