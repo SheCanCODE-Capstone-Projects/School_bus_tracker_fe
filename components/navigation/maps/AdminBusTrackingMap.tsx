@@ -76,8 +76,18 @@ export default function AdminBusTrackingMap({ busId, busName }: AdminBusTracking
     const fetchLocations = async () => {
       try {
         const data = await adminGetBusLocations(busId);
+        console.log('=== Bus GPS Location Data ===');
+        console.log('Bus ID:', busId);
+        console.log('Location Points:', data);
+        if (Array.isArray(data) && data.length > 0) {
+          console.log('Latest GPS Coordinates:');
+          console.log('  Latitude:', data[0].latitude);
+          console.log('  Longitude:', data[0].longitude);
+          console.log('  Last Updated:', data[0].lastUpdated);
+        }
         if (!cancelled) setLocations(Array.isArray(data) ? data : []);
-      } catch {
+      } catch (err) {
+        console.error('Error fetching GPS locations:', err);
         if (!cancelled) setLocations([]);
       }
     };
