@@ -3,30 +3,31 @@ export function getAuthToken(): string | null {
 
   const token = localStorage.getItem('authToken') || getCookie('authToken');
   
+  if (!token) return null;
+  
   // Validate token format
-  if (token) {
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-        // Check if token is expired
-        if (payload.exp && payload.exp * 1000 < Date.now()) {
-          console.log('Token expired, removing from storage');
-          localStorage.removeItem('authToken');
-          document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-          return null;
-        }
-        return token;
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      // Check if token is expired (only if exp field exists)
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        console.log('Token expired, removing from storage');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userRole');
+        document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'userRole=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        return null;
       }
-    } catch (error) {
-      console.error('Invalid token format:', error);
-      localStorage.removeItem('authToken');
-      document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      return null;
+      return token;
     }
+    // If token doesn't have 3 parts, still return it (might be a custom token)
+    return token;
+  } catch (error) {
+    // If token parsing fails, still return the token (don't invalidate it)
+    console.warn('Token validation warning:', error);
+    return token;
   }
-
-  return null;
 }
 
 
