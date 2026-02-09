@@ -29,6 +29,7 @@ interface Bus {
   active: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Student {
   fullName?: string;
   full_name?: string;
@@ -77,10 +78,10 @@ interface BusData {
   capacity: number;
   maxCapacity: number;
   active: boolean;
+  trackingStatus: string;
   plateNumber: string;
   lastMaintenance: string;
   students: string[];
-
   routeHistory: RouteHistory[];
   emergencyLogs: EmergencyLog[];
   latitude?: number;
@@ -141,7 +142,7 @@ const BusDetailsPage = () => {
           return;
         }
 
-        const [busResponse, studentsResponse] = await Promise.all([
+        const [busResponse, studentsResponse, trackingStatusResponse, locationsResponse, gpsResponse] = await Promise.all([
           fetch(`${API_BASE_URL}/buses/${busId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -154,10 +155,31 @@ const BusDetailsPage = () => {
               "Content-Type": "application/json",
             },
           }),
+          fetch(`${API_BASE_URL}/admin/buses/${busId}/tracking-status`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }),
+          fetch(`${API_BASE_URL}/admin/buses/${busId}/locations`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }),
+          fetch(`${API_BASE_URL}/tracking/location/${busId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }),
         ]);
 
         console.log("Bus Response Status:", busResponse.status);
         console.log("Students Response Status:", studentsResponse.status);
+        console.log("Tracking Status Response Status:", trackingStatusResponse.status);
+        console.log("Locations Response Status:", locationsResponse.status);
+        console.log("GPS Response Status:", gpsResponse.status);
 
         if (!busResponse.ok) {
           const errorText = await busResponse.text();
@@ -169,23 +191,82 @@ const BusDetailsPage = () => {
         const studentsData = studentsResponse.ok
           ? await studentsResponse.json()
           : { data: [] };
+        const trackingStatusData = trackingStatusResponse.ok
+          ? await trackingStatusResponse.json()
+          : null;
+        const locationsHistory = locationsResponse.ok
+          ? await locationsResponse.json()
+          : [];
+        const gpsData = gpsResponse.ok
+          ? await gpsResponse.json()
+          : null;
 
         console.log("=== Full API Response ===");
         console.log(JSON.stringify(apiResponse, null, 2));
         console.log("=== Students API Response ===");
         console.log(JSON.stringify(studentsData, null, 2));
+        console.log("=== Tracking Status API Response ===");
+        console.log(JSON.stringify(trackingStatusData, null, 2));
+        console.log("=== Locations History API Response ===");
+        console.log(JSON.stringify(locationsHistory, null, 2));
+        console.log("=== GPS Location API Response ===");
+        console.log(JSON.stringify(gpsData, null, 2));
 
         const busDetails = apiResponse.data || apiResponse;
         const allStudents = studentsData?.data || [];
         const busStudents = allStudents.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (s: any) => s.assignedBus?.id === parseInt(busId as string),
         );
+        
+        const latestLocation = Array.isArray(locationsHistory) && locationsHistory.length > 0 
+          ? locationsHistory[locationsHistory.length - 1] 
+          : null;
+        
+        const busLatitude = gpsData?.latitude || latestLocation?.latitude || busDetails.latitude;
+        const busLongitude = gpsData?.longitude || latestLocation?.longitude || busDetails.longitude;
+        
+        let currentLocationName = "Location not available";
+        if (busLatitude && busLongitude) {
+          try {
+            const geoResponse = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${busLatitude}&lon=${busLongitude}&zoom=18&addressdetails=1`,
+              {
+                headers: {
+                  'User-Agent': 'SchoolBusTracker/1.0'
+                }
+              }
+            );
+            if (geoResponse.ok) {
+              const geoData = await geoResponse.json();
+              const address = geoData.address;
+              const locationName = address?.suburb || address?.neighbourhood || address?.city_district || address?.city || "Unknown Location";
+              currentLocationName = `${locationName} (Lat: ${busLatitude.toFixed(6)}, Long: ${busLongitude.toFixed(6)})`;
+              console.log("Geocoded Location:", currentLocationName);
+              console.log("Full Address Data:", geoData);
+            } else {
+              currentLocationName = `${busLatitude.toFixed(6)}, ${busLongitude.toFixed(6)}`;
+            }
+          } catch (error) {
+            console.error("Geocoding error:", error);
+            currentLocationName = `${busLatitude.toFixed(6)}, ${busLongitude.toFixed(6)}`;
+          }
+        }
 
         console.log("=== Bus Details ===");
         console.log("Bus Name:", busDetails.busName);
         console.log("Bus Number:", busDetails.busNumber);
         console.log("Route:", busDetails.route);
-        console.log("Status:", busDetails.status);
+        console.log("Backend Status (busDetails.status):", busDetails.status);
+        console.log("Transformed active flag:", busDetails.status === "ACTIVE");
+        console.log("Tracking Status:", trackingStatusData?.status);
+        console.log("GPS Latitude (from tracking):", gpsData?.latitude);
+        console.log("GPS Longitude (from tracking):", gpsData?.longitude);
+        console.log("Latest Location Latitude:", latestLocation?.latitude);
+        console.log("Latest Location Longitude:", latestLocation?.longitude);
+        console.log("Final Latitude:", busLatitude);
+        console.log("Final Longitude:", busLongitude);
+        console.log("Current Location Name:", currentLocationName);
         console.log("Capacity:", busDetails.capacity);
         console.log("Assigned Driver:", busDetails.assignedDriver);
         console.log("Filtered Students for this bus:", busStudents);
@@ -208,15 +289,16 @@ const BusDetailsPage = () => {
             busDetails.assignedDriver?.phone_number ||
             "N/A",
           driverEmail: busDetails.assignedDriver?.email || "N/A",
-          currentLocation:
-            busDetails.currentLocation || "Location not available",
-          currentSpeed: busDetails.currentSpeed || 0,
+          currentLocation: currentLocationName,
+          currentSpeed: gpsData?.speed || busDetails.currentSpeed || 0,
           fuelLevel: busDetails.fuelLevel || 0,
           capacity: busDetails.capacity || 0,
           maxCapacity: busDetails.maxCapacity || busDetails.capacity || 50,
           active: busDetails.status === "ACTIVE",
+          trackingStatus: trackingStatusData?.status || "STOPPED",
           plateNumber: busDetails.plateNumber || "N/A",
           lastMaintenance: busDetails.lastMaintenance || "N/A",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           students: busStudents.map((s: any) => {
             const name =
               s.studentName || s.fullName || s.full_name || s.name || "Unknown"; // Fixed: removed s.data
@@ -268,50 +350,35 @@ const BusDetailsPage = () => {
     setShowEditModal(false);
   };
 
-  const handleUpdateBus = (updatedBusData: Bus) => {
-    const transformedBusData: BusData = {
-      id: updatedBusData.id,
-      name: updatedBusData.name,
-      code: updatedBusData.code,
-      route: updatedBusData.route,
-      driver: updatedBusData.driver,
-      driverPhone: "+1 (555) 123-4567",
-      driverEmail: "driver@school.com",
-      currentLocation: "5th Ave & Elm St (Stop 4)",
-      currentSpeed: 25,
-      fuelLevel: 78,
-      capacity: updatedBusData.capacity,
-      maxCapacity: updatedBusData.maxCapacity,
-      active: updatedBusData.active,
-      plateNumber: "XYZ-789",
-      lastMaintenance: "2024-11-01",
-      students: ["Sarah Connor", "John Smith", "Alice Jones", "Bob Brown"],
-      routeHistory: [
-        { date: "2024-12-02", distance: "15.2 mi", duration: "45 min" },
-        { date: "2024-12-01", distance: "14.8 mi", duration: "42 min" },
-        { date: "2024-11-30", distance: "15.5 mi", duration: "48 min" },
-      ],
-      emergencyLogs: [
-        {
-          id: 1,
-          type: "Minor mechanical issue - tire pressure low",
-          timestamp: "2024-12-02 at 2:45 PM",
-          location: "5th Ave & Park St",
-          resolution: "Driver reported and resolved on-site. No delays.",
-          status: "Resolved",
+  const handleUpdateBus = async (updatedBusData: Bus) => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/buses/${busId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        {
-          id: 2,
-          type: "Traffic delay due to accident on main route",
-          timestamp: "2024-11-28 at 8:15 AM",
-          location: "3rd Ave & Main St",
-          resolution:
-            "Alternative route taken. Parents notified. Arrived 10 minutes late.",
-          status: "Resolved",
-        },
-      ],
-    };
-    setBusData(transformedBusData);
+        body: JSON.stringify({
+          busName: updatedBusData.name,
+          busNumber: updatedBusData.code,
+          route: updatedBusData.route,
+          capacity: updatedBusData.capacity,
+          status: updatedBusData.active ? "ACTIVE" : "INACTIVE",
+        }),
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        alert("Failed to update bus");
+      }
+    } catch (error) {
+      console.error("Error updating bus:", error);
+      alert("Failed to update bus");
+    }
     closeEditModal();
   };
 
@@ -328,8 +395,11 @@ const BusDetailsPage = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <BusesNavbar />
         <div className="flex-1 p-12 sm:p-16">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">Loading bus details...</div>
+          <div className="bg-white rounded-xl sm:rounded-2xl p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading bus details...</span>
+            </div>
           </div>
         </div>
         <Footer />
@@ -384,9 +454,15 @@ const BusDetailsPage = () => {
                   </div>
                 </div>
                 <div
-                  className={`w-full px-3 py-2 rounded-lg text-xs font-medium text-center border ${busData.active ? "bg-green-100 text-green-800 border-green-500" : "bg-red-500 text-white border-red-500"}`}
+                  className={`w-full px-3 py-2 rounded-lg text-xs font-medium text-center border ${
+                    busData.trackingStatus === "MOVING"
+                      ? "bg-green-100 text-green-800 border-green-500"
+                      : busData.trackingStatus === "STOPPED"
+                        ? "bg-yellow-100 text-yellow-800 border-yellow-500"
+                        : "bg-red-100 text-red-800 border-red-500"
+                  }`}
                 >
-                  Status: {busData.active ? "Moving" : "Inactive"}
+                  Status: {busData.trackingStatus}
                 </div>
                 <div className="mt-3 space-y-3 text-xs">
                   <div>
