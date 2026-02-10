@@ -40,12 +40,21 @@ const EmergencyCard = () => {
   const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
   const [microphoneStream, setMicrophoneStream] = useState<MediaStream | null>(null);
   const [recordingState, setRecordingState] = useState<'idle' | 'requesting' | 'recording' | 'stopped'>('idle');
+  const [apiSuccess, setApiSuccess] = useState('');
+  const [apiError, setApiError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleReportIssue = () => {
     setShowReportModal(true);
   };
 
-
+  const handleEmergencyToggle = (emergencyId: string) => {
+    setSelectedEmergencies(prev => 
+      prev.includes(emergencyId)
+        ? prev.filter(id => id !== emergencyId)
+        : [...prev, emergencyId]
+    );
+  };
 
   const startRecording = async (stream: MediaStream) => {
     const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
@@ -91,6 +100,8 @@ const EmergencyCard = () => {
     setAudioBlob(null);
     setRecordingDuration(0);
     setRecordingState('idle');
+    setApiSuccess('');
+    setApiError('');
   };
 
   const handleStartRecording = async () => {
@@ -103,7 +114,6 @@ const EmergencyCard = () => {
       setRecordingError('');
       setRecordingDuration(0);
       
-      // Direct microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -115,8 +125,9 @@ const EmergencyCard = () => {
       await startRecording(stream);
       setMicrophoneStream(stream);
       
-    } catch (error: any) {
-      if (error.name === 'NotAllowedError') {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('NotAllowed')) {
         setRecordingError('Microphone permission required for voice recording');
       } else {
         setRecordingError('Unable to access microphone');
@@ -124,71 +135,180 @@ const EmergencyCard = () => {
     }
   };
 
-  const handleEmergencyToggle = (emergencyId: string) => {
-    setSelectedEmergencies(prev => 
-      prev.includes(emergencyId)
-        ? prev.filter(id => id !== emergencyId)
-        : [...prev, emergencyId]
-    );
+  const getAuthToken = () => {
+    // Check for the specific token name used in your app
+    const token = localStorage.getItem('authToken') || 
+                  localStorage.getItem('accessToken') || 
+                  localStorage.getItem('token');
+    
+    if (token) {
+      return token.replace(/^Bearer\s+/i, '');
+    }
+    
+    return null;
+  };
+
+  const getCurrentLocation = (): Promise<{latitude: number, longitude: number}> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        // Default to Kigali, Rwanda coordinates if geolocation is not available
+        resolve({ latitude: -1.9441, longitude: 30.0619 });
+        return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.warn('Geolocation error:', error);
+          // Default to Kigali, Rwanda coordinates if user denies permission
+          resolve({ latitude: -1.9441, longitude: 30.0619 });
+        },
+        { 
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
   };
 
   const handleSendReport = async () => {
     if (selectedEmergencies.length === 0) {
-      return; // Don't proceed if no emergency types selected
-    }
-    
-    if (!showNoteBox) {
-      setShowNoteBox(true); // Show note box for details
+      setApiError('Please select at least one emergency type');
       return;
     }
     
-    // Proceed with sending if note box is shown and details provided
-    if (!reportNote.trim() && !audioBlob) {
-      return; // Need either text or voice
+    if (!showNoteBox) {
+      setShowNoteBox(true);
+      return;
     }
     
-    const reportData = {
-      emergencyTypes: selectedEmergencies,
-      reportNote: reportNote.trim(),
-      audioRecording: audioBlob,
-      recordingDuration: recordingDuration,
-      timestamp: new Date().toISOString(),
-      audioSize: audioBlob ? audioBlob.size : 0
-    };
-    
-    // Professional way to send report data
-    const formData = new FormData();
-    formData.append('emergencyTypes', JSON.stringify(selectedEmergencies));
-    formData.append('reportNote', reportNote.trim());
-    formData.append('timestamp', reportData.timestamp);
-    
-    if (audioBlob) {
-      formData.append('audioFile', audioBlob, `emergency_${Date.now()}.webm`);
-      formData.append('duration', recordingDuration.toString());
+    if (!reportNote.trim()) {
+      setApiError('Please provide emergency details');
+      return;
     }
     
-    console.log('Emergency report ready to send:', {
-      types: selectedEmergencies,
-      note: reportNote.trim(),
-      hasAudio: !!audioBlob,
-      audioSize: audioBlob ? `${(audioBlob.size / 1024).toFixed(2)} KB` : 'No audio'
-    });
+    setIsSubmitting(true);
+    setApiError('');
+    setApiSuccess('');
     
-    // Reset all states
-    setShowReportModal(false);
-    setIsRecording(false);
-    setSelectedEmergencies([]);
-    setReportNote('');
-    setShowNoteBox(false);
-    setAudioBlob(null);
-    setMediaRecorder(null);
-    setRecordingError('');
-    setRecordingDuration(0);
-    setRecordingState('idle');
-    setMicrophoneStream(null);
-    if (recordingTimer) {
-      window.clearInterval(recordingTimer);
-      setRecordingTimer(null);
+    try {
+      // Get authentication token
+      const token = getAuthToken();
+      if (!token) {
+        setApiError('Authentication required. Please log in first.');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Get current location
+      const location = await getCurrentLocation();
+      
+      // According to the API documentation, the endpoint expects:
+      // POST /api/driver/emergencies
+      // Required fields: emergencyType, description, latitude, longitude
+      
+      const requestData = {
+        type: selectedEmergencies[0],
+        description: reportNote.trim(),
+        latitude: location.latitude,
+        longitude: location.longitude
+      };
+      
+      // Debug logging
+      console.log('=== SENDING EMERGENCY REPORT ===');
+      console.log('Endpoint:', 'https://school-bus-tracker-be.onrender.com/api/driver/emergencies');
+      console.log('Token present:', !!token);
+      console.log('Token value:', token?.substring(0, 20) + '...');
+      console.log('Request headers:', {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token?.substring(0, 20)}...`,
+      });
+      console.log('Request data:', JSON.stringify(requestData, null, 2));
+      console.log('Request data types:', {
+        type: typeof requestData.type,
+        description: typeof requestData.description,
+        latitude: typeof requestData.latitude,
+        longitude: typeof requestData.longitude
+      });
+      
+      const response = await fetch("https://school-bus-tracker-be.onrender.com/api/driver/emergencies", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      // Try to parse response as JSON
+      let responseData;
+      const responseText = await response.text();
+      console.log('Raw response text:', responseText);
+      
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', e);
+        responseData = { message: responseText || 'Unknown error' };
+      }
+      
+      if (!response.ok) {
+        console.error('API Error:', responseData);
+        
+        // Extract error message from response
+        const errorMessage = responseData.message || 
+                            responseData.error || 
+                            responseData.details || 
+                            `Error ${response.status}: ${response.statusText}`;
+        
+        // Specific handling for common error codes
+        if (response.status === 400) {
+          setApiError(`Invalid request: ${errorMessage}. Please check your input.`);
+        } else if (response.status === 401) {
+          setApiError('Session expired. Please log in again.');
+        } else if (response.status === 403) {
+          setApiError('You do not have permission to report emergencies.');
+        } else if (response.status === 404) {
+          setApiError('Emergency reporting service not found.');
+        } else if (response.status === 500) {
+          setApiError('Server error. Please try again later.');
+        } else {
+          setApiError(`Failed to send emergency report: ${errorMessage}`);
+        }
+        
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Success case
+      console.log('Success response:', responseData);
+      setApiSuccess('Emergency report sent successfully!');
+      
+      // Reset form and close modal after 3 seconds
+      setTimeout(() => {
+        setShowReportModal(false);
+        setSelectedEmergencies([]);
+        setReportNote('');
+        setShowNoteBox(false);
+        setApiSuccess('');
+        setApiError('');
+        setIsSubmitting(false);
+      }, 3000);
+      
+    } catch (error: unknown) {
+      console.error('Network or other error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unable to connect to server';
+      setApiError(`Network error: ${errorMessage}`);
+      setIsSubmitting(false);
     }
   };
 
@@ -210,7 +330,6 @@ const EmergencyCard = () => {
     }
     
     setShowReportModal(false);
-    setIsRecording(false);
     setSelectedEmergencies([]);
     setShowEmergencyTypes(false);
     setReportNote('');
@@ -220,7 +339,11 @@ const EmergencyCard = () => {
     setRecordingError('');
     setRecordingDuration(0);
     setRecordingState('idle');
+    setApiSuccess('');
+    setApiError('');
+    setIsSubmitting(false);
   };
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200 h-96 w-full flex flex-col items-center justify-center">
       {/* Title with red exclamation mark */}
@@ -263,159 +386,168 @@ const EmergencyCard = () => {
       {showReportModal && (
         <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm bg-black/20">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 sm:p-6 w-full max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-              {/* Header with exclamation mark */}
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.786 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <h2 className="text-xl font-bold text-black">Report Emergency</h2>
-                </div>
-                <p className="text-gray-700 text-sm text-center mb-6">
-                  Select emergency type(s) and record a voice message to notify all relevant parties.
-                </p>
+            {/* Header with exclamation mark */}
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.786 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <h2 className="text-xl font-bold text-black">Report Emergency</h2>
               </div>
+              <p className="text-gray-700 text-sm text-center mb-6">
+                Select emergency type and provide details to notify all relevant parties.
+              </p>
+            </div>
+            
+            {/* Emergency Types Selection */}
+            <div className="mb-6">
+              <button
+                onClick={() => setShowEmergencyTypes(!showEmergencyTypes)}
+                className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+              >
+                <span className="text-lg font-semibold text-gray-900">Emergency Types</span>
+                {showEmergencyTypes ? 
+                  <FaChevronUp className="w-4 h-4 text-gray-600" /> : 
+                  <FaChevronDown className="w-4 h-4 text-gray-600" />
+                }
+              </button>
               
-              {/* Emergency Types Selection */}
-              <div className="mb-6">
-                <button
-                  onClick={() => setShowEmergencyTypes(!showEmergencyTypes)}
-                  className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
-                >
-                  <span className="text-lg font-semibold text-gray-900">Emergency Types</span>
-                  {showEmergencyTypes ? 
-                    <FaChevronUp className="w-4 h-4 text-gray-600" /> : 
-                    <FaChevronDown className="w-4 h-4 text-gray-600" />
-                  }
-                </button>
-                
-                {showEmergencyTypes && (
-                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {emergencyTypes.map((emergency) => {
-                      const IconComponent = emergency.icon;
-                      const isSelected = selectedEmergencies.includes(emergency.id);
-                      
-                      return (
-                        <label
-                          key={emergency.id}
-                          className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                            isSelected
-                              ? 'border-red-300 bg-red-50'
-                              : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleEmergencyToggle(emergency.id)}
-                            className="w-4 h-4 text-white bg-blue-600 border-gray-300 rounded focus:ring-blue-500 accent-blue-600"
-                          />
-                          <IconComponent className={`w-5 h-5 ${emergency.color}`} />
-                          <span className="text-sm font-medium text-gray-900">{emergency.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-              
-                {/* Recording Status */}
-                {recordingError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600">{recordingError}</p>
-                  </div>
-                )}
-                
-                {audioBlob && recordingState === 'stopped' && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-green-600">✓ Voice message saved ({recordingDuration}s)</p>
-                      <button
-                        onClick={handleDeleteRecording}
-                        className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors"
-                        title="Delete recording"
+              {showEmergencyTypes && (
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {emergencyTypes.map((emergency) => {
+                    const IconComponent = emergency.icon;
+                    const isSelected = selectedEmergencies.includes(emergency.id);
+                    
+                    return (
+                      <label
+                        key={emergency.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                          isSelected
+                            ? 'border-red-300 bg-red-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                        }`}
                       >
-                        <HiOutlineTrash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              
-              {/* Report Details Note - Only show when requested */}
-              {showNoteBox && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Emergency Details Required
-                  </label>
-                  <textarea
-                    value={reportNote}
-                    onChange={(e) => setReportNote(e.target.value)}
-                    placeholder="Describe the emergency situation in detail..."
-                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-800 placeholder-gray-400 transition-colors"
-                    rows={4}
-                    maxLength={500}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{reportNote.length}/500 characters</p>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleEmergencyToggle(emergency.id)}
+                          className="w-4 h-4 text-white bg-blue-600 border-gray-300 rounded focus:ring-blue-500 accent-blue-600"
+                        />
+                        <IconComponent className={`w-5 h-5 ${emergency.color}`} />
+                        <span className="text-sm font-medium text-gray-900">{emergency.label}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
-              
-              {/* Action Buttons */}
-              <div className="w-full space-y-3">
-                {/* Start/Stop Recording Button */}
-                <button 
-                  onClick={handleStartRecording}
-                  className={`${
-                    isRecording 
-                      ? 'bg-red-800 hover:bg-red-900' 
-                      : 'bg-red-600 hover:bg-red-700'
-                  } text-white font-bold py-3 rounded-xl shadow-lg transition-colors w-full flex items-center justify-center gap-2`}
-                >
-                  <AiOutlineAudio className={`text-white text-lg ${
-                    isRecording ? 'animate-pulse' : ''
-                  }`} />
-                  <span>
-                    {isRecording ? `Recording... ${recordingDuration}s` : audioBlob ? 'Re-record' : 'Start Recording'}
-                  </span>
-                </button>
-                
-                {/* Send Emergency Report Button */}
-                <button 
-                  onClick={handleSendReport}
-                  disabled={selectedEmergencies.length === 0 || (showNoteBox && !reportNote.trim() && !audioBlob)}
-                  className={`font-bold py-3 rounded-xl shadow-lg transition-colors w-full flex items-center justify-center gap-2 ${
-                    (selectedEmergencies.length > 0 && (!showNoteBox || reportNote.trim() || audioBlob))
-                      ? 'bg-red-600 hover:bg-red-700 text-white'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  <BsSend className="text-lg" />
-                  <span>{showNoteBox ? 'Send Emergency Report' : 'Continue to Details'}</span>
-                </button>
-                
-                {/* Requirement Message */}
-                {selectedEmergencies.length === 0 && (
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Please select emergency type(s) above
-                  </p>
-                )}
-                
-                {showNoteBox && !reportNote.trim() && !audioBlob && (
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Please add details by voice recording or written note
-                  </p>
-                )}
-                
-                {/* Cancel Button */}
-                <button 
-                  onClick={handleCancel}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl shadow-lg transition-colors w-full"
-                >
-                  Cancel
-                </button>
-              </div>
             </div>
+            
+            {/* API Success/Error Messages */}
+            {apiSuccess && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-600">{apiSuccess}</p>
+              </div>
+            )}
+            
+            {apiError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{apiError}</p>
+              </div>
+            )}
+            
+            {/* Report Details Note - Only show when requested */}
+            {showNoteBox && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Emergency Details Required *
+                </label>
+                <textarea
+                  value={reportNote}
+                  onChange={(e) => setReportNote(e.target.value)}
+                  placeholder="Describe the emergency situation in detail (e.g., location, severity, number of people affected, immediate actions taken)..."
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-800 placeholder-gray-400 transition-colors"
+                  rows={4}
+                  maxLength={500}
+                  disabled={isSubmitting}
+                />
+                <p className="text-xs text-gray-500 mt-1">{reportNote.length}/500 characters</p>
+              </div>
+            )}
+            
+            {/* Selected Emergencies Display */}
+            {selectedEmergencies.length > 0 && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-800 mb-1">Selected Emergency Types:</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedEmergencies.map(id => {
+                    const emergency = emergencyTypes.find(e => e.id === id);
+                    return emergency ? (
+                      <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
+                        <emergency.icon className={`w-3 h-3 ${emergency.color}`} />
+                        {emergency.label}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Action Buttons */}
+            <div className="w-full space-y-3">
+              {/* Send Emergency Report Button */}
+              <button 
+                onClick={handleSendReport}
+                disabled={selectedEmergencies.length === 0 || (showNoteBox && !reportNote.trim()) || isSubmitting}
+                className={`font-bold py-3 rounded-xl shadow-lg transition-colors w-full flex items-center justify-center gap-2 ${
+                  (selectedEmergencies.length > 0 && (!showNoteBox || reportNote.trim()) && !isSubmitting)
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <BsSend className="text-lg" />
+                    <span>{showNoteBox ? 'Send Emergency Report' : 'Continue to Details'}</span>
+                  </>
+                )}
+              </button>
+              
+              {/* Requirement Message */}
+              {selectedEmergencies.length === 0 && (
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  Please select at least one emergency type above
+                </p>
+              )}
+              
+              {showNoteBox && !reportNote.trim() && (
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  Please provide emergency details before sending
+                </p>
+              )}
+              
+              {/* Cancel Button */}
+              <button 
+                onClick={handleCancel}
+                disabled={isSubmitting}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl shadow-lg transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
+            
+            {/* Footer note */}
+            <p className="text-xs text-gray-400 text-center mt-6">
+              This report will be sent to school administration and parents immediately.
+              Only use for genuine emergencies.
+            </p>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 };

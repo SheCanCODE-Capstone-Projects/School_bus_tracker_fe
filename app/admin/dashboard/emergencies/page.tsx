@@ -1,66 +1,69 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Info, MapPin, Clock, Phone, Users } from 'lucide-react';
 import AdminNavbar from '@/components/navigation/AdminNavbar';
 
+interface Emergency {
+  id: number;
+  type: string;
+  description: string;
+  voiceRecordingUrl: string | null;
+  status: string;
+  busNumber: string;
+  driverName: string;
+  latitude: number;
+  longitude: number;
+  parentsNotified: boolean;
+  reportedAt: string;
+  resolvedAt: string | null;
+  resolvedByAdminName: string | null;
+  resolutionNotes: string | null;
+}
+
 const EmergenciesPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
-  const [selectedEmergency, setSelectedEmergency] = useState<typeof emergencies[0] | null>(null);
+  const [selectedEmergency, setSelectedEmergency] = useState<Emergency | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [sendNotification, setSendNotification] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [emergencies, setEmergencies] = useState<Emergency[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const emergencies = [
-    {
-      id: 1,
-      type: 'Mechanical Issue',
-      description: 'Engine overheating warning light',
-      status: 'active',
-      bus: 'Bus 03',
-      driver: 'David Brown',
-      time: '15 minutes ago',
-      location: '5th Avenue & Park Street',
-      reportedAt: '2024-12-02 2:45 PM',
-      driverContact: '+1 (555) 789-0123',
-      parentsNotified: true,
-      resolutionNotes: null,
-      resolvedBy: null,
-      resolvedAt: null
-    },
-    {
-      id: 2,
-      type: 'Traffic Delay',
-      description: 'Major traffic accident on route',
-      status: 'resolved',
-      bus: 'Bus 01',
-      driver: 'Michael Johnson',
-      time: '1 day ago',
-      location: '3rd Avenue & Main Street',
-      reportedAt: '2024-12-01 8:15 AM',
-      driverContact: '+1 (555) 987-6543',
-      parentsNotified: true,
-      resolutionNotes: 'Alternative route taken. All students arrived safely. 12-minute delay.',
-      resolvedBy: 'Admin Sarah',
-      resolvedAt: '2024-12-01 8:30 AM'
-    },
-    {
-      id: 3,
-      type: 'Medical Assistance',
-      description: 'Student feeling unwell',
-      status: 'resolved',
-      bus: 'Bus 02',
-      driver: 'Sarah Williams',
-      time: '2 days ago',
-      location: 'Lincoln Elementary School',
-      reportedAt: '2024-11-30 3:20 PM',
-      driverContact: '+1 (555) 123-4567',
-      parentsNotified: true,
-      resolutionNotes: 'School nurse attended. Parent picked up student. No serious issues.',
-      resolvedBy: 'Admin John',
-      resolvedAt: '2024-11-30 3:35 PM'
+  useEffect(() => {
+    fetchEmergencies();
+  }, []);
+
+  const fetchEmergencies = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('https://school-bus-tracker-be.onrender.com/api/driver/emergencies', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      setEmergencies(data);
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to load emergencies');
+      setLoading(false);
     }
-  ];
+  };
 
   const activeCount = emergencies.filter(e => e.status === 'active').length;
   const resolvedTodayCount = emergencies.filter(e => {
