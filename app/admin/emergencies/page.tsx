@@ -1,65 +1,142 @@
 'use client';
 
-import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle, Info, MapPin, Clock, Phone, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertTriangle, CheckCircle, Info, MapPin, Clock, Users } from 'lucide-react';
+
+interface Emergency {
+  id: number;
+  type: string;
+  description: string;
+  voiceRecordingUrl?: string;
+  status: string;
+  busNumber: string;
+  driverName: string;
+  latitude: number;
+  longitude: number;
+  parentsNotified: boolean;
+  reportedAt: string;
+  resolvedAt?: string;
+  resolvedByAdminName?: string;
+  resolutionNotes?: string;
+}
 
 const EmergenciesPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [emergencies, setEmergencies] = useState<Emergency[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [selectedEmergency, setSelectedEmergency] = useState<Emergency | null>(null);
+  const [resolutionNotes, setResolutionNotes] = useState('');
+  const [notifyParents, setNotifyParents] = useState(true);
+  const [isResolving, setIsResolving] = useState(false);
 
-  const emergencies = [
-    {
-      id: 1,
-      type: 'Mechanical Issue',
-      description: 'Engine overheating warning light',
-      status: 'active',
-      bus: 'Bus 03',
-      driver: 'David Brown',
-      time: '15 minutes ago',
-      location: '5th Avenue & Park Street',
-      reportedAt: '2024-12-02 2:45 PM',
-      driverContact: '+1 (555) 789-0123',
-      parentsNotified: true,
-      resolutionNotes: null,
-      resolvedBy: null,
-      resolvedAt: null
-    },
-    {
-      id: 2,
-      type: 'Traffic Delay',
-      description: 'Major traffic accident on route',
-      status: 'resolved',
-      bus: 'Bus 01',
-      driver: 'Michael Johnson',
-      time: '1 day ago',
-      location: '3rd Avenue & Main Street',
-      reportedAt: '2024-12-01 8:15 AM',
-      driverContact: '+1 (555) 987-6543',
-      parentsNotified: true,
-      resolutionNotes: 'Alternative route taken. All students arrived safely. 12-minute delay.',
-      resolvedBy: 'Admin Sarah',
-      resolvedAt: '2024-12-01 8:30 AM'
-    },
-    {
-      id: 3,
-      type: 'Medical Assistance',
-      description: 'Student feeling unwell',
-      status: 'resolved',
-      bus: 'Bus 02',
-      driver: 'Sarah Williams',
-      time: '2 days ago',
-      location: 'Lincoln Elementary School',
-      reportedAt: '2024-11-30 3:20 PM',
-      driverContact: '+1 (555) 123-4567',
-      parentsNotified: true,
-      resolutionNotes: 'School nurse attended. Parent picked up student. No serious issues.',
-      resolvedBy: 'Admin John',
-      resolvedAt: '2024-11-30 3:35 PM'
+  useEffect(() => {
+    fetchEmergencies();
+  }, []);
+
+  const fetchEmergencies = async () => {
+    try {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('accessToken') || localStorage.getItem('token');
+      
+      console.log('=== FETCHING EMERGENCIES (ADMIN) ===');
+      console.log('Token found:', !!token);
+      
+      if (!token) {
+        console.error('No auth token found');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Calling API:', 'https://school-bus-tracker-be.onrender.com/api/admin/emergencies');
+      console.log('Timestamp:', new Date().toISOString());
+      
+      const response = await fetch('https://school-bus-tracker-be.onrender.com/api/admin/emergencies', {
+        method:'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Emergencies received:', data);
+        console.log('Number of emergencies:', Array.isArray(data) ? data.length : 'Not an array');
+        setEmergencies(Array.isArray(data) ? data : []);
+      } else {
+        const errorText = await response.text();
+        console.error('API Error:', response.status, errorText);
+        if (response.status === 403) {
+          console.error('403 FORBIDDEN: Admin token cannot access driver endpoint. Backend needs to create /api/admin/emergencies endpoint.');
+        }
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching emergencies:', err);
+      setLoading(false);
     }
-  ];
+  };
 
-  const activeCount = emergencies.filter(e => e.status === 'active').length;
+  const handleManageClick = (emergency: Emergency) => {
+    setSelectedEmergency(emergency);
+    setResolutionNotes('');
+    setNotifyParents(true);
+    setShowResolveModal(true);
+  };
+
+  const handleResolveEmergency = async () => {
+    if (!selectedEmergency || !resolutionNotes.trim()) {
+      alert('Please provide resolution notes');
+      return;
+    }
+
+    setIsResolving(true);
+
+    try {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('accessToken') || localStorage.getItem('token');
+      
+      if (!token) {
+        alert('Authentication required');
+        setIsResolving(false);
+        return;
+      }
+
+      const response = await fetch(`https://school-bus-tracker-be.onrender.com/api/admin/emergencies/${selectedEmergency.id}/resolve`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          resolutionNotes: resolutionNotes.trim(),
+          notifyParents: notifyParents
+        })
+      });
+
+      if (response.ok) {
+        alert('Emergency resolved successfully!');
+        setShowResolveModal(false);
+        setSelectedEmergency(null);
+        setResolutionNotes('');
+        fetchEmergencies(); 
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to resolve emergency: ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error resolving emergency:', err);
+      alert('Failed to resolve emergency');
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
+  const activeCount = emergencies.filter(e => e.status === 'ACTIVE').length;
   const resolvedTodayCount = emergencies.filter(e => {
-    if (e.status !== 'resolved' || !e.resolvedAt) return false;
+    if (e.status !== 'RESOLVED' || !e.resolvedAt) return false;
     const today = new Date().toDateString();
     const resolvedDate = new Date(e.resolvedAt).toDateString();
     return today === resolvedDate;
@@ -68,12 +145,34 @@ const EmergenciesPage = () => {
 
   const filteredEmergencies = emergencies.filter(e => {
     if (activeFilter === 'all') return true;
-    if (activeFilter === 'active') return e.status === 'active';
-    if (activeFilter === 'resolved') return e.status === 'resolved';
+    if (activeFilter === 'active') return e.status === 'ACTIVE';
+    if (activeFilter === 'resolved') return e.status === 'RESOLVED';
     return true;
   });
 
   const hasActiveEmergency = activeCount > 0;
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    return `${Math.floor(seconds / 86400)} days ago`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading emergencies...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -188,7 +287,7 @@ const EmergenciesPage = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Resolved ({emergencies.filter(e => e.status === 'resolved').length})
+            Resolved ({emergencies.filter(e => e.status === 'RESOLVED').length})
           </button>
         </div>
 
@@ -210,7 +309,7 @@ const EmergenciesPage = () => {
             <div
               key={emergency.id}
               className={`rounded-2xl p-6 shadow-sm border-2 ${
-                emergency.status === 'active'
+                emergency.status === 'ACTIVE'
                   ? 'bg-red-50 border-red-200'
                   : 'bg-green-50 border-green-200'
               }`}
@@ -219,10 +318,10 @@ const EmergenciesPage = () => {
                 <div className="flex items-start space-x-4">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      emergency.status === 'active' ? 'bg-red-200' : 'bg-green-200'
+                      emergency.status === 'ACTIVE' ? 'bg-red-200' : 'bg-green-200'
                     }`}
                   >
-                    {emergency.status === 'active' ? (
+                    {emergency.status === 'ACTIVE' ? (
                       <AlertTriangle className="w-6 h-6 text-red-600" />
                     ) : (
                       <CheckCircle className="w-6 h-6 text-green-600" />
@@ -233,12 +332,12 @@ const EmergenciesPage = () => {
                       <h3 className="text-xl font-bold text-gray-900">{emergency.type}</h3>
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          emergency.status === 'active'
+                          emergency.status === 'ACTIVE'
                             ? 'bg-red-200 text-red-800'
                             : 'bg-green-200 text-green-800'
                         }`}
                       >
-                        {emergency.status === 'active' ? 'Active' : 'Resolved'}
+                        {emergency.status === 'ACTIVE' ? 'Active' : 'Resolved'}
                       </span>
                     </div>
                     <p className="text-gray-700 mb-3">{emergency.description}</p>
@@ -248,21 +347,24 @@ const EmergenciesPage = () => {
                           <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
                           <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
                         </svg>
-                        <span>{emergency.bus}</span>
+                        <span>Bus {emergency.busNumber}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Users className="w-4 h-4" />
-                        <span>{emergency.driver}</span>
+                        <span>{emergency.driverName}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />
-                        <span>{emergency.time}</span>
+                        <span>{getTimeAgo(emergency.reportedAt)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                {emergency.status === 'active' && (
-                  <button className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                {emergency.status === 'ACTIVE' && (
+                  <button 
+                    onClick={() => handleManageClick(emergency)}
+                    className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                  >
                     Manage
                   </button>
                 )}
@@ -275,12 +377,9 @@ const EmergenciesPage = () => {
                       <MapPin className="w-4 h-4" />
                       <span className="font-medium">Location</span>
                     </div>
-                    <p className="text-gray-700 ml-6">{emergency.location}</p>
-                    
-                    <div className="mt-4">
-                      <p className="font-medium text-gray-700 mb-1">Driver Contact</p>
-                      <p className="text-gray-600 ml-6">{emergency.driverContact}</p>
-                    </div>
+                    <p className="text-gray-700 ml-6">
+                      Lat: {emergency.latitude.toFixed(4)}, Lng: {emergency.longitude.toFixed(4)}
+                    </p>
                   </div>
 
                   <div>
@@ -288,25 +387,27 @@ const EmergenciesPage = () => {
                       <Clock className="w-4 h-4" />
                       <span className="font-medium">Reported At</span>
                     </div>
-                    <p className="text-gray-700 ml-6">{emergency.reportedAt}</p>
+                    <p className="text-gray-700 ml-6">{new Date(emergency.reportedAt).toLocaleString()}</p>
                     
                     <div className="mt-4">
                       <p className="font-medium text-gray-700 mb-1">Parents Notified</p>
-                      <p className="text-green-600 ml-6 flex items-center space-x-1">
+                      <p className={`ml-6 flex items-center space-x-1 ${emergency.parentsNotified ? 'text-green-600' : 'text-gray-500'}`}>
                         <CheckCircle className="w-4 h-4" />
-                        <span>Yes</span>
+                        <span>{emergency.parentsNotified ? 'Yes' : 'No'}</span>
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {emergency.status === 'resolved' && emergency.resolutionNotes && (
+                {emergency.status === 'RESOLVED' && emergency.resolutionNotes && (
                   <div className="mt-6 pt-6 border-t border-gray-200">
                     <p className="font-medium text-gray-700 mb-2">Resolution Notes</p>
                     <p className="text-gray-600 mb-2">{emergency.resolutionNotes}</p>
-                    <p className="text-sm text-gray-500">
-                      Resolved by {emergency.resolvedBy} at {emergency.resolvedAt}
-                    </p>
+                    {emergency.resolvedByAdminName && emergency.resolvedAt && (
+                      <p className="text-sm text-gray-500">
+                        Resolved by {emergency.resolvedByAdminName} at {new Date(emergency.resolvedAt).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -314,6 +415,66 @@ const EmergenciesPage = () => {
           ))}
         </div>
       </main>
+
+      {/* Resolve Emergency Modal */}
+      {showResolveModal && selectedEmergency && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Resolve Emergency</h2>
+            <p className="text-gray-600 mb-4">
+              <strong>{selectedEmergency.type}</strong> - {selectedEmergency.description}
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Resolution Notes *
+              </label>
+              <textarea
+                value={resolutionNotes}
+                onChange={(e) => setResolutionNotes(e.target.value)}
+                placeholder="Describe how the emergency was resolved..."
+                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-800"
+                rows={4}
+                disabled={isResolving}
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={notifyParents}
+                  onChange={(e) => setNotifyParents(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  disabled={isResolving}
+                />
+                <span className="text-sm text-gray-700">Notify parents about resolution</span>
+              </label>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={handleResolveEmergency}
+                disabled={isResolving || !resolutionNotes.trim()}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                {isResolving ? 'Resolving...' : 'Resolve Emergency'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowResolveModal(false);
+                  setSelectedEmergency(null);
+                  setResolutionNotes('');
+                }}
+                disabled={isResolving}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-lg disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
