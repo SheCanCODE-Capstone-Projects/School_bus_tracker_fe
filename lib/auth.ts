@@ -2,8 +2,32 @@ export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
 
   const token = localStorage.getItem('authToken') || getCookie('authToken');
-
-  return token || null;
+  
+  if (!token) return null;
+  
+  // Validate token format
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      // Check if token is expired (only if exp field exists)
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        console.log('Token expired, removing from storage');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userRole');
+        document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'userRole=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        return null;
+      }
+      return token;
+    }
+    // If token doesn't have 3 parts, still return it (might be a custom token)
+    return token;
+  } catch (error) {
+    // If token parsing fails, still return the token (don't invalidate it)
+    console.warn('Token validation warning:', error);
+    return token;
+  }
 }
 
 
@@ -33,9 +57,11 @@ export function setAuthData(token: string, role: string, userData?: UserData): v
       localStorage.setItem('userData', JSON.stringify(userData));
     }
     
-    // Also set cookies for middleware
-    setCookie('authToken', token, 7); // 7 days
-    setCookie('userRole', role, 7);
+    // Set cookies for middleware with longer expiry
+    setCookie('authToken', token, 30); // 30 days
+    setCookie('userRole', role, 30);
+    
+    console.log('Auth data set successfully:', { role, hasToken: !!token });
   }
 }
 

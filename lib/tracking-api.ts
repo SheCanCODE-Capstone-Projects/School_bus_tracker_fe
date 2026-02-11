@@ -1,0 +1,238 @@
+import { getAuthToken } from './auth';
+
+const API_BASE_URL = 'https://school-bus-tracker-be.onrender.com/api';
+/** Parent controller routes in doc are without /api: GET /parent/{id}/students, GET /parent/bus/{id}/location */
+const PARENT_BASE_URL = 'https://school-bus-tracker-be.onrender.com';
+
+/** Throws if no valid token – use this so we never call protected APIs without Authorization. */
+function requireAuthHeaders(): HeadersInit {
+  const token = getAuthToken();
+  if (!token || typeof token !== 'string' || token.trim() === '') {
+    throw new Error('Not authenticated. Please log in again.');
+  }
+  return { Authorization: `Bearer ${token}` };
+}
+
+export interface TrackingSuccessResponse {
+  success: boolean;
+  message?: string;
+}
+
+export interface DriverLocationPayload {
+  latitude: number;
+  longitude: number;
+  speed?: number | null;
+  heading?: number | null;
+}
+
+export interface ParentBusLocationResponse {
+  latitude: number;
+  longitude: number;
+  speed?: number | null;
+  heading?: number | null;
+  lastUpdated: string; // ISO 8601
+}
+
+export interface AdminTrackingStatusResponse {
+  status: 'ACTIVE' | 'STOPPED';
+  startedAt: string | null;
+  stoppedAt: string | null;
+  driverName?: string;
+  busNumber?: string;
+}
+
+export interface AdminBusLocationPoint {
+  latitude: number;
+  longitude: number;
+  speed?: number | null;
+  heading?: number | null;
+  lastUpdated: string; // ISO 8601
+}
+
+const REQUEST_TIMEOUT_MS = 45000; // 45s – Render free tier cold start can be slow
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit & { timeoutMs?: number } = {}
+): Promise<Response> {
+  const { timeoutMs = REQUEST_TIMEOUT_MS, ...fetchOptions } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...fetchOptions, signal: controller.signal });
+    return res;
+  } catch (e) {
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new Error(
+        'Request timed out. Backend may be starting (e.g. Render free tier). Check network/CORS or try again.'
+      );
+    }
+    if (e instanceof TypeError && e.message === 'Failed to fetch') {
+      throw new Error(
+        'Network error: cannot reach server. Check CORS (backend must allow your origin) and that the server is running.'
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+async function parseError(res: Response): Promise<string> {
+  try {
+    const text = await res.text();
+    if (!text) return `Request failed (${res.status})`;
+    try {
+      const json = JSON.parse(text) as { message?: string };
+      return json?.message || text;
+    } catch {
+      return text;
+    }
+  } catch {
+    return `Request failed (${res.status})`;
+  }
+}
+
+/** Backend must resolve JWT to a Driver entity; "Driver entity not found" means no Driver record for this user. */
+export async function driverStartTracking(): Promise<TrackingSuccessResponse> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/driver/tracking/start`, {
+    method: 'POST',
+    headers: { ...requireAuthHeaders() },
+  });
+
+  let data: (TrackingSuccessResponse & { message?: string }) | null = null;
+  try {
+    data = (await res.json()) as TrackingSuccessResponse & { message?: string };
+  } catch {
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  }
+  if (!res.ok) throw new Error(data?.message || `Request failed (${res.status})`);
+  if (data && data.success === false) {
+    throw new Error(data.message || 'Failed to start tracking');
+  }
+  return data!;
+}
+
+export async function driverStopTracking(): Promise<TrackingSuccessResponse> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/driver/tracking/stop`, {
+    method: 'POST',
+    headers: { ...requireAuthHeaders() },
+  });
+
+  let data: (TrackingSuccessResponse & { message?: string }) | null = null;
+  try {
+    data = (await res.json()) as TrackingSuccessResponse & { message?: string };
+  } catch {
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  }
+  if (!res.ok) throw new Error(data?.message || `Request failed (${res.status})`);
+  if (data && data.success === false) {
+    throw new Error(data.message || 'Failed to stop tracking');
+  }
+  return data!;
+}
+
+export async function driverSendLocation(payload: DriverLocationPayload): Promise<TrackingSuccessResponse> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/driver/tracking/location`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...requireAuthHeaders(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let data: (TrackingSuccessResponse & { message?: string }) | null = null;
+  try {
+    data = (await res.json()) as TrackingSuccessResponse & { message?: string };
+  } catch {
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  }
+  if (!res.ok) throw new Error(data?.message || `Request failed (${res.status})`);
+  if (data && data.success === false) {
+    throw new Error(data.message || 'Failed to send location');
+  }
+  return data!;
+}
+
+/** Student from GET /parent/{parentId}/students – has assignedBus; use assignedBus.id for GET /parent/bus/{busId}/location. */
+export interface ParentStudent {
+  id?: number;
+  studentName?: string;
+  age?: number;
+  parentName?: string;
+  parentPhone?: string;
+  address?: string;
+  busStop?: { stopName?: string; address?: string };
+  assignedBus?: {
+    id?: number;
+    busName?: string;
+    busNumber?: string;
+  };
+  school_id?: number;
+  busId?: number;
+  [key: string]: unknown;
+}
+
+/** GET /parent/{parentId}/students – returns list of parent's students (each can have assignedBus with bus id). */
+export async function getParentStudents(parentId: number | string): Promise<ParentStudent[]> {
+  const res = await fetchWithTimeout(`${PARENT_BASE_URL}/parent/${parentId}/students`, {
+    headers: { ...requireAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : data?.students ?? data?.data ?? [];
+  return list;
+}
+
+/**
+ * Get the assigned bus ID from students (for GET /parent/bus/{busId}/location).
+ * Backend should include assignedBus.id in GET /parent/{parentId}/students response so we can call the location API.
+ */
+export function getAssignedBusIdFromStudents(students: ParentStudent[]): number | null {
+  for (const s of students) {
+    const id =
+      s?.assignedBus?.id ??
+      (s?.assignedBus as { busId?: number })?.busId ??
+      s?.busId ??
+      (s?.bus as { id?: number })?.id;
+    if (typeof id === 'number' && id > 0) return id;
+  }
+  return null;
+}
+
+/** GET /parent/bus/{busId}/location – live location of the bus (parent must have a child on this bus). */
+export async function parentGetBusLocation(busId: number | string): Promise<ParentBusLocationResponse> {
+  const res = await fetchWithTimeout(`${PARENT_BASE_URL}/parent/bus/${busId}/location`, {
+    headers: { ...requireAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as ParentBusLocationResponse;
+}
+
+export async function adminGetTrackingStatus(busId: number | string): Promise<AdminTrackingStatusResponse> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/admin/buses/${busId}/tracking-status`, {
+    headers: { ...requireAuthHeaders() },
+  });
+
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as AdminTrackingStatusResponse;
+}
+
+export async function adminGetBusLocations(
+  busId: number | string,
+  params?: { from?: string; to?: string }
+): Promise<AdminBusLocationPoint[]> {
+  const query = new URLSearchParams();
+  if (params?.from) query.set('from', params.from);
+  if (params?.to) query.set('to', params.to);
+
+  const url = `${API_BASE_URL}/admin/buses/${busId}/locations${query.toString() ? `?${query.toString()}` : ''}`;
+
+  const res = await fetchWithTimeout(url, {
+    headers: { ...requireAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as AdminBusLocationPoint[];
+}
+

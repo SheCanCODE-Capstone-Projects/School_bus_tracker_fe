@@ -97,7 +97,12 @@ export default function SchoolBusLogin() {
       }
 
       if (data.token) {
-        setAuthData(data.token, userRole || selectedRole, data.user);
+        const userData = data.user ?? {
+          id: data.id,
+          email: data.email ?? data.user?.email,
+          role: data.role ?? data.user?.role,
+        };
+        setAuthData(data.token, userRole || selectedRole, userData);
       }
 
       // Navigate based on role
@@ -107,7 +112,7 @@ export default function SchoolBusLogin() {
       } else if (finalRole === 'driver') {
         router.push('/driver/tracker');
       } else if (finalRole === 'admin') {
-        router.push('/admin/dashboard');
+        window.location.href = '/admin/dashboard';
       }
 
     } catch (err: unknown) {
@@ -115,8 +120,9 @@ export default function SchoolBusLogin() {
       
       // Fallback for admin login when server is unavailable
       if (selectedRole === 'admin' && email === 'admin@school.com' && password === 'admin123') {
-        setAuthData('mock-admin-token', 'admin', { id: 1, email: 'admin@school.com', role: 'admin' });
-        router.push('/admin/dashboard');
+        const mockJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBzY2hvb2wuY29tIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzM4MzY4MDAwfQ.mock-signature';
+        setAuthData(mockJWT, 'admin', { id: 1, email: 'admin@school.com', role: 'admin' });
+        window.location.href = '/admin/dashboard';
         return;
       }
       

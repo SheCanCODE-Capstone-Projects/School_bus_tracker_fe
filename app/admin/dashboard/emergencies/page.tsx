@@ -3,7 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Info, MapPin, Clock, Users } from 'lucide-react';
 import AdminNavbar from '@/components/navigation/AdminNavbar';
+ emergency-creation
 import AdminFooter from '@/components/navigation/AdminFooter';
+=======
+import { getAuthToken } from '@/lib/auth';
+ main
 
 interface Emergency {
   id: number;
@@ -39,6 +43,7 @@ const EmergenciesPage = () => {
 
   const fetchEmergencies = async () => {
     try {
+ emergency-creation
       const token = localStorage.getItem('authToken') || localStorage.getItem('accessToken') || localStorage.getItem('token');
       
       console.log('=== FETCHING EMERGENCIES (ADMIN) ===');
@@ -55,6 +60,18 @@ const EmergenciesPage = () => {
       
       const response = await fetch('https://school-bus-tracker-be.onrender.com/api/admin/emergencies', {
         method:'GET',
+
+      const token = getAuthToken();
+      console.log(token)
+       if (!token) {
+          console.error("No authentication token found");
+          window.location.href = "/login";
+          return;
+        }
+
+      const response = await fetch('https://school-bus-tracker-be.onrender.com/api/admin/emergencies', {
+        method: 'GET',
+main
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

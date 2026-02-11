@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Bus } from 'lucide-react';
 import { getAuthToken } from '@/lib/auth';
 
-// Define the Bus type for consistency
 interface Bus {
   id: number;
   name: string;
@@ -19,6 +18,11 @@ interface School {
   schoolName: string;
 }
 
+interface Driver {
+  id: number;
+  fullName: string;
+}
+
 interface EditBusModalProps {
   bus: Bus;
   onClose: () => void;
@@ -26,73 +30,58 @@ interface EditBusModalProps {
 }
 
 const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => {
-  // Use state to manage the form data
   const [formData, setFormData] = useState(bus);
+
   const [schools, setSchools] = useState<School[]>([]);
-  const [schoolsLoading, setSchoolsLoading] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | "">("");
+
+  const [schoolOpen, setSchoolOpen] = useState(false);
+  const [driverOpen, setDriverOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
 
   const API_BASE_URL = 'https://school-bus-tracker-be.onrender.com/api';
 
-  // Fetch schools on component mount
   useEffect(() => {
-    const fetchSchools = async () => {
-      setSchoolsLoading(true);
-      try {
-        const token = getAuthToken();
-        if (!token) {
-          setSchools([]);
-          return;
-        }
+    const fetchData = async () => {
+      const token = getAuthToken();
+      if (!token) return;
 
-        const res = await fetch(`${API_BASE_URL}/schools`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-        });
+      const schoolsRes = await fetch(`${API_BASE_URL}/schools`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        if (!res.ok) {
-          console.warn(`Schools API error: ${res.status}`);
-          setSchools([]);
-          return;
-        }
+      if (schoolsRes.ok) {
+        const data = await schoolsRes.json();
+        const list = Array.isArray(data) ? data : data?.data || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setSchools(list.map((s: any) => ({
+          id: s.id,
+          schoolName: s.schoolName || s.name,
+        })));
+      }
 
-        const data = await res.json();
-        const schoolsList = Array.isArray(data) 
-          ? data 
-          : data?.data && Array.isArray(data.data)
-          ? data.data 
-          : data?.content && Array.isArray(data.content)
-          ? data.content 
-          : [];
+      const driversRes = await fetch(`${API_BASE_URL}/drivers`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        const formattedSchools = schoolsList.map((school: any) => ({
-          id: school.id || school.schoolId || Date.now(),
-          schoolName: school.schoolName || school.name || 'Unknown School'
-        }));
-
-        setSchools(formattedSchools);
-      } catch (error) {
-        console.error("Error fetching schools:", error);
-        setSchools([]);
-      } finally {
-        setSchoolsLoading(false);
+      if (driversRes.ok) {
+        const data = await driversRes.json();
+        const list = data?.data || data;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setDrivers(list.map((d: any) => ({
+          id: d.id,
+          fullName: d.full_name || d.fullName,
+        })));
       }
     };
 
-    fetchSchools();
+    fetchData();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' ? Number(value) : value,
-    }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -103,180 +92,176 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose}></div>
+
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between border-b pb-3 mb-4">
-          <div className="flex items-center gap-2">
-            <Bus className="w-6 h-6 text-blue-500" />
-            <h3 className="text-lg font-bold text-gray-700">Edit Bus: {bus.name}</h3>
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-4 border-b pb-3">
+          <div className="flex gap-2 items-center">
+            <Bus className="text-blue-400" />
+            <h3 className="font-bold text-gray-700">Edit Bus</h3>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={24} />
+          <button onClick={onClose}>
+            <X />
           </button>
         </div>
 
-        {/* Edit Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* Bus Name */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* BUS NAME */}
           <div>
-            <label htmlFor="name" className="block text-xs text-black mb-1">
-              Bus Name
-            </label>
+            <label className="text-xs text-black">Bus Name</label>
             <input
-              type="text"
-              id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-              required
+              className="w-full border px-3 py-2 rounded-lg text-sm text-gray-400
+                         focus:ring-1 focus:outline-none focus:ring-blue-400 focus:border-blue-400"
             />
           </div>
-          
-          {/* Bus Number */}
+
+          {/* BUS NUMBER */}
           <div>
-            <label htmlFor="code" className="block text-xs text-black mb-1">
-              Bus Number
-            </label>
+            <label className="text-xs text-black">Bus Number</label>
             <input
-              type="text"
-              id="code"
               name="code"
               value={formData.code}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-              required
+              className="w-full border px-3 py-2 rounded-lg text-sm text-gray-400
+                         focus:ring-1 focus:outline-none focus:ring-blue-400 focus:border-blue-400"
             />
           </div>
 
-          {/* School */}
-          <div>
-            <label htmlFor="school" className="block text-xs text-black mb-1">
-              School
-            </label>
-            <select
-              id="school"
-              disabled={schoolsLoading}
-              value={selectedSchoolId}
-              onChange={(e) => setSelectedSchoolId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 disabled:bg-gray-100"
-              required
-            >
-              <option value="">Select a school</option>
-              {schools.map((school) => (
-                <option key={school.id} value={school.id}>
-                  {school.schoolName}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Max Capacity */}
-          <div>
-            <label htmlFor="maxCapacity" className="block text-xs text-black mb-1">
-              Max Capacity
-            </label>
-            <input
-              type="number"
-              id="maxCapacity"
-              name="maxCapacity"
-              value={formData.maxCapacity}
-              onChange={handleChange}
-              min="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-              required
-            />
-          </div>
+          {/* SCHOOL */}
+          <div className="relative">
+            <label className="text-xs text-black mb-1 block">School</label>
 
-          {/* Current Filled */}
-          <div>
-            <label htmlFor="capacity" className="block text-xs text-black mb-1">
-              Current Filled
-            </label>
-            <input
-              type="number"
-              id="capacity"
-              name="capacity"
-              value={formData.capacity}
-              onChange={handleChange}
-              min="0"
-              max={formData.maxCapacity}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-              required
-            />
-          </div>
-
-          {/* Route */}
-          <div>
-            <label htmlFor="route" className="block text-xs text-black mb-1">
-              Route
-            </label>
-            <input
-              type="text"
-              id="route"
-              name="route"
-              value={formData.route}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-              required
-            />
-          </div>
-          
-          {/* Assign Driver */}
-          <div>
-            <label htmlFor="driver" className="block text-xs text-black mb-1">
-              Assign Driver
-            </label>
-            <select
-              id="driver"
-              name="driver"
-              value={formData.driver}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-              required
-            >
-              <option value="">No Assignment</option>
-              <option value="Michael Johnson">Michael Johnson (#001)</option>
-              <option value="Sarah Williams">Sarah Williams (#002)</option>
-              <option value="John Doe">John Doe (#003)</option>
-              <option value="Alice Brown">Alice Brown (#004)</option>
-            </select>
-          </div>
-
-          {/* Status */}
-          <div>
-            <label htmlFor="active" className="block text-xs text-black mb-1">
-              Status
-            </label>
-            <select
-              id="active"
-              name="active"
-              value={formData.active.toString()}
-              onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.value === 'true' }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-            >
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-          </div>
-
-          {/* Submit Buttons */}
-          <div className="flex gap-3 pt-4">
             <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors"
+              type="button"
+              onClick={() => setSchoolOpen(!schoolOpen)}
+              className="w-full border px-3 py-2 rounded-lg text-left text-sm
+                         text-gray-400 focus:ring-1 focus:outline-none focus:ring-blue-400"
             >
+              {selectedSchoolId
+                ? schools.find(s => s.id === selectedSchoolId)?.schoolName
+                : "Select school"}
+            </button>
+
+            {schoolOpen && (
+              <ul className="mt-2 rounded-lg shadow border bg-blue-400 border-blue-400">
+                {schools.map(s => (
+                  <li
+                    key={s.id}
+                    onClick={() => {
+                      setSelectedSchoolId(s.id);
+                      setSchoolOpen(false);
+                    }}
+                    className="px-3 py-2 text-white cursor-pointer
+                               hover:bg-blue-400"
+                  >
+                    {s.schoolName}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* DRIVER */}
+          <div className="relative">
+            <label className="text-xs text-black mb-1 block">Assign Driver</label>
+
+            <button
+              type="button"
+              onClick={() => setDriverOpen(!driverOpen)}
+              className="w-full border px-3 py-2 rounded-lg text-left text-sm
+                         text-gray-400 truncate
+                         focus:ring-1 focus:outline-none focus:ring-blue-400"
+            >
+              {formData.driver || "No Assignment"}
+            </button>
+
+            {driverOpen && (
+              <ul className="mt-2 rounded-lg shadow border bg-white border-blue-500">
+
+                <li
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, driver: "" }));
+                    setDriverOpen(false);
+                  }}
+                  className="px-3 py-2 text-gray-400 cursor-pointer hover:bg-blue-400  hover:text-white"
+                >
+                  No Assignment
+                </li>
+
+                {drivers.map(d => (
+                  <li
+                    key={d.id}
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, driver: d.fullName }));
+                      setDriverOpen(false);
+                    }}
+                    className="px-3 py-2 text-gray-400 cursor-pointer hover:bg-blue-400 hover:text-white"
+                  >
+                    {d.fullName}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* STATUS */}
+          <div className="relative">
+            <label className="text-xs text-black mb-1 block">Status</label>
+
+            <button
+              type="button"
+              onClick={() => setStatusOpen(!statusOpen)}
+              className="w-full border px-3 py-2 rounded-lg text-left text-sm
+                         text-gray-400 focus:ring-1 focus:outline-none focus:ring-blue-400"
+            >
+              {formData.active ? "Active" : "Inactive"}
+            </button>
+
+            {statusOpen && (
+              <ul className="mt-2 rounded-lg shadow border bg-white border-blue-500">
+                <li
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, active: true }));
+                    setStatusOpen(false);
+                  }}
+                  className="px-3 py-2 text-gray-400 cursor-pointer hover:bg-blue-400 hover:text-white"
+                >
+                  Active
+                </li>
+
+                <li
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, active: false }));
+                    setStatusOpen(false);
+                  }}
+                  className="px-3 py-2 text-gray-400 cursor-pointer hover:bg-blue-400  hover:text-white"
+                >
+                  Inactive
+                </li>
+              </ul>
+            )}
+          </div>
+
+          {/* BUTTONS */}
+          <div className="flex gap-3 pt-4">
+            <button className="flex-1 bg-blue-400 text-white py-2 rounded-lg hover:bg-blue-500">
               Save Changes
             </button>
+
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
+              className="flex-1 bg-gray-200 py-2 rounded-lg hover:bg-gray-300"
             >
               Cancel
             </button>
           </div>
+
         </form>
       </div>
     </div>

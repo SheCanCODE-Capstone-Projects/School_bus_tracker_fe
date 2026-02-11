@@ -3,12 +3,35 @@
 
 import React from 'react';
 import { Bus, Shield, Star, Calendar, AlertTriangle, Users, Phone, Mail, User, TrendingUp, Award } from 'lucide-react';
-import DriverNavbar from '@/components/navigation/DriverNavbar';
 
 export default function DriverProfile() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <DriverNavbar />
+      {/* Top Navigation */}
+      <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+              <Bus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Driver Profile</h1>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">peace</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 sm:gap-6">
+            <button className="hidden sm:block text-gray-600 hover:text-gray-900 font-medium">Tracker</button>
+            <button className="text-blue-600 hover:text-blue-700 font-medium text-sm sm:text-base">Profile</button>
+            <button className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900">
+              <span>→</span>
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
+        </div>
+      </nav>
 
       <main className="flex-1 p-4 sm:p-6">
         <div className="max-w-6xl mx-auto">
