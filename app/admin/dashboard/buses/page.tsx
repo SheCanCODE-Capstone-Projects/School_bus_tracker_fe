@@ -561,8 +561,11 @@ const handleAssignDriverSubmit = async () => {
       <div className="min-h-screen bg-white flex flex-col">
         <AdminNavbar />
         <div className="flex-1 px-8 sm:px-12 lg:px-16 py-4 sm:py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">Loading buses...</div>
+          <div className="bg-white rounded-xl sm:rounded-2xl p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading buses...</span>
+            </div>
           </div>
         </div>
         <AdminFooter />
