@@ -183,6 +183,25 @@ export default function AdminDashboardContent() {
     }
   }, [isLoading]);
 
+  // Helper function to map API status to component status
+  const mapApiStatusToComponentStatus = (apiStatus: string): "moving" | "stopped" | "emergency" | "offline" => {
+    const status = apiStatus?.toUpperCase();
+    switch (status) {
+      case 'ACTIVE':
+        return 'moving';  // Active buses show as "moving" (counted as active)
+      case 'INACTIVE':
+        return 'offline'; // Inactive buses show as "offline"
+      case 'PARKED':
+        return 'stopped';
+      case 'EMERGENCY':
+        return 'emergency';
+      case 'MAINTENANCE':
+        return 'offline';
+      default:
+        return 'offline';
+    }
+  };
+
   // Fetch buses from API
   useEffect(() => {
     const fetchBuses = async () => {
@@ -261,25 +280,6 @@ export default function AdminDashboardContent() {
         setBuses([]);
       } finally {
         setIsLoadingBuses(false);
-      }
-    };
-
-    // Helper function to map API status to component status
-    const mapApiStatusToComponentStatus = (apiStatus: string): "moving" | "stopped" | "emergency" | "offline" => {
-      const status = apiStatus?.toUpperCase();
-      switch (status) {
-        case 'ACTIVE':
-          return 'moving';
-        case 'INACTIVE':
-        case 'PARKED':
-          return 'stopped';
-        case 'EMERGENCY':
-          return 'emergency';
-        case 'OFFLINE':
-        case 'MAINTENANCE':
-          return 'offline';
-        default:
-          return 'offline';
       }
     };
 
