@@ -35,7 +35,7 @@ const EmergenciesPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    fetchEmergencies();
+    fetchEmergencies();    
   }, []);
 
   const fetchEmergencies = async () => {
@@ -148,12 +148,18 @@ const EmergenciesPage = () => {
   }).length;
   const totalCount = emergencies.length;
 
-  const filteredEmergencies = emergencies.filter(e => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'active') return e.status === 'ACTIVE';
-    if (activeFilter === 'resolved') return e.status === 'RESOLVED';
-    return true;
-  });
+  const filteredEmergencies = emergencies
+    .filter(e => {
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'active') return e.status === 'ACTIVE';
+      if (activeFilter === 'resolved') return e.status === 'RESOLVED';
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.status === 'ACTIVE' && b.status !== 'ACTIVE') return -1;
+      if (a.status !== 'ACTIVE' && b.status === 'ACTIVE') return 1;
+      return new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime();
+    });
 
   const hasActiveEmergency = activeCount > 0;
 
@@ -255,18 +261,6 @@ const EmergenciesPage = () => {
           </button>
         </div>
 
-        {/* Alert Banner for Active Emergencies */}
-        {hasActiveEmergency && activeFilter === 'all' && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
-            <div className="flex items-center">
-              <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
-              <p className="text-red-700 font-medium">
-                This emergency requires immediate attention. Click Manage to take action.
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Emergency Cards */}
         <div className="space-y-6">
           {filteredEmergencies.map((emergency) => (
@@ -286,7 +280,7 @@ const EmergenciesPage = () => {
                     )}
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">{emergency.type}</h3>
-                      <span
+                      <span      
                         className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium ${
                           emergency.status === 'ACTIVE'
                             ? 'bg-red-100 text-red-700'
@@ -341,6 +335,17 @@ const EmergenciesPage = () => {
                     <p className="text-gray-700">{emergency.parentsNotified ? 'Yes' : 'No'}</p>
                   </div>
                 </div>
+
+                {emergency.status === 'ACTIVE' && (
+                  <div className="mt-4 p-4 bg-red-50 rounded-lg">
+                    <div className="flex items-center">
+                      <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
+                      <p className="text-sm font-medium text-red-900">
+                        This emergency requires immediate attention. Click Manage to take action.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {emergency.status === 'RESOLVED' && emergency.resolutionNotes && (
                   <div className="mt-4 p-4 bg-green-50 rounded-lg">
@@ -405,7 +410,7 @@ const EmergenciesPage = () => {
                   <p className="font-semibold text-gray-900">{selectedEmergency.driverName}</p>
                 </div>
               </div>
-
+                                          
               {/* View Location Button */}
               <button
                 onClick={() => {
@@ -496,4 +501,13 @@ const EmergenciesPage = () => {
   );
 };
 
-export default EmergenciesPage;
+export default EmergenciesPage;  
+
+
+
+
+
+
+
+
+                                            
