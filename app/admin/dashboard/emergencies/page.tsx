@@ -226,7 +226,7 @@ const EmergenciesPage = () => {
           </div>
         </div>
 
-        {/* Filter Buttons */}
+        
         <div className="mb-6 flex space-x-4">
           <span className="text-gray-700 font-medium self-center">Filter:</span>
           <button
