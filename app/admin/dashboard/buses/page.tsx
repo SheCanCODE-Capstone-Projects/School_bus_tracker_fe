@@ -766,7 +766,7 @@ const handleAssignDriverSubmit = async () => {
                     <div className="flex items-center">
                       <Link 
                         href={`/admin/dashboard/buses/${bus.id}`} 
-                        className="flex items-center gap-2 bg-blue-400 text-white px-4 py-2 rounded-xl flex-1 justify-center text-sm font-medium hover:bg-blue-600 transition-colors"
+                        className="flex items-center gap-2 bg-blue-400 text-white px-4 py-2 rounded-xl flex-1 justify-center text-sm font-medium hover:bg-blue-500 transition-colors"
                       >
                         <LiaEyeSolid size={18} /> View Details
                       </Link>
