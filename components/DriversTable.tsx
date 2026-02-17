@@ -118,12 +118,12 @@ export default function DriversTable() {
       // Transform API data to match our Driver type
       const transformedDrivers = driversArray.map((driver: any) => ({
         id: driver.id,
-        name: driver.full_name || driver.name || 'Unknown Driver',
+        name: driver.driverName || driver.full_name || driver.name || 'Unknown Driver',
         email: driver.email,
-        phone: driver.phone_number || driver.phone,
-        bus: driver.assigned_bus_id ? `Bus ${driver.assigned_bus_id}` : null,
+        phone: driver.phoneNumber || driver.phone_number || driver.phone,
+        bus: driver.assignedBus?.busName || driver.assigned_bus_id ? `Bus ${driver.assigned_bus_id}` : null,
         status: driver.status || "Active" as "Active" | "Inactive",
-        license_number: driver.license_number
+        license_number: driver.licenseNumber || driver.license_number
       }));
       
       setDrivers(transformedDrivers);

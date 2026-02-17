@@ -226,6 +226,16 @@ const BusDetailsPage = () => {
         const busLatitude = gpsData?.latitude || latestLocation?.latitude || busDetails.latitude;
         const busLongitude = gpsData?.longitude || latestLocation?.longitude || busDetails.longitude;
         
+        // Transform locations history into route history
+        const routeHistoryFromLocations = Array.isArray(locationsHistory) && locationsHistory.length > 0
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ? locationsHistory.map((loc: any) => ({
+              date: loc.timestamp || loc.createdAt || new Date(loc.recordedAt).toLocaleDateString() || "N/A",
+              distance: loc.distance ? `${loc.distance} km` : "N/A",
+              duration: loc.duration || "N/A",
+            }))
+          : [];
+        
         let currentLocationName = "Location not available";
         if (busLatitude && busLongitude) {
           try {
@@ -305,13 +315,15 @@ const BusDetailsPage = () => {
             console.log("Mapping student:", s, "-> Name:", name);
             return name;
           }),
-          routeHistory: Array.isArray(busDetails.routeHistory)
-            ? busDetails.routeHistory.map((r: RouteHistoryAPI) => ({
-                date: r.date || r.routeDate || "N/A",
-                distance: r.distance || r.totalDistance || "N/A",
-                duration: r.duration || r.totalDuration || "N/A",
-              }))
-            : [],
+          routeHistory: routeHistoryFromLocations.length > 0
+            ? routeHistoryFromLocations
+            : Array.isArray(busDetails.routeHistory)
+              ? busDetails.routeHistory.map((r: RouteHistoryAPI) => ({
+                  date: r.date || r.routeDate || "N/A",
+                  distance: r.distance || r.totalDistance || "N/A",
+                  duration: r.duration || r.totalDuration || "N/A",
+                }))
+              : [],
           emergencyLogs: Array.isArray(busDetails.emergencyLogs)
             ? busDetails.emergencyLogs.map((e: EmergencyLogAPI) => ({
                 id: e.id,

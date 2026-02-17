@@ -385,11 +385,8 @@ export default function ParentsPage() {
 
       const updateData = {
         parentName: editParent.name,
-        email: editParent.email,
-        phone: editParent.phone,
-        address: editParent.address,
-        childName: editParent.childName,
-        assignedBus: editParent.assignedBus,
+        parentEmail: editParent.email,
+        parentPhone: editParent.phone,
       };
 
       console.log("Updating parent:", editParent.id, updateData);
@@ -407,6 +404,8 @@ export default function ParentsPage() {
       );
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Backend error:", errorText);
         throw new Error(`Failed to update parent: ${response.status}`);
       }
 
