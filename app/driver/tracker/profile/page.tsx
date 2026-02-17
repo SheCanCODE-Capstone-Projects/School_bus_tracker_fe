@@ -8,7 +8,6 @@ export default function DriverProfile() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
 
-      {/* ✅ ONLY CHANGE: replaced inline <nav> with DriverNavbar */}
       <DriverNavbar />
 
       <main className="flex-1 p-4 sm:p-6">
