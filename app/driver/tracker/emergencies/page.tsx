@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle, Info, MapPin, Clock, Phone, Users } from 'lucide-react';
+import { AlertTriangle, CheckCircle, MapPin, Clock, Users } from 'lucide-react';
 import { notificationService } from '@/lib/notification-service';
+import DriverNavbar from '@/components/navigation/DriverNavbar';
 
 const EmergenciesPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedEmergency, setSelectedEmergency] = useState<typeof emergencies[0] | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [sendNotification, setSendNotification] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const emergencies = [
     {
@@ -92,8 +92,7 @@ const EmergenciesPage = () => {
 
   const handleMarkAsResolved = () => {
     if (!selectedEmergency) return;
-    
-    // Send notification to admin about status change
+
     notificationService.reportStatusChange(
       selectedEmergency.id,
       selectedEmergency.status,
@@ -101,7 +100,7 @@ const EmergenciesPage = () => {
       selectedEmergency.driver,
       selectedEmergency.bus
     );
-    
+
     console.log('Marking emergency as resolved:', {
       emergencyId: selectedEmergency.id,
       resolutionNotes,
@@ -112,67 +111,12 @@ const EmergenciesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
-                  <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Emergency Management</h1>
-                <div className="flex items-center space-x-2 mt-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">peace</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <nav className="hidden md:flex items-center space-x-8">
-                <a href="#" className="text-gray-600 hover:text-gray-900">Tracker</a>
-                <a href="#" className="text-gray-600 hover:text-gray-900">Profile</a>
-                <a href="#" className="text-blue-500 font-medium">Emergencies</a>
-                <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
-                  <span>Logout</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </button>
-              </nav>
-              <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-200">
-            <div className="px-6 py-4 space-y-2">
-              <a href="#" className="block text-gray-600 hover:text-gray-900 py-2">Tracker</a>
-              <a href="#" className="block text-gray-600 hover:text-gray-900 py-2">Profile</a>
-              <a href="#" className="block text-blue-500 font-medium py-2">Emergencies</a>
-              <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 py-2">
-                <span>Logout</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
-      </header>
 
-      {/* Main Content */}
+      {/* ✅ ONLY CHANGE: replaced inline <header> with DriverNavbar */}
+      <DriverNavbar />
+
       <main className="max-w-7xl mx-auto px-6 py-8">
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-2xl p-6 shadow-lg border border-red-200 hover:shadow-xl transition-shadow duration-300">
@@ -205,7 +149,7 @@ const EmergenciesPage = () => {
                 <p className="text-gray-600 text-sm mb-2">Total Incidents</p>
                 <p className="text-4xl font-bold text-gray-900">{totalCount}</p>
               </div>
-             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-8 h-8 text-blue-500" />
               </div>
             </div>
@@ -222,7 +166,7 @@ const EmergenciesPage = () => {
             onClick={() => setActiveFilter('all')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeFilter === 'all'
-                ? 'bg-blue-500 text-gray-900'
+                ? 'bg-blue-500 text-white'
                 : 'bg-gray-300 text-gray-700 hover:bg-gray-500 hover:text-white'
             }`}
           >
@@ -307,6 +251,15 @@ const EmergenciesPage = () => {
                     </div>
                   </div>
                 </div>
+
+                {emergency.status === 'active' && (
+                  <button
+                    onClick={() => handleManageClick(emergency)}
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition-colors flex-shrink-0"
+                  >
+                    Manage
+                  </button>
+                )}
               </div>
 
               <div className="bg-white rounded-xl p-4">
@@ -320,7 +273,6 @@ const EmergenciesPage = () => {
                     <p className="font-medium text-gray-700 mb-1">Driver Contact</p>
                     <p className="text-gray-600 ml-6">{emergency.driverContact}</p>
                   </div>
-
                   <div>
                     <div className="flex items-center space-x-2 text-blue-600 mb-2">
                       <Clock className="w-4 h-4" />
@@ -362,12 +314,8 @@ const EmergenciesPage = () => {
 
         {/* Footer */}
         <footer className="text-center py-8 mt-12">
-          <p className="text-gray-600 font-medium mb-1">
-            School Bus Tracker © 2025
-          </p>
-          <p className="text-gray-500 text-sm">
-            Keeping your children safe, one ride at a time
-          </p>
+          <p className="text-gray-600 font-medium mb-1">School Bus Tracker © 2025</p>
+          <p className="text-gray-500 text-sm">Keeping your children safe, one ride at a time</p>
         </footer>
 
         {/* Manage Emergency Modal */}
@@ -375,7 +323,6 @@ const EmergenciesPage = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
-                {/* Modal Header */}
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                     <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -383,13 +330,11 @@ const EmergenciesPage = () => {
                   <h2 className="text-2xl font-bold text-gray-900">Manage Emergency</h2>
                 </div>
 
-                {/* Emergency Details Card */}
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{selectedEmergency.type}</h3>
                   <p className="text-gray-700">{selectedEmergency.description}</p>
                 </div>
 
-                {/* Bus and Driver Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
                     <label className="text-sm font-medium text-gray-600 mb-2 block">Bus</label>
@@ -401,12 +346,10 @@ const EmergenciesPage = () => {
                   </div>
                 </div>
 
-                {/* View Location Button */}
                 <button className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors mb-6">
                   View Bus Location on Map
                 </button>
 
-                {/* Resolution Notes */}
                 <div className="mb-6">
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Resolution Notes</label>
                   <textarea
@@ -417,7 +360,6 @@ const EmergenciesPage = () => {
                   />
                 </div>
 
-                {/* Send Notification Checkbox */}
                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
                   <label className="flex items-center space-x-3 cursor-pointer">
                     <input
@@ -430,7 +372,6 @@ const EmergenciesPage = () => {
                   </label>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <button
                     onClick={handleMarkAsResolved}
