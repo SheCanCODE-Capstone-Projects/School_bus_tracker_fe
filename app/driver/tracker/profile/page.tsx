@@ -1,37 +1,14 @@
-
 'use client';
 
 import React from 'react';
-import { Bus, Shield, Star, Calendar, AlertTriangle, Users, Phone, Mail, User, TrendingUp, Award } from 'lucide-react';
+import { Shield, Star, Calendar, Phone, Mail, User, TrendingUp, Award } from 'lucide-react';
+import DriverNavbar from '@/components/navigation/DriverNavbar';
 
 export default function DriverProfile() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-              <Bus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Driver Profile</h1>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">peace</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 sm:gap-6">
-            <button className="hidden sm:block text-gray-600 hover:text-gray-900 font-medium">Tracker</button>
-            <button className="text-blue-600 hover:text-blue-700 font-medium text-sm sm:text-base">Profile</button>
-            <button className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900">
-              <span>→</span>
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-          </div>
-        </div>
-      </nav>
+
+      <DriverNavbar />
 
       <main className="flex-1 p-4 sm:p-6">
         <div className="max-w-6xl mx-auto">
@@ -58,9 +35,7 @@ export default function DriverProfile() {
               <div className="w-1 h-6 bg-blue-600 rounded-full transition-all duration-300 group-hover:w-2"></div>
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Personal Information</h2>
             </div>
-            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {/* Full Name */}
               <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -71,7 +46,6 @@ export default function DriverProfile() {
                 </div>
               </div>
 
-              {/* Phone Number */}
               <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -82,7 +56,6 @@ export default function DriverProfile() {
                 </div>
               </div>
 
-              {/* Email Address */}
               <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4 lg:col-span-2">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -101,7 +74,6 @@ export default function DriverProfile() {
               <div className="w-1 h-6 bg-blue-600 rounded-full transition-all duration-300 group-hover:w-2"></div>
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Bus Assignment</h2>
             </div>
-            
             <div className="bg-blue-50 rounded-lg sm:rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-md">
                 🚌
@@ -120,9 +92,7 @@ export default function DriverProfile() {
               <div className="w-1 h-6 bg-blue-600 rounded-full transition-all duration-300 group-hover:w-2"></div>
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Professional Details</h2>
             </div>
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              {/* License Number */}
               <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
@@ -133,7 +103,6 @@ export default function DriverProfile() {
                 </div>
               </div>
 
-              {/* Years of Service */}
               <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
@@ -144,7 +113,6 @@ export default function DriverProfile() {
                 </div>
               </div>
 
-              {/* Total Trips */}
               <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
@@ -155,7 +123,6 @@ export default function DriverProfile() {
                 </div>
               </div>
 
-              {/* Safety Rating */}
               <div className="bg-green-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-200 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Award className="w-4 h-4 sm:w-5 sm:h-5 text-green-700" />
@@ -173,19 +140,14 @@ export default function DriverProfile() {
 
           {/* Stats Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6">
-            {/* On-time Rate */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
               <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">100%</h3>
               <p className="text-gray-600 font-medium text-sm sm:text-base">On-Time Rate</p>
             </div>
-            
-            {/* Incidents */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
               <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">0</h3>
               <p className="text-gray-600 font-medium text-sm sm:text-base">Incidents</p>
             </div>
-            
-            {/* Students */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
               <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">45</h3>
               <p className="text-gray-600 font-medium text-sm sm:text-base">Students</p>
