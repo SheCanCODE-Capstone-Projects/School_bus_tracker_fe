@@ -214,10 +214,26 @@ const BusDetailsPage = () => {
 
         const busDetails = apiResponse.data || apiResponse;
         const allStudents = studentsData?.data || [];
+        
+        console.log("=== Student Filtering Debug ===");
+        console.log("All students from API:", allStudents.length);
+        console.log("Looking for bus ID:", busId);
+        console.log("Bus ID type:", typeof busId);
+        
         const busStudents = allStudents.filter(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (s: any) => s.assignedBus?.id === parseInt(busId as string),
+          (s: any) => {
+            const studentBusId = s.assignedBus?.id;
+            const targetBusId = parseInt(busId as string);
+            const matches = studentBusId === targetBusId;
+            console.log(`Student: ${s.studentName || s.name}, Bus ID: ${studentBusId}, Matches: ${matches}`);
+            return matches;
+          }
         );
+        
+        console.log("=== Filtered Students Result ===");
+        console.log("Total students for this bus:", busStudents.length);
+        console.log("Student names:", busStudents.map((s: any) => s.studentName || s.name));
         
         const latestLocation = Array.isArray(locationsHistory) && locationsHistory.length > 0 
           ? locationsHistory[locationsHistory.length - 1] 
@@ -345,7 +361,6 @@ const BusDetailsPage = () => {
       } catch (error) {
         console.error("=== Error Fetching Bus Details ===");
         console.error(error);
-        alert("Failed to load bus details. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -384,12 +399,9 @@ const BusDetailsPage = () => {
 
       if (response.ok) {
         window.location.reload();
-      } else {
-        alert("Failed to update bus");
       }
     } catch (error) {
-      console.error("Error updating bus:", error);
-      alert("Failed to update bus");
+      console.error(error);
     }
     closeEditModal();
   };
@@ -499,14 +511,14 @@ const BusDetailsPage = () => {
                     <div className="flex items-center justify-between">
                       <p className="text-gray-500">Capacity</p>
                       <span className="font-bold text-gray-800 text-xs">
-                        {busData.capacity}/{busData.maxCapacity}
+                        {busData.students.length}/{busData.maxCapacity}
                       </span>
                     </div>
                     <div className="bg-gray-300 h-2 rounded-full mt-1">
                       <div
                         className="bg-blue-500 h-2 rounded-full"
                         style={{
-                          width: `${(busData.capacity / busData.maxCapacity) * 100}%`,
+                          width: `${(busData.students.length / busData.maxCapacity) * 100}%`,
                         }}
                       ></div>
                     </div>

@@ -1,14 +1,22 @@
 'use client';
 import { Search, UserPlus, Plus, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function DriversToolbar() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showAddDriverModal, setShowAddDriverModal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isBusDropdownOpen, setIsBusDropdownOpen] = useState(false);
   const [isAddDriverDropdownOpen, setIsAddDriverDropdownOpen] = useState(false);
-  const [selectedDriver, setSelectedDriver] = useState("");
+  const [selectedDriver, setSelectedDriver] = useState<number | "">("");
+  const [selectedBus, setSelectedBus] = useState<number | "">("");
   const [selectedBusForNewDriver, setSelectedBusForNewDriver] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [notes, setNotes] = useState("");
+
+  // Fetch real drivers and buses from API
+  const [drivers, setDrivers] = useState<{ id: number; fullName: string; assignedBus?: string }[]>([]);
+  const [buses, setBuses] = useState<{ id: number; busName: string; assignedDriver?: { fullName: string } }[]>([]);
 
   // States for API integration
   const [driverForm, setDriverForm] = useState({
@@ -22,13 +30,71 @@ export default function DriversToolbar() {
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
-  const drivers = [
-    "Michael Johnson",
-    "Sarah Williams", 
-    "David Brown",
-    "Emily Davis",
-    "James Wilson"
-  ];
+  // Fetch drivers and buses when assign modal opens
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!showAssignModal) return;
+      
+      try {
+        const token = getAuthToken();
+        if (!token) return;
+
+        const [driversRes, busesRes] = await Promise.all([
+          fetch('https://school-bus-tracker-be.onrender.com/api/drivers', {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+          }),
+          fetch('https://school-bus-tracker-be.onrender.com/api/buses', {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+          })
+        ]);
+
+        if (driversRes.ok) {
+          const data = await driversRes.json();
+          if (data.success && data.data) {
+            setDrivers(data.data.map((d: any) => ({
+              id: d.id,
+              fullName: d.full_name || d.fullName || d.driverName,
+              assignedBus: d.assigned_bus_id ? `Bus ${d.assigned_bus_id}` : null
+            })));
+          }
+        }
+
+        if (busesRes.ok) {
+          const data = await busesRes.json();
+          if (data.success && data.data) {
+            setBuses(data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, [showAssignModal]);
+
+  const getAuthToken = () => {
+    let token = localStorage.getItem("token");
+    if (!token) {
+      const possibleKeys = ['accessToken', 'authToken', 'jwtToken', 'jwt', 'auth_token'];
+      for (const key of possibleKeys) {
+        token = localStorage.getItem(key) || sessionStorage.getItem(key);
+        if (token) break;
+      }
+    }
+    if (!token) {
+      const userString = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (userString) {
+        try {
+          const userData = JSON.parse(userString);
+          token = userData.token || userData.accessToken || userData.authToken;
+        } catch (e) {
+          console.log("Could not parse user data");
+        }
+      }
+    }
+    return token ? token.replace(/^Bearer\s+/i, '') : null;
+  };
 
   const handleAssignToBus = () => {
     setShowAssignModal(true);
@@ -37,7 +103,50 @@ export default function DriversToolbar() {
   const handleCloseModal = () => {
     setShowAssignModal(false);
     setSelectedDriver("");
+    setSelectedBus("");
+    setStartDate("");
+    setNotes("");
     setIsDropdownOpen(false);
+    setIsBusDropdownOpen(false);
+  };
+
+  const handleAssignDriverSubmit = async () => {
+    if (!selectedDriver || !selectedBus) {
+      console.error("Please select both a driver and a bus.");
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.error("No auth token found. Please login again.");
+        window.location.href = '/login';
+        return;
+      }
+
+      const response = await fetch('https://school-bus-tracker-be.onrender.com/api/admin/assign-bus-to-driver', {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ driverId: selectedDriver, busId: selectedBus }),
+      });
+
+      if (response.ok) {
+        const assignedDriver = drivers.find(d => d.id === selectedDriver);
+        const assignedBus = buses.find(b => b.id === selectedBus);
+        handleCloseModal();
+        window.location.reload();
+      } else {
+        const errorText = await response.text();
+        console.error('Assignment failed:', errorText);
+        console.error(`Failed to assign driver: ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error assigning driver:', err);
+      console.error('Network error. Please try again.');
+    }
   };
 
   const handleAddDriver = () => {
@@ -67,8 +176,8 @@ export default function DriversToolbar() {
     setIsAddDriverDropdownOpen(false);
   };
 
-  const handleDriverSelect = (driver: string) => {
-    setSelectedDriver(driver);
+  const handleDriverSelect = (driverId: number) => {
+    setSelectedDriver(driverId);
     setIsDropdownOpen(false);
   };
 
@@ -277,102 +386,113 @@ export default function DriversToolbar() {
         </button>
       </div>
       
-      {/* Assign to Bus Modal - UNCHANGED */}
+      {/* Assign to Bus Modal */}
       {showAssignModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 backdrop-blur-sm bg-black/20">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 w-full max-w-md">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6 ml-4">
-              <UserPlus size={24} className="text-purple-600" />
-              <h2 className="text-xl font-bold text-black">Assign driver to bus</h2>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={handleCloseModal}></div>
+          <div className="relative bg-white rounded-4xl shadow-2xl max-w-[400px] w-full p-6 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center gap-2 mb-4">
+              <UserPlus size={20} className="text-purple-600" />
+              <h3 className="text-lg mt-4 mb-4 font-bold text-gray-700">Assign Driver to Bus</h3>
             </div>
             
-            <div className="px-2">
+            <div className="space-y-8">
               {/* Select Driver */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">
-                  Select Driver
-                </label>
-                <div className="relative">
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between bg-white border border-gray-300 rounded-2xl px-4 py-3 text-left focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <span className={selectedDriver ? "text-black" : "text-gray-500"}>
-                      {selectedDriver || "Choose a driver"}
-                    </span>
-                    <ChevronDown size={18} className="text-gray-400" />
-                  </button>
-                  
-                  {/* Dropdown List */}
-                  {isDropdownOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-2xl shadow-lg z-10 max-h-48 overflow-y-auto">
-                      {drivers.map((driver) => (
-                        <button
-                          key={driver}
-                          onClick={() => handleDriverSelect(driver)}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-100 text-black border-b border-gray-100 last:border-none"
+              <div className="mb-8 relative">
+                <label className="block text-xs text-black mb-2">Select Driver</label>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-white text-gray-400 text-left focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                >
+                  {selectedDriver ? drivers.find(d => d.id === selectedDriver)?.fullName : "Choose a driver"}
+                </button>
+                
+                {isDropdownOpen && (
+                  <ul className="mt-2 w-full bg-purple-500 rounded-lg shadow-lg border border-purple-500">
+                    {drivers
+                      .filter(driver => !driver.assignedBus)
+                      .map((driver) => (
+                        <li
+                          key={driver.id}
+                          onClick={() => handleDriverSelect(driver.id)}
+                          className="px-3 py-2 cursor-pointer text-white hover:bg-purple-600 focus:bg-purple-600"
                         >
-                          {driver}
-                        </button>
+                          {driver.fullName}
+                        </li>
                       ))}
-                    </div>
-                  )}
-                </div>
-                <p className="text-gray-700 text-sm mt-2 ml-1">Only showing unassigned drivers</p>
+                  </ul>
+                )}
+                <p className="text-xs mt-2 text-gray-700">Only showing unassigned drivers</p>
               </div>
               
               {/* Assign to Bus */}
-              <div className="mb-6 ml-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">
-                  Assign to Bus
-                </label>
-                <select className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-black">
-                  <option value="" className="text-gray-500">Select a bus</option>
-                  <option value="bus01">Bus 01</option>
-                  <option value="bus02">Bus 02</option>
-                  <option value="bus03">Bus 03</option>
-                  <option value="bus04">Bus 04</option>
-                </select>
+              <div className={`relative transition-all duration-300 ${isBusDropdownOpen ? "mb-8" : "mb-6"}`}>
+                <label className="block text-xs text-black mb-2">Assign to Bus</label>
+                <button
+                  type="button"
+                  onClick={() => setIsBusDropdownOpen(true)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-white text-gray-400 text-left focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                >
+                  {selectedBus ? buses.find(b => b.id === selectedBus)?.busName : "Select a bus"}
+                </button>
+                
+                {isBusDropdownOpen && buses.length > 0 && (
+                  <ul className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-300 text-sm">
+                    {buses.map((bus) => (
+                      <li
+                        key={bus.id}
+                        onClick={() => {
+                          setSelectedBus(bus.id);
+                          setIsBusDropdownOpen(false);
+                        }}
+                        className="px-3 py-1 cursor-pointer text-gray-600 hover:bg-purple-400 hover:text-white"
+                      >
+                        {bus.busName} {bus.assignedDriver ? `(Currently: ${bus.assignedDriver.fullName})` : "(Available)"}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               
               {/* Start Date */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">
-                  Start Date
-                </label>
+              <div>
+                <label className="block text-xs text-black mb-2">Start Date</label>
                 <input 
-                  type="date" 
-                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-black"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full text-sm border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               
               {/* Notes */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">
-                  Notes (optional)
-                </label>
+              <div>
+                <label className="block text-xs mt-2 mb-2 text-black">Notes (Optional)</label>
                 <textarea 
-                  placeholder="Any additional notes about this assignment"
-                  rows={3}
-                  className="w-full bg-white border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none placeholder-gray-500 text-black"
+                  placeholder="Any additional notes about this assignment..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full mt-2 mb-2 text-sm border border-gray-300 px-3 h-30 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg transition-colors"
-              >
-                Assign Driver
-              </button>
-              <button
-                onClick={handleCloseModal}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
+              <hr className="mb-4"></hr>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleAssignDriverSubmit}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Assign Driver
+                </button>
+                <button
+                  onClick={handleCloseModal}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

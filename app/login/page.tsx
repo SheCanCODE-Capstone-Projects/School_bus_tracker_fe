@@ -86,13 +86,8 @@ export default function SchoolBusLogin() {
       // Backend success - use dynamic response
       const userRole = data.user?.role?.toLowerCase() || data.role?.toLowerCase();
       
-      if (userRole && userRole !== selectedRole) {
-        setError(`This email is registered for ${userRole} access. Please select the correct account type.`);
-        return;
-      }
-
       if (!userRole) {
-        setError(`No ${selectedRole} account found with this email.`);
+        setError('Unable to determine account type. Please contact support.');
         return;
       }
 
@@ -102,16 +97,15 @@ export default function SchoolBusLogin() {
           email: data.email ?? data.user?.email,
           role: data.role ?? data.user?.role,
         };
-        setAuthData(data.token, userRole || selectedRole, userData);
+        setAuthData(data.token, userRole, userData);
       }
 
-      // Navigate based on role
-      const finalRole = userRole || selectedRole;
-      if (finalRole === 'parent') {
+      // Navigate based on actual user role from backend
+      if (userRole === 'parent') {
         router.push('/parent/dashboard');
-      } else if (finalRole === 'driver') {
+      } else if (userRole === 'driver') {
         router.push('/driver/tracker');
-      } else if (finalRole === 'admin') {
+      } else if (userRole === 'admin') {
         window.location.href = '/admin/dashboard';
       }
 

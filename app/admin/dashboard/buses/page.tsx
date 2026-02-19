@@ -12,6 +12,25 @@ import Link from "next/link";
 import EditBusModal from "@/components/EditBusModal";
 import { getAuthToken, getUserRole, redirectByRole } from "@/lib/auth";
 
+// Action Logger Functions
+const logAction = (action: string, description: string, entityType: string) => {
+  try {
+    const adminName = localStorage.getItem('userName') || 
+                     JSON.parse(localStorage.getItem('user') || '{}').name || 
+                     'Admin';
+    const newLog = {
+      id: Date.now().toString(),
+      action,
+      description,
+      entityType,
+      performedBy: adminName,
+      timestamp: new Date().toISOString()
+    };
+    const logs = JSON.parse(localStorage.getItem('admin_action_logs') || '[]');
+    localStorage.setItem('admin_action_logs', JSON.stringify([newLog, ...logs].slice(0, 100)));
+  } catch (e) { console.error('Log error:', e); }
+};
+
 // Custom Dropdown Component
 function CustomDropdown({ schools, selectedSchool, setSelectedSchool }: {
   schools: School[];
@@ -95,6 +114,7 @@ const BusesPage = () => {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [totalStudents, setTotalStudents] = useState(0);
   // Store drivers fetched from backend
 const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
 
@@ -161,26 +181,45 @@ const [drivers, setDrivers] = useState<{ id: number; fullName: string }[]>([]);
           return;
         }
         
-        const response = await fetch(`${API_BASE_URL}/buses`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const [busesResponse, studentsResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/buses`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }),
+          fetch(`${API_BASE_URL}/students`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+        ]);
         
-        if (response.ok) {
-          const apiResponse: ApiResponse<ApiBus[]> = await response.json();
+        if (busesResponse.ok) {
+          const apiResponse: ApiResponse<ApiBus[]> = await busesResponse.json();
+          const studentsData = studentsResponse.ok ? await studentsResponse.json() : { data: [] };
+          const allStudents = studentsData?.data || [];
+          
+          setTotalStudents(allStudents.length);
+          
           if (apiResponse.success && apiResponse.data) {
-            const transformedBuses: Bus[] = apiResponse.data.map(apiBus => ({
-              id: apiBus.id,
-              name: apiBus.busName,
-              code: apiBus.busNumber,
-              route: apiBus.route,
-              driver: apiBus.assignedDriver?.fullName || "Not Assigned",
-              capacity: apiBus.capacity,
-              maxCapacity: apiBus.capacity,
-              active: apiBus.status === "ACTIVE"
-            }));
+            const transformedBuses: Bus[] = apiResponse.data.map(apiBus => {
+              const studentCount = allStudents.filter(
+                (s: any) => s.assignedBus?.id === apiBus.id
+              ).length;
+              
+              return {
+                id: apiBus.id,
+                name: apiBus.busName,
+                code: apiBus.busNumber,
+                route: apiBus.route,
+                driver: apiBus.assignedDriver?.fullName || "Not Assigned",
+                capacity: studentCount,
+                maxCapacity: apiBus.capacity,
+                active: apiBus.status === "ACTIVE"
+              };
+            }).sort((a, b) => a.name.localeCompare(b.name));
             setBuses(transformedBuses);
           }
         } else {
@@ -289,7 +328,7 @@ useEffect(() => {
   try {
     const token = getAuthToken();
     if (!token) {
-      alert("No auth token found. Please login again.");
+      console.error("No auth token found");
       return;
     }
 
@@ -303,8 +342,7 @@ useEffect(() => {
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
-      alert("Failed to update bus status: " + errorText);
+      console.error('Failed to update bus status:', res.status);
       return;
     }
 
@@ -312,11 +350,11 @@ useEffect(() => {
     setBuses((prev: Bus[]) =>
       prev.map((b: Bus) => b.id === selectedBus.id ? { ...b, active: newStatus } : b)
     );
+    logAction('Bus Status Changed', `Changed ${selectedBus.name} status to ${newStatus ? 'Active' : 'Inactive'}`, 'bus');
     closeStatusModal();
 
   } catch (err) {
     console.error("Error updating bus status:", err);
-    alert("Error updating bus status. See console for details.");
   }
 };
 
@@ -387,30 +425,15 @@ useEffect(() => {
       } else {
         console.log(`API error: ${res.status} ${res.statusText}`);
         
-        // Handle 403 specifically - token might be expired
         if (res.status === 403) {
-          console.log('403 Forbidden - Token may be expired or insufficient permissions');
+          console.log('403 Forbidden');
           localStorage.removeItem('authToken');
-          alert('Session expired or insufficient permissions. Please login again.');
           window.location.href = '/login';
           return;
         }
         
-        // Handle 400 - Bad Request
         if (res.status === 400) {
-          try {
-            const errorResponse = await res.text();
-            console.log('400 Bad Request - Server response:', errorResponse);
-            const errorData = JSON.parse(errorResponse);
-            if (errorData.message && errorData.message.includes('duplicate key')) {
-              alert('Bus number already exists. Please use a different bus number.');
-            } else {
-              alert(`Bad Request: ${errorData.message || 'Invalid data sent to server'}`);
-            }
-          } catch (e) {
-            console.log('400 Bad Request - Could not read error response');
-            alert('Bad Request: Invalid data sent to server');
-          }
+          console.log('400 Bad Request');
           return;
         }
       }
@@ -427,7 +450,7 @@ useEffect(() => {
           active: apiResponse.data.status === "ACTIVE"
         };
         setBuses((prev: Bus[]) => [...prev, newBus]);
-        alert('Bus added successfully!');
+        logAction('Bus Added', `Added new bus: ${newBus.name} (${newBus.code})`, 'bus');
       } else {
         setBuses((prev: Bus[]) => [...prev, { id: Date.now(), name, code: uniqueBusNumber, route, driver, capacity, maxCapacity, active }]);
       }
@@ -458,17 +481,15 @@ useEffect(() => {
     setStartDate("");
     setNotes("");
   };
- // --- Assign Driver Handler ---
 const handleAssignDriverSubmit = async () => {
   if (!selectedDriverForBus || !selectedBusForDriver) {
-    alert("Please select both a driver and a bus.");
+    console.error("Please select both");
     return;
   }
 
   try {
     const token = getAuthToken();
     if (!token) {
-      alert("No auth token found. Please login again.");
       window.location.href = '/login';
       return;
     }
@@ -476,16 +497,11 @@ const handleAssignDriverSubmit = async () => {
     const busId = Number(selectedBusForDriver);
     const driverId = Number(selectedDriverForBus);
 
-    // Check if bus is already assigned
     const selectedBusData = buses.find(bus => bus.id === busId);
     if (selectedBusData && selectedBusData.driver && selectedBusData.driver !== "Not Assigned") {
-      const confirmReassign = confirm(`Bus ${selectedBusData.name} is already assigned to ${selectedBusData.driver}. Do you want to reassign it?`);
-      if (!confirmReassign) {
-        return;
-      }
+      const confirmReassign = confirm(`Bus ${selectedBusData.name} is already assigned. Reassign?`);
+      if (!confirmReassign) return;
     }
-
-    console.log('Assigning driver:', { busId, driverId });
 
     const res = await fetch(`${API_BASE_URL}/admin/assign-bus-to-driver`, {
       method: "PATCH",
@@ -496,12 +512,7 @@ const handleAssignDriverSubmit = async () => {
       body: JSON.stringify({ driverId, busId }),
     });
 
-    console.log(`Response status: ${res.status}`);
-
     if (res.ok) {
-      const data = await res.json();
-      console.log("Driver assigned successfully:", data);
-      
       const assignedDriver = drivers.find(d => d.id === driverId);
       const selectedBusData = buses.find(b => b.id === busId);
       
@@ -511,35 +522,17 @@ const handleAssignDriverSubmit = async () => {
         )
       );
       
-      alert(`Driver ${assignedDriver?.fullName || 'Unknown'} has been assigned to ${selectedBusData?.name || 'Bus'} successfully!`);
+      logAction('Driver Assigned', `Assigned ${assignedDriver?.fullName} to ${selectedBusData?.name}`, 'driver');
       closeAssignDriverModal();
     } else {
-      const errorText = await res.text();
-      console.error('Assignment failed:', errorText);
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        if (errorData.message?.includes('duplicate key') || errorData.message?.includes('already exists')) {
-          alert('This bus is already assigned to another driver. Please unassign the current driver first or choose a different bus.');
-        } else {
-          alert(`Assignment failed: ${errorData.message || 'Unknown error'}`);
-        }
-      } catch {
-        if (res.status === 403) {
-          alert('Permission denied. You may not have admin privileges to assign drivers.');
-        } else if (res.status === 401) {
-          localStorage.removeItem('authToken');
-          alert('Session expired. Please login again.');
-          window.location.href = '/login';
-        } else {
-          alert(`Failed to assign driver: ${res.status} - ${errorText}`);
-        }
+      console.error('Assignment failed:', res.status);
+      if (res.status === 401) {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
       }
     }
-
   } catch (err) {
-    console.error('Error assigning driver:', err);
-    alert('Network error. Please try again.');
+    console.error('Error:', err);
   }
 };
 
@@ -547,8 +540,10 @@ const handleAssignDriverSubmit = async () => {
 
   // --- Stats Data ---
   const activeBuses = buses.filter(b => b.active).length;
-  const totalStudents = 172;
-  const avgCapacity = "70%";
+  const totalCapacity = buses.reduce((sum, b) => sum + b.maxCapacity, 0);
+  const filledCapacity = buses.reduce((sum, b) => sum + b.capacity, 0);
+  const avgCapacity = totalCapacity > 0 ? `${Math.round((filledCapacity / totalCapacity) * 100)}%` : "0%";
+  
   const stats = [
     { title: "Total Buses", value: buses.length, color: "border-blue-200" },
     { title: "Active Buses", value: activeBuses, color: "border-green-200" },
@@ -667,10 +662,7 @@ const handleAssignDriverSubmit = async () => {
                   <label className="block text-xs text-black mb-1">Current Filled</label>
                   <input type="number" placeholder="0" value={capacity} max={maxCapacity} onChange={e => {
                     const value = Number(e.target.value);
-                    if (value > maxCapacity) {
-                      alert(`Current filled (${value}) cannot exceed max capacity (${maxCapacity})`);
-                      return;
-                    }
+                    if (value > maxCapacity) return;
                     setCapacity(value);
                   }} className="w-full border border-gray-300 px-3 py-2 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-300"/>
                 </div>

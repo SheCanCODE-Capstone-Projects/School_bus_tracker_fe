@@ -113,7 +113,6 @@ export default function DriverTracker() {
     if (isLoading) return;
 
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported in this browser.");
       return;
     }
 
