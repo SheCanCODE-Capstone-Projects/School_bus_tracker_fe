@@ -422,16 +422,15 @@ export default function StudentBusDashboard() {
       const token = getAuthToken();
 
       if (!token) {
-        alert("Authentication token not found. Please login again.");
         return;
       }
 
       if (!selectedBus) {
-        alert("Please select a bus.");
         return;
       }
 
       const busId = parseInt(selectedBus);
+      let allSuccess = true;
 
       // Assign each student individually
       for (const studentId of selectedStudents) {
@@ -448,16 +447,21 @@ export default function StudentBusDashboard() {
         );
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: "Failed to assign student" }));
-          throw new Error(errorData.message || "Failed to assign students to bus");
+          const errorData = await response.json().catch(() => ({}));
+          console.log('Assignment failed for student:', studentId, errorData);
+          allSuccess = false;
         }
       }
 
-      logAction('Students Assigned', `Assigned ${selectedStudents.length} student(s) to bus`, 'student');
+      if (allSuccess) {
+        logAction('Students Assigned', `Assigned ${selectedStudents.length} student(s) to bus`, 'student');
+      }
+      
       closeAssignModal();
-      fetchStudents();
+      await fetchStudents();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to assign students to bus");
+      console.log('Error assigning students:', error);
+      closeAssignModal();
     }
   };
 
@@ -646,8 +650,18 @@ export default function StudentBusDashboard() {
       const token = getAuthToken();
 
       if (!token) {
+        console.log('No token found');
         return;
       }
+
+      console.log('Updating student:', editStudent.id);
+      console.log('Request body:', {
+        studentName: editStudent.name,
+        age: parseInt(editStudent.age),
+        parentName: editStudent.parentName,
+        parentPhone: editStudent.parentPhone,
+        address: editStudent.address,
+      });
 
       const response = await fetch(
         `https://school-bus-tracker-be.onrender.com/api/students/${editStudent.id}`,
@@ -667,15 +681,22 @@ export default function StudentBusDashboard() {
         }
       );
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error("Failed to update student");
+        const errorData = await response.json().catch(() => ({}));
+        console.log('Update failed:', errorData);
+        return;
       }
+
+      const data = await response.json();
+      console.log('Update successful:', data);
 
       logAction('Student Updated', `Updated student: ${editStudent.name}`, 'student');
       closeEditModal();
-      fetchStudents();
+      await fetchStudents();
     } catch (error) {
-      console.error(error);
+      console.log('Error updating student:', error);
     }
   };
 

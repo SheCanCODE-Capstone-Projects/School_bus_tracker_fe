@@ -26,9 +26,9 @@ export default function DriversTable() {
       setLoading(true);
       
       // Get authentication token
-      let token = localStorage.getItem("token");
+      let token = localStorage.getItem("authToken") || localStorage.getItem("token");
       if (!token) {
-        const possibleKeys = ['accessToken', 'authToken', 'jwtToken', 'jwt', 'auth_token'];
+        const possibleKeys = ['accessToken', 'jwtToken', 'jwt', 'auth_token'];
         for (const key of possibleKeys) {
           token = localStorage.getItem(key) || sessionStorage.getItem(key);
           if (token) break;

@@ -151,7 +151,8 @@ export default function AdminDashboardContent() {
         
         const token = getAuthToken();
         if (!token) {
-          console.error('No token found for emergencies');
+          console.log('No token found for emergencies');
+          setEmergencies([]);
           return;
         }
         
@@ -298,8 +299,10 @@ export default function AdminDashboardContent() {
         const token = getAuthToken();
         
         if (!token) {
-          console.error('❌ No token found anywhere!');
-          throw new Error('No authentication token found. Please login again.');
+          console.log('No token found for buses');
+          setBuses([]);
+          setBusError(null);
+          return;
         }
         
         console.log('✓ Token found! Length:', token.length);

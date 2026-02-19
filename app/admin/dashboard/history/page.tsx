@@ -250,10 +250,10 @@ export default function ActivityHistory() {
           {currentActivities.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-gray-400" />
+                <Clock className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No activities found</h3>
-              <p className="text-gray-600">Try adjusting your search or filters</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No activities yet</h3>
+              <p className="text-gray-600">Activities will appear here when you add, edit, delete, or assign students, buses, drivers, or parents.</p>
             </div>
           ) : (
             currentActivities.map((activity, index) => (

@@ -404,20 +404,17 @@ export default function ParentsPage() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Backend error:", errorText);
+        console.log("Update error:", response.status, errorText);
         throw new Error(`Failed to update parent: ${response.status}`);
       }
 
       const result = await response.json();
       console.log("Parent updated successfully:", result);
 
-      // Refresh the parents list
       await fetchParents();
-
       setShowEditModal(false);
     } catch (err: any) {
-      console.error("Error updating parent:", err);
-      console.error(`Error updating parent: ${err.message}`);
+      console.log("Error updating parent:", err);
     }
   };
 
@@ -444,20 +441,19 @@ export default function ParentsPage() {
       );
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log('Delete failed:', response.status, errorText);
         throw new Error(`Failed to delete parent: ${response.status}`);
       }
 
       const result = await response.json();
       console.log("Parent deleted successfully:", result);
 
-      // Refresh the parents list
       await fetchParents();
-
       setShowDeleteModal(false);
       setParentToDelete(null);
     } catch (err: any) {
-      console.error("Error deleting parent:", err);
-      console.error(`Error deleting parent: ${err.message}`);
+      console.log('Error deleting parent:', err);
     }
   };
 
