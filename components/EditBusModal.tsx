@@ -256,7 +256,7 @@ const EditBusModal: React.FC<EditBusModalProps> = ({ bus, onClose, onSave }) => 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-200 py-2 rounded-lg hover:bg-gray-300"
+              className="flex-1 bg-gray-200 text-gray-500 py-2 rounded-lg hover:bg-gray-300"
             >
               Cancel
             </button>

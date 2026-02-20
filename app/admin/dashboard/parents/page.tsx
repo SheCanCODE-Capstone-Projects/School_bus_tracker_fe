@@ -355,10 +355,9 @@ export default function ParentsPage() {
       setAssignedBus("");
 
       // Show success message (you can add a toast notification here)
-      alert("Parent added successfully!");
     } catch (err: any) {
       console.error("Error adding parent:", err);
-      alert(`Error adding parent: ${err.message}`);
+      console.error(`Error adding parent: ${err.message}`);
     }
   };
 
@@ -385,11 +384,8 @@ export default function ParentsPage() {
 
       const updateData = {
         parentName: editParent.name,
-        email: editParent.email,
-        phone: editParent.phone,
-        address: editParent.address,
-        childName: editParent.childName,
-        assignedBus: editParent.assignedBus,
+        parentEmail: editParent.email,
+        parentPhone: editParent.phone,
       };
 
       console.log("Updating parent:", editParent.id, updateData);
@@ -407,20 +403,18 @@ export default function ParentsPage() {
       );
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log("Update error:", response.status, errorText);
         throw new Error(`Failed to update parent: ${response.status}`);
       }
 
       const result = await response.json();
       console.log("Parent updated successfully:", result);
 
-      // Refresh the parents list
       await fetchParents();
-
       setShowEditModal(false);
-      alert("Parent updated successfully!");
     } catch (err: any) {
-      console.error("Error updating parent:", err);
-      alert(`Error updating parent: ${err.message}`);
+      console.log("Error updating parent:", err);
     }
   };
 
@@ -447,21 +441,19 @@ export default function ParentsPage() {
       );
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log('Delete failed:', response.status, errorText);
         throw new Error(`Failed to delete parent: ${response.status}`);
       }
 
       const result = await response.json();
       console.log("Parent deleted successfully:", result);
 
-      // Refresh the parents list
       await fetchParents();
-
       setShowDeleteModal(false);
       setParentToDelete(null);
-      alert("Parent deleted successfully!");
     } catch (err: any) {
-      console.error("Error deleting parent:", err);
-      alert(`Error deleting parent: ${err.message}`);
+      console.log('Error deleting parent:', err);
     }
   };
 

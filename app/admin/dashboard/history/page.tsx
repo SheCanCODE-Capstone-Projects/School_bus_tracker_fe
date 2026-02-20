@@ -1,9 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Calendar, User, Bus, Users, GraduationCap, AlertTriangle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import AdminNavbar from '@/components/navigation/AdminNavbar';
 import AdminFooter from '@/components/navigation/AdminFooter';
+
+// Get action logs from localStorage
+const getActionLogs = () => {
+  try {
+    return JSON.parse(localStorage.getItem('admin_action_logs') || '[]');
+  } catch { return []; }
+};
 
 // Activity type definitions
 type ActivityType = 'driver' | 'bus' | 'parent' | 'student' | 'emergency';
@@ -20,160 +27,6 @@ interface Activity {
   icon: React.ReactNode;
 }
 
-// This is where you'll replace with real data from your API/Database
-const MOCK_ACTIVITIES: Activity[] = [
-  {
-    id: '1',
-    type: 'driver',
-    action: 'added',
-    title: 'Driver Added',
-    description: 'Added new driver: Michael Johnson',
-    timestamp: '2024-12-03 14:30',
-    performedBy: 'Admin John',
-    icon: '👨‍✈️'
-  },
-  {
-    id: '2',
-    type: 'bus',
-    action: 'changed',
-    title: 'Bus Status Changed',
-    description: 'Changed Bus 05 status from Active to Inactive',
-    timestamp: '2024-12-03 14:15',
-    performedBy: 'Admin John',
-    icon: '🚌'
-  },
-  {
-    id: '3',
-    type: 'parent',
-    action: 'registered',
-    title: 'Parent Registered',
-    description: 'New parent registered: Sarah Anderson (2 children)',
-    timestamp: '2024-12-03 13:45',
-    performedBy: 'Admin Sarah',
-    icon: '👨‍👩‍👧'
-  },
-  {
-    id: '4',
-    type: 'student',
-    action: 'assigned',
-    title: 'Student Assigned',
-    description: 'Assigned Emma Thompson to Bus 03',
-    timestamp: '2024-12-03 13:20',
-    performedBy: 'Admin John',
-    icon: '👧'
-  },
-  {
-    id: '5',
-    type: 'emergency',
-    action: 'resolved',
-    title: 'Emergency Resolved',
-    description: 'Resolved emergency report from Bus 01',
-    timestamp: '2024-12-03 12:50',
-    performedBy: 'Admin Sarah',
-    icon: '🚨'
-  },
-  {
-    id: '6',
-    type: 'driver',
-    action: 'assigned',
-    title: 'Driver Assigned',
-    description: 'Assigned Sarah Williams to Bus 02',
-    timestamp: '2024-12-03 11:30',
-    performedBy: 'Admin John',
-    icon: '👨‍✈️'
-  },
-  {
-    id: '7',
-    type: 'bus',
-    action: 'added',
-    title: 'Bus Added',
-    description: 'Added new bus: Bus 06 - Route E',
-    timestamp: '2024-12-03 11:00',
-    performedBy: 'Admin Sarah',
-    icon: '🚌'
-  },
-  {
-    id: '8',
-    type: 'parent',
-    action: 'updated',
-    title: 'Parent Updated',
-    description: 'Updated contact info for Robert Martinez',
-    timestamp: '2024-12-03 10:45',
-    performedBy: 'Admin John',
-    icon: '👨‍👩‍👧'
-  },
-  {
-    id: '9',
-    type: 'student',
-    action: 'removed',
-    title: 'Student Removed',
-    description: 'Removed student: James Wilson from Bus 01',
-    timestamp: '2024-12-03 10:20',
-    performedBy: 'Admin Sarah',
-    icon: '👧'
-  },
-  {
-    id: '10',
-    type: 'emergency',
-    action: 'resolved',
-    title: 'Emergency Resolved',
-    description: 'Resolved emergency on Bus 03',
-    timestamp: '2024-12-03 10:00',
-    performedBy: 'Admin John',
-    icon: '🚨'
-  },
-  {
-    id: '11',
-    type: 'driver',
-    action: 'updated',
-    title: 'Driver Updated',
-    description: 'Updated license info for John Smith',
-    timestamp: '2024-12-03 09:45',
-    performedBy: 'Admin Sarah',
-    icon: '👨‍✈️'
-  },
-  {
-    id: '12',
-    type: 'bus',
-    action: 'changed',
-    title: 'Bus Status Changed',
-    description: 'Changed Bus 02 status from Inactive to Active',
-    timestamp: '2024-12-03 09:30',
-    performedBy: 'Admin John',
-    icon: '🚌'
-  },
-  {
-    id: '13',
-    type: 'parent',
-    action: 'registered',
-    title: 'Parent Registered',
-    description: 'New parent registered: Mike Thompson (1 child)',
-    timestamp: '2024-12-03 09:15',
-    performedBy: 'Admin Sarah',
-    icon: '👨‍👩‍👧'
-  },
-  {
-    id: '14',
-    type: 'student',
-    action: 'assigned',
-    title: 'Student Assigned',
-    description: 'Assigned Tom Wilson to Bus 05',
-    timestamp: '2024-12-03 09:00',
-    performedBy: 'Admin John',
-    icon: '👧'
-  },
-  {
-    id: '15',
-    type: 'driver',
-    action: 'added',
-    title: 'Driver Added',
-    description: 'Added new driver: Lisa Anderson',
-    timestamp: '2024-12-03 08:45',
-    performedBy: 'Admin Sarah',
-    icon: '👨‍✈️'
-  }
-];
-
 const ITEMS_PER_PAGE = 6;
 
 export default function ActivityHistory() {
@@ -181,9 +34,68 @@ export default function ActivityHistory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchActivities();
+    // Refresh every 5 seconds to catch new actions
+    const interval = setInterval(fetchActivities, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchActivities = () => {
+    try {
+      setLoading(true);
+      const logs = getActionLogs();
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formattedActivities: Activity[] = logs.map((log: any) => ({
+        id: log.id,
+        type: log.entityType,
+        action: log.action.toLowerCase().includes('add') ? 'added' : 
+               log.action.toLowerCase().includes('update') ? 'updated' :
+               log.action.toLowerCase().includes('delete') ? 'removed' :
+               log.action.toLowerCase().includes('assign') ? 'assigned' :
+               log.action.toLowerCase().includes('resolve') ? 'resolved' : 'updated',
+        title: log.action,
+        description: log.description,
+        timestamp: new Date(log.timestamp).toLocaleString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        performedBy: log.performedBy,
+        icon: getIconForType(log.entityType)
+      }));
+      
+      setActivities(formattedActivities);
+      setError(null);
+    } catch (err) {
+      console.log('Error loading action logs:', err);
+      setActivities([]);
+      setError(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getIconForType = (type: string) => {
+    switch (type) {
+      case 'driver': return '👨✈️';
+      case 'bus': return '🚌';
+      case 'parent': return '👨👩👧';
+      case 'student': return '👧';
+      case 'emergency': return '🚨';
+      default: return '📋';
+    }
+  };
 
   // Filter activities based on selected type and search query
-  const filteredActivities = MOCK_ACTIVITIES.filter(activity => {
+  const filteredActivities = activities.filter(activity => {
     const matchesFilter = selectedFilter === 'all' || activity.type === selectedFilter;
     const matchesSearch = activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          activity.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -312,16 +224,36 @@ export default function ActivityHistory() {
         </div>
 
         {/* Activity List with Transitions */}
+        {loading ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading activities...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error loading activities</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={fetchActivities}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
         <div className={`space-y-4 transition-all duration-300 ${
           isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
         }`}>
           {currentActivities.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-gray-400" />
+                <Clock className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No activities found</h3>
-              <p className="text-gray-600">Try adjusting your search or filters</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No activities yet</h3>
+              <p className="text-gray-600">Activities will appear here when you add, edit, delete, or assign students, buses, drivers, or parents.</p>
             </div>
           ) : (
             currentActivities.map((activity, index) => (
@@ -370,6 +302,7 @@ export default function ActivityHistory() {
             ))
           )}
         </div>
+        )}
 
         {/* Pagination */}
         {totalPages > 1 && (
