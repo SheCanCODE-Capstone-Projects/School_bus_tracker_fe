@@ -32,6 +32,23 @@ export const logAction = (
     };
 
     const existingLogs = getActionLogs();
+    
+    // Check for exact duplicate within last 1 second only
+    const isDuplicate = existingLogs.some(log => {
+      const timeDiff = Date.now() - new Date(log.timestamp).getTime();
+      return (
+        log.action === action &&
+        log.description === description &&
+        log.entityType === entityType &&
+        log.performedBy === adminName &&
+        timeDiff < 1000 // 1 second
+      );
+    });
+
+    if (isDuplicate) {
+      return; // Skip logging exact duplicate
+    }
+
     const updatedLogs = [newLog, ...existingLogs].slice(0, MAX_LOGS);
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLogs));
