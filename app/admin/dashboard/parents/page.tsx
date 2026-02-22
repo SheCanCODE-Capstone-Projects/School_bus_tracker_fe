@@ -20,11 +20,19 @@ import { getAuthToken, getUserRole } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 interface BusStop {
+  id: number;
   stopName: string;
   address: string;
 }
 
+interface BusStopOption {
+  id: number;
+  name: string;
+  address: string;
+}
+
 interface AssignedBus {
+  id: number;
   busName: string;
   busNumber: string;
 }
@@ -51,6 +59,12 @@ interface ParentData {
   students: Student[];
 }
 
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: ParentData[];
+}
+
 export default function ParentsPage() {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -59,15 +73,25 @@ export default function ParentsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [parentToDelete, setParentToDelete] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Notification states
+  const [apiSuccess, setApiSuccess] = useState("");
+  const [apiError, setApiError] = useState("");
+
+  // Bus stops state
+  const [busStops, setBusStops] = useState<BusStopOption[]>([]);
+  const [loadingBusStops, setLoadingBusStops] = useState(false);
+
+  // Form states
   const [parentName, setParentName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [homeAddress, setHomeAddress] = useState("");
+  const [schoolId, setSchoolId] = useState(1);
   const [children, setChildren] = useState([
-    { id: 1, name: "", age: "", busStop: "" },
+    { id: 1, fullName: "", age: "", gender: "Not Specified", busStopId: "" },
   ]);
-  const [assignedBus, setAssignedBus] = useState("");
 
   const [editParent, setEditParent] = useState({
     id: "",
@@ -83,6 +107,51 @@ export default function ParentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Fetch bus stops
+  const fetchBusStops = async () => {
+    try {
+      setLoadingBusStops(true);
+      const token = getAuthToken();
+      const cleanToken = token.replace(/^Bearer\s+/i, '');
+
+      const response = await fetch(
+        "https://school-bus-tracker-be.onrender.com/api/bus-stops",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${cleanToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch bus stops");
+      }
+
+      const result = await response.json();
+      
+      if (result.success && Array.isArray(result.data)) {
+        setBusStops(result.data);
+      } else if (Array.isArray(result)) {
+        setBusStops(result);
+      } else {
+        console.warn("Unexpected bus stops data format:", result);
+        setBusStops([]);
+      }
+    } catch (err) {
+      console.error("Error fetching bus stops:", err);
+      setBusStops([
+        { id: 1, name: "Oak Street Stop", address: "Oak Street" },
+        { id: 2, name: "Maple Avenue Stop", address: "Maple Avenue" },
+        { id: 3, name: "Pine Road Stop", address: "Pine Road" },
+        { id: 4, name: "Elm Street Stop", address: "Elm Street" },
+      ]);
+    } finally {
+      setLoadingBusStops(false);
+    }
+  };
+
   // Check authorization
   useEffect(() => {
     const token = getAuthToken();
@@ -96,16 +165,14 @@ export default function ParentsPage() {
     setIsAuthorized(true);
   }, [router]);
 
-  // Fetch parents data
+  // Fetch parents data - UPDATED to use correct endpoint
   const fetchParents = async () => {
     try {
       setLoading(true);
       const token = getAuthToken();
+      const cleanToken = token.replace(/^Bearer\s+/i, '');
 
-      console.log(
-        "Fetching parents with token:",
-        token ? "Token exists" : "No token",
-      );
+      console.log("Fetching parents from /api/admin/parents");
 
       const response = await fetch(
         "https://school-bus-tracker-be.onrender.com/api/admin/parents",
@@ -113,81 +180,68 @@ export default function ParentsPage() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${cleanToken}`,
           },
-        },
+        }
       );
 
       console.log("Response status:", response.status);
 
       if (!response.ok) {
         if (response.status === 403) {
-          throw new Error(
-            "Access forbidden. Please check your admin permissions.",
-          );
+          throw new Error("Access forbidden. Please check your admin permissions.");
         } else if (response.status === 401) {
           throw new Error("Unauthorized. Please login again.");
         }
         throw new Error(`Failed to fetch parents: ${response.status}`);
       }
 
-      const result = await response.json();
+      const result: ApiResponse = await response.json();
       console.log("API Response:", result);
 
-      // Handle different response structures
+      // Transform the API data according to the documentation
       let transformedParents = [];
 
       if (result.success && Array.isArray(result.data)) {
-        console.log(
-          "Processing result.data array, length:",
-          result.data.length,
-        );
+        console.log("Processing result.data array, length:", result.data.length);
 
-        // Transform API data safely - consolidate all children per parent into one row
         transformedParents = result.data
           .map((parentData: ParentData) => {
-            // Check if parentData exists and has students array
-            if (
-              !parentData ||
-              !Array.isArray(parentData.students) ||
-              parentData.students.length === 0
-            ) {
+            if (!parentData || !Array.isArray(parentData.students)) {
               console.log("Skipping parent data without students:", parentData);
               return null;
             }
 
             try {
-              // Get all children names and buses, filtering out any undefined/null values
+              // Get all children names
               const childrenNames = parentData.students
-                .map((s) => s?.studentName) // ✅ correct field from API
+                .map((s) => s?.studentName)
                 .filter((name) => name && name.trim() !== "")
                 .join(", ");
 
+              // Get unique bus numbers from all children
               const buses = [
                 ...new Set(
                   parentData.students
                     .map((s) => s?.assignedBus?.busNumber)
-                    .filter((bus) => bus && bus.trim() !== ""),
+                    .filter((bus) => bus && bus.trim() !== "")
                 ),
               ].join(", ");
 
+              // Get address from first student or use parent's address
               const firstStudent = parentData.students[0];
+              const address = firstStudent?.address || "No address";
 
-              console.log(
-                "Parent:",
-                parentData.parentName,
-                "Children:",
-                childrenNames,
-              );
+              console.log("Parent:", parentData.parentName, "Children:", childrenNames);
 
               return {
                 id: parentData.parentId,
-                name: parentData?.parentName || "Unknown Parent",
-                address: firstStudent?.address || "No address",
-                email: parentData?.parentEmail || "No email",
-                phone: parentData?.parentPhone || "No phone",
-                childName: childrenNames || "Unknown Child",
-                assignedBus: buses || "No bus",
+                name: parentData.parentName || "Unknown Parent",
+                address: address,
+                email: parentData.parentEmail || "No email",
+                phone: parentData.parentPhone || "No phone",
+                childName: childrenNames || "No children",
+                assignedBus: buses || "No bus assigned",
                 childrenCount: parentData.students.length,
               };
             } catch (err) {
@@ -195,15 +249,7 @@ export default function ParentsPage() {
               return null;
             }
           })
-          .filter(Boolean); // Remove any null entries
-      } else if (Array.isArray(result)) {
-        // If result is directly an array
-        console.log("Processing direct array result, length:", result.length);
-        transformedParents = result;
-      } else if (result.data) {
-        // If there's a data property but not in expected format
-        console.log("Unexpected data format:", result.data);
-        transformedParents = Array.isArray(result.data) ? result.data : [];
+          .filter(Boolean);
       }
 
       console.log("Transformed parents:", transformedParents);
@@ -213,7 +259,6 @@ export default function ParentsPage() {
     } catch (err: any) {
       setError(err.message);
       console.error("Error fetching parents:", err);
-      console.error("Error stack:", err.stack);
     } finally {
       setLoading(false);
     }
@@ -223,6 +268,13 @@ export default function ParentsPage() {
     if (!isAuthorized) return;
     fetchParents();
   }, [isAuthorized]);
+
+  // Fetch bus stops when modal opens
+  useEffect(() => {
+    if (showAddParentModal && isAuthorized) {
+      fetchBusStops();
+    }
+  }, [showAddParentModal, isAuthorized]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -286,7 +338,13 @@ export default function ParentsPage() {
   const handleAddChild = () => {
     setChildren([
       ...children,
-      { id: children.length + 1, name: "", age: "", busStop: "" },
+      { 
+        id: children.length + 1, 
+        fullName: "", 
+        age: "", 
+        gender: "Not Specified", 
+        busStopId: "" 
+      },
     ]);
   };
 
@@ -305,60 +363,122 @@ export default function ParentsPage() {
 
   const handleSubmitParent = async () => {
     try {
+      // Clear previous notifications
+      setApiError("");
+      setApiSuccess("");
+
+      // Validate required fields
+      if (!parentName || !email || !phone || !homeAddress) {
+        setApiError("Please fill in all parent information fields");
+        return;
+      }
+
+      // Validate at least one child
+      const hasValidChild = children.some(
+        (child) => child.fullName && child.age && child.busStopId
+      );
+      
+      if (!hasValidChild) {
+        setApiError("Please add at least one child with complete information (name, age, and bus stop)");
+        return;
+      }
+
+      setIsSubmitting(true);
+
       const token = getAuthToken();
 
-      // Prepare the data to send to the API
+      // Clean the token (remove "Bearer " if already included)
+      const cleanToken = token.replace(/^Bearer\s+/i, '');
+
+      // Prepare the data according to the API specification for /api/admin/add-parent
       const parentData = {
-        parentName,
-        email,
-        phone,
-        address,
+        schoolId: schoolId,
+        name: parentName,
+        email: email,
+        password: "DefaultPass123!",
+        phone: phone,
+        homeAddress: homeAddress,
         children: children.map((child) => ({
-          name: child.name,
+          fullName: child.fullName,
+          studentNumber: `STU${Date.now()}${child.id}`,
           age: parseInt(child.age) || 0,
-          busStop: child.busStop,
+          gender: child.gender || "Not Specified",
+          busStopId: parseInt(child.busStopId) || 0,
         })),
-        assignedBus,
       };
 
-      console.log("Submitting parent data:", parentData);
+      console.log("Submitting parent data to /api/admin/add-parent:", parentData);
 
       const response = await fetch(
-        "https://school-bus-tracker-be.onrender.com/api/admin/parents",
+        "https://school-bus-tracker-be.onrender.com/api/admin/add-parent",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${cleanToken}`,
           },
           body: JSON.stringify(parentData),
-        },
+        }
       );
 
+      // Better error handling
+      let responseData;
+      let errorMessage = '';
+      
       if (!response.ok) {
-        throw new Error(`Failed to add parent: ${response.status}`);
+        try {
+          const responseClone = response.clone();
+          const errorText = await responseClone.text();
+          
+          try {
+            responseData = JSON.parse(errorText);
+            errorMessage = responseData.message || responseData.error || `Error ${response.status}: ${response.statusText}`;
+          } catch {
+            errorMessage = errorText || `Error ${response.status}: ${response.statusText}`;
+          }
+        } catch (e) {
+          errorMessage = `Error ${response.status}: ${response.statusText}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      console.log("Parent added successfully:", result);
+      // Success handling
+      responseData = await response.json();
+      console.log("Parent added successfully:", responseData);
 
-      // Refresh the parents list
+      // Wait a moment for the backend to process
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await fetchParents();
 
-      // Reset form and close modal
-      setShowAddParentModal(false);
-      setParentName("");
-      setEmail("");
-      setPhone("");
-      setAddress("");
-      setChildren([{ id: 1, name: "", age: "", busStop: "" }]);
-      setAssignedBus("");
+      setApiSuccess("Parent added successfully!");
 
-      // Show success message (you can add a toast notification here)
-      alert("Parent added successfully!");
+      // Reset form and close modal after 2 seconds
+      setTimeout(() => {
+        setShowAddParentModal(false);
+        setParentName("");
+        setEmail("");
+        setPhone("");
+        setHomeAddress("");
+        setSchoolId(1);
+        setChildren([{ id: 1, fullName: "", age: "", gender: "Not Specified", busStopId: "" }]);
+        setApiSuccess("");
+      }, 2000);
+
     } catch (err: any) {
       console.error("Error adding parent:", err);
-      alert(`Error adding parent: ${err.message}`);
+      
+      if (err.message.includes("403") || err.message.includes("Forbidden")) {
+        setApiError("Access denied. You need admin privileges to add parents.");
+      } else if (err.message.includes("401") || err.message.includes("Unauthorized")) {
+        setApiError("Your session has expired. Please log in again.");
+      } else if (err.message.includes("already exists")) {
+        setApiError("A parent with this email already exists.");
+      } else {
+        setApiError(err.message || "Failed to add parent. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -379,17 +499,22 @@ export default function ParentsPage() {
     setEditParent({ ...editParent, [field]: value });
   };
 
+  // UPDATED: handleSaveEdit function with correct endpoint and better error handling
   const handleSaveEdit = async () => {
     try {
-      const token = getAuthToken();
+      setApiError("");
+      setApiSuccess("");
 
+      const token = getAuthToken();
+      const cleanToken = token.replace(/^Bearer\s+/i, '');
+
+      // Prepare the data according to API specification
       const updateData = {
-        parentName: editParent.name,
+        name: editParent.name,
         email: editParent.email,
         phone: editParent.phone,
-        address: editParent.address,
-        childName: editParent.childName,
-        assignedBus: editParent.assignedBus,
+        homeAddress: editParent.address,
+        // You might need to include children data if the API requires it
       };
 
       console.log("Updating parent:", editParent.id, updateData);
@@ -397,30 +522,66 @@ export default function ParentsPage() {
       const response = await fetch(
         `https://school-bus-tracker-be.onrender.com/api/admin/parents/${editParent.id}`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${cleanToken}`,
           },
           body: JSON.stringify(updateData),
-        },
+        }
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed to update parent: ${response.status}`);
+      console.log("Update response status:", response.status);
+
+      // Try to get the response body even if it's not OK
+      const responseText = await response.text();
+      console.log("Update response body:", responseText);
+
+      let responseData;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : null;
+      } catch (e) {
+        console.log("Response is not JSON:", responseText);
       }
 
-      const result = await response.json();
-      console.log("Parent updated successfully:", result);
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 403) {
+          throw new Error("You don't have permission to update this parent.");
+        } else if (response.status === 404) {
+          throw new Error("Parent not found. It may have been deleted.");
+        } else if (response.status === 400) {
+          throw new Error(responseData?.message || "Invalid data provided.");
+        } else {
+          throw new Error(responseData?.message || `Failed to update parent (${response.status})`);
+        }
+      }
+
+      console.log("Parent updated successfully:", responseData);
 
       // Refresh the parents list
       await fetchParents();
 
-      setShowEditModal(false);
-      alert("Parent updated successfully!");
+      setApiSuccess("Parent updated successfully!");
+
+      // Close modal after 2 seconds
+      setTimeout(() => {
+        setShowEditModal(false);
+        setEditParent({
+          id: "",
+          name: "",
+          email: "",
+          phone: "",
+          address: "",
+          childName: "",
+          assignedBus: "",
+        });
+        setApiSuccess("");
+      }, 2000);
+
     } catch (err: any) {
       console.error("Error updating parent:", err);
-      alert(`Error updating parent: ${err.message}`);
+      setApiError(err.message || "Failed to update parent. Please try again.");
     }
   };
 
@@ -431,7 +592,11 @@ export default function ParentsPage() {
 
   const confirmDelete = async () => {
     try {
+      setApiError("");
+      setApiSuccess("");
+
       const token = getAuthToken();
+      const cleanToken = token.replace(/^Bearer\s+/i, '');
 
       console.log("Deleting parent:", parentToDelete.id);
 
@@ -441,7 +606,7 @@ export default function ParentsPage() {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${cleanToken}`,
           },
         },
       );
@@ -453,15 +618,19 @@ export default function ParentsPage() {
       const result = await response.json();
       console.log("Parent deleted successfully:", result);
 
-      // Refresh the parents list
       await fetchParents();
 
-      setShowDeleteModal(false);
-      setParentToDelete(null);
-      alert("Parent deleted successfully!");
+      setApiSuccess("Parent deleted successfully!");
+
+      setTimeout(() => {
+        setShowDeleteModal(false);
+        setParentToDelete(null);
+        setApiSuccess("");
+      }, 2000);
+
     } catch (err: any) {
       console.error("Error deleting parent:", err);
-      alert(`Error deleting parent: ${err.message}`);
+      setApiError(`Error deleting parent: ${err.message}`);
     }
   };
 
@@ -497,7 +666,11 @@ export default function ParentsPage() {
             {/* Buttons - Stack vertically on mobile, horizontal on larger screens */}
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <button
-                onClick={() => setShowAddParentModal(true)}
+                onClick={() => {
+                  setApiError("");
+                  setApiSuccess("");
+                  setShowAddParentModal(true);
+                }}
                 className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-blue-400 text-white rounded-2xl hover:bg-blue-500 transition w-full sm:w-auto"
               >
                 <Plus className="w-5 h-5" />
@@ -798,7 +971,13 @@ export default function ParentsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-gray-700/40 backdrop-blur-md"
-              onClick={() => setShowAddParentModal(false)}
+              onClick={() => {
+                if (!isSubmitting) {
+                  setShowAddParentModal(false);
+                  setApiError("");
+                  setApiSuccess("");
+                }
+              }}
             />
             <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="p-6">
@@ -810,6 +989,19 @@ export default function ParentsPage() {
                     Add New Parent
                   </h2>
                 </div>
+
+                {/* Success/Error Messages */}
+                {apiSuccess && (
+                  <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">
+                    {apiSuccess}
+                  </div>
+                )}
+                
+                {apiError && (
+                  <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                    {apiError}
+                  </div>
+                )}
 
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -826,6 +1018,7 @@ export default function ParentsPage() {
                         value={parentName}
                         onChange={(e) => setParentName(e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                        disabled={isSubmitting}
                       />
                     </div>
                     <div>
@@ -838,6 +1031,7 @@ export default function ParentsPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                        disabled={isSubmitting}
                       />
                     </div>
                     <div>
@@ -850,19 +1044,36 @@ export default function ParentsPage() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                        disabled={isSubmitting}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address
+                        Home Address
                       </label>
                       <input
                         type="text"
                         placeholder="123 Main Street"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        value={homeAddress}
+                        onChange={(e) => setHomeAddress(e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                        disabled={isSubmitting}
                       />
+                    </div>
+                    {/* Optional: Add school selection if needed */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        School ID
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="1"
+                        value={schoolId}
+                        onChange={(e) => setSchoolId(parseInt(e.target.value) || 1)}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                        disabled={isSubmitting}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Default: 1 (you may need to adjust based on your school)</p>
                     </div>
                   </div>
                 </div>
@@ -874,7 +1085,8 @@ export default function ParentsPage() {
                     </h3>
                     <button
                       onClick={handleAddChild}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-100  text-blue-600 rounded-2xl shadow-sm hover:shadow-md hover:bg-blue-200 transition text-sm font-medium"
+                      disabled={isSubmitting}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-2xl shadow-sm hover:shadow-md hover:bg-blue-200 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Plus className="w-4 h-4" />
                       Add Child
@@ -893,7 +1105,8 @@ export default function ParentsPage() {
                           {children.length > 1 && (
                             <button
                               onClick={() => handleRemoveChild(child.id)}
-                              className="text-red-500 hover:bg-red-50 p-1 rounded transition"
+                              disabled={isSubmitting}
+                              className="text-red-500 hover:bg-red-50 p-1 rounded transition disabled:opacity-50"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -902,20 +1115,21 @@ export default function ParentsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Child's Name
+                              Child s Full Name
                             </label>
                             <input
                               type="text"
                               placeholder="Jane Doe"
-                              value={child.name}
+                              value={child.fullName}
                               onChange={(e) =>
                                 handleChildChange(
                                   child.id,
-                                  "name",
+                                  "fullName",
                                   e.target.value,
                                 )
                               }
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-700"
+                              disabled={isSubmitting}
                             />
                           </div>
                           <div>
@@ -934,36 +1148,57 @@ export default function ParentsPage() {
                                 )
                               }
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-700"
+                              disabled={isSubmitting}
                             />
                           </div>
-                          <div className="md:col-span-2">
+                          <div>
                             <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Bus Stop
+                              Gender
                             </label>
                             <select
-                              value={child.busStop}
+                              value={child.gender}
                               onChange={(e) =>
                                 handleChildChange(
                                   child.id,
-                                  "busStop",
+                                  "gender",
                                   e.target.value,
                                 )
                               }
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-700"
+                              disabled={isSubmitting}
+                            >
+                              <option value="Not Specified">Not Specified</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Bus Stop
+                            </label>
+                            <select
+                              value={child.busStopId}
+                              onChange={(e) =>
+                                handleChildChange(
+                                  child.id,
+                                  "busStopId",
+                                  e.target.value,
+                                )
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-700"
+                              disabled={isSubmitting || loadingBusStops}
                             >
                               <option value="">Select a bus stop</option>
-                              <option value="Oak Street Stop">
-                                Oak Street Stop
-                              </option>
-                              <option value="Maple Avenue Stop">
-                                Maple Avenue Stop
-                              </option>
-                              <option value="Pine Road Stop">
-                                Pine Road Stop
-                              </option>
-                              <option value="Elm Street Stop">
-                                Elm Street Stop
-                              </option>
+                              {loadingBusStops ? (
+                                <option value="" disabled>Loading bus stops...</option>
+                              ) : (
+                                busStops.map((stop) => (
+                                  <option key={stop.id} value={stop.id}>
+                                    {stop.name} {stop.address ? `- ${stop.address}` : ''}
+                                  </option>
+                                ))
+                              )}
                             </select>
                           </div>
                         </div>
@@ -972,34 +1207,33 @@ export default function ParentsPage() {
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Assign to Bus
-                  </label>
-                  <select
-                    value={assignedBus}
-                    onChange={(e) => setAssignedBus(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  >
-                    <option value="">Select a bus</option>
-                    <option value="Bus 01">Bus 01</option>
-                    <option value="Bus 02">Bus 02</option>
-                    <option value="Bus 03">Bus 03</option>
-                  </select>
-                </div>
-
                 <div className="w-full h-px bg-gray-300 my-4" />
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={handleSubmitParent}
-                    className="w-full sm:flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium"
+                    disabled={isSubmitting}
+                    className="w-full sm:flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Add Parent
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Adding...</span>
+                      </>
+                    ) : (
+                      "Add Parent"
+                    )}
                   </button>
                   <button
-                    onClick={() => setShowAddParentModal(false)}
-                    className="w-full sm:flex-1 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                    onClick={() => {
+                      if (!isSubmitting) {
+                        setShowAddParentModal(false);
+                        setApiError("");
+                        setApiSuccess("");
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    className="w-full sm:flex-1 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -1014,7 +1248,11 @@ export default function ParentsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-gray-700/40 backdrop-blur-md"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                setApiError("");
+                setApiSuccess("");
+              }}
             />
             <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3 mb-4 md:mb-6">
@@ -1025,6 +1263,19 @@ export default function ParentsPage() {
                   Edit Parent
                 </h2>
               </div>
+
+              {/* Success/Error Messages */}
+              {apiSuccess && (
+                <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">
+                  {apiSuccess}
+                </div>
+              )}
+              
+              {apiError && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                  {apiError}
+                </div>
+              )}
 
               <div className="space-y-3 md:space-y-4">
                 <div>
@@ -1119,7 +1370,11 @@ export default function ParentsPage() {
                   Save Changes
                 </button>
                 <button
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setApiError("");
+                    setApiSuccess("");
+                  }}
                   className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-gray-200 text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-300 transition font-medium text-sm md:text-base"
                 >
                   Cancel
@@ -1134,7 +1389,11 @@ export default function ParentsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-gray-700/40 backdrop-blur-md"
-              onClick={() => setShowDeleteModal(false)}
+              onClick={() => {
+                setShowDeleteModal(false);
+                setApiError("");
+                setApiSuccess("");
+              }}
             />
             <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6">
               <div className="flex items-center gap-3 mb-3 md:mb-4">
@@ -1145,6 +1404,19 @@ export default function ParentsPage() {
                   Delete Parent
                 </h2>
               </div>
+
+              {/* Success/Error Messages */}
+              {apiSuccess && (
+                <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">
+                  {apiSuccess}
+                </div>
+              )}
+              
+              {apiError && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                  {apiError}
+                </div>
+              )}
 
               <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">
                 Are you sure you want to delete{" "}
@@ -1162,7 +1434,11 @@ export default function ParentsPage() {
                   Delete
                 </button>
                 <button
-                  onClick={() => setShowDeleteModal(false)}
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setApiError("");
+                    setApiSuccess("");
+                  }}
                   className="w-full sm:flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-white text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition font-medium text-sm md:text-base"
                 >
                   Cancel
