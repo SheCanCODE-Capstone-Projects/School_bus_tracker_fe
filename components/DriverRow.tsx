@@ -8,7 +8,7 @@ import {
   ChevronDown,
   Mail
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 // Driver type
@@ -34,6 +34,7 @@ export default function DriverRow({ driver, onUpdate, onDelete }: DriverRowProps
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [buses, setBuses] = useState<{ id: number; busName: string; assignedDriver?: { fullName: string } }[]>([]);
 
   const [selectedBus, setSelectedBus] = useState(driver.bus ?? "");
   const [formData, setFormData] = useState({
@@ -42,6 +43,35 @@ export default function DriverRow({ driver, onUpdate, onDelete }: DriverRowProps
     phone: driver.phone,
     license: driver.license_number || "DL123456789"
   });
+
+  useEffect(() => {
+    const fetchBuses = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token) return;
+
+        const response = await fetch('https://school-bus-tracker-be.onrender.com/api/buses', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            setBuses(data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching buses:', error);
+      }
+    };
+
+    if (showEditModal) {
+      fetchBuses();
+    }
+  }, [showEditModal]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -343,21 +373,33 @@ export default function DriverRow({ driver, onUpdate, onDelete }: DriverRowProps
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute w-full bg-white border rounded-2xl mt-1 shadow-lg">
-                      {["", "Bus 01", "Bus 02", "Bus 03"].map(bus => (
-                        <button
-                          key={bus}
-                          onClick={() => {
-                            setSelectedBus(bus);
-                            setIsDropdownOpen(false);
-                          }}
-                          className="block w-full px-4 py-3 hover:bg-gray-100 text-left"
-                        >
-                          {bus || "No assignment"}
-                        </button>
-                      ))}
+                    <div className="absolute w-full bg-purple-500 border rounded-2xl mt-1 shadow-lg z-10 max-h-48 overflow-y-auto">
+                      <button
+                        onClick={() => {
+                          setSelectedBus("");
+                          setIsDropdownOpen(false);
+                        }}
+                        className="block w-full px-4 py-3 hover:bg-purple-600 text-left text-white"
+                      >
+                        No assignment
+                      </button>
+                      {buses
+                        .filter(bus => !bus.assignedDriver || bus.assignedDriver.fullName === driver.name)
+                        .map(bus => (
+                          <button
+                            key={bus.id}
+                            onClick={() => {
+                              setSelectedBus(bus.busName);
+                              setIsDropdownOpen(false);
+                            }}
+                            className="block w-full px-4 py-3 hover:bg-purple-600 text-left text-white"
+                          >
+                            {bus.busName}
+                          </button>
+                        ))}
                     </div>
                   )}
+                  <p className="text-xs mt-2 text-gray-700">Only showing unassigned buses</p>
                 </div>
               </div>
 

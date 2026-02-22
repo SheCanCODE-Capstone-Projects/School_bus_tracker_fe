@@ -29,12 +29,23 @@ interface BusData {
 
 interface ActivityItem {
   id: string;
-  type: "emergency" | "completed" | "assigned";
+  type: "emergency" | "completed" | "assigned" | "added" | "updated" | "deleted";
   title: string;
   description: string;
   time: string;
   icon: React.ReactNode;
   bgColor: string;
+}
+
+interface AdminActionLog {
+  id: number;
+  adminId: number;
+  adminName: string;
+  action: string;
+  targetType: string;
+  targetId: number;
+  details: string;
+  timestamp: string;
 }
 
 interface EmergencyData {
@@ -62,6 +73,8 @@ export default function AdminDashboardContent() {
   const [busError, setBusError] = useState<string | null>(null);
   const [emergencies, setEmergencies] = useState<EmergencyData[]>([]);
   const [isLoadingEmergencies, setIsLoadingEmergencies] = useState(true);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(true);
   
   // Role-based protection - only allow admin access
   useEffect(() => {
@@ -138,7 +151,8 @@ export default function AdminDashboardContent() {
         
         const token = getAuthToken();
         if (!token) {
-          console.error('No token found for emergencies');
+          console.log('No token found for emergencies');
+          setEmergencies([]);
           return;
         }
         
@@ -183,6 +197,77 @@ export default function AdminDashboardContent() {
     }
   }, [isLoading]);
 
+  // Fetch admin action logs
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setIsLoadingActivities(true);
+        const token = getAuthToken();
+        if (!token) return;
+        
+        const response = await fetch('https://school-bus-tracker-be.onrender.com/api/admin/action-logs', {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        
+        if (!response.ok) return;
+        const data = await response.json();
+        const logsArray: AdminActionLog[] = Array.isArray(data) ? data : (data.data || []);
+        
+        const transformedActivities: ActivityItem[] = logsArray.slice(0, 10).map((log) => {
+          const timeAgo = getTimeAgo(log.timestamp);
+          let icon = <Activity className="w-5 h-5 text-blue-500" />;
+          let type: ActivityItem['type'] = "assigned";
+          
+          if (log.action.toLowerCase().includes('emergency')) {
+            icon = <AlertTriangle className="w-5 h-5 text-red-500" />;
+            type = "emergency";
+          } else if (log.action.toLowerCase().includes('assign')) {
+            icon = <Users className="w-5 h-5 text-blue-500" />;
+            type = "assigned";
+          } else if (log.action.toLowerCase().includes('add')) {
+            icon = <Users className="w-5 h-5 text-green-500" />;
+            type = "added";
+          } else if (log.action.toLowerCase().includes('update')) {
+            icon = <Activity className="w-5 h-5 text-blue-500" />;
+            type = "updated";
+          } else if (log.action.toLowerCase().includes('delete')) {
+            icon = <AlertTriangle className="w-5 h-5 text-orange-500" />;
+            type = "deleted";
+          }
+          
+          return { id: log.id.toString(), type, title: log.action, description: `${log.adminName} • ${timeAgo}`, time: timeAgo, icon, bgColor: "bg-white" };
+        });
+        
+        setActivities(transformedActivities);
+      } catch (error) {
+        console.error('Error fetching activities:', error);
+      } finally {
+        setIsLoadingActivities(false);
+      }
+    };
+
+    if (!isLoading) {
+      fetchActivities();
+      const interval = setInterval(fetchActivities, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoading]);
+
+  const getTimeAgo = (timestamp: string): string => {
+    const now = new Date();
+    const past = new Date(timestamp);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
+
   // Helper function to map API status to component status
   const mapApiStatusToComponentStatus = (apiStatus: string): "moving" | "stopped" | "emergency" | "offline" => {
     const status = apiStatus?.toUpperCase();
@@ -214,8 +299,10 @@ export default function AdminDashboardContent() {
         const token = getAuthToken();
         
         if (!token) {
-          console.error('❌ No token found anywhere!');
-          throw new Error('No authentication token found. Please login again.');
+          console.log('No token found for buses');
+          setBuses([]);
+          setBusError(null);
+          return;
         }
         
         console.log('✓ Token found! Length:', token.length);
@@ -372,36 +459,6 @@ export default function AdminDashboardContent() {
       driver: "Emily Davis",
       status: "moving",
       position: { x: 35, y: 65 },
-    },
-  ];
-
-  const activities: ActivityItem[] = [
-    {
-      id: "1",
-      type: "emergency",
-      title: "Emergency reported on Bus 03",
-      description: "Driver: David Brown • 10 minutes ago",
-      time: "10 min",
-      icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
-      bgColor: "bg-white",
-    },
-    {
-      id: "2",
-      type: "completed",
-      title: "Bus 01 completed morning route",
-      description: "Driver: Michael Johnson • 25 minutes ago",
-      time: "25 min",
-      icon: <Activity className="w-5 h-5 text-green-500" />,
-      bgColor: "bg-white",
-    },
-    {
-      id: "3",
-      type: "assigned",
-      title: "New driver Sarah Williams assigned to Bus 02",
-      description: "Admin Action • 1 hour ago",
-      time: "1 hour",
-      icon: <Users className="w-5 h-5 text-blue-500" />,
-      bgColor: "bg-white",
     },
   ];
 
@@ -689,8 +746,19 @@ export default function AdminDashboardContent() {
               </h2>
 
               <div className="space-y-4">
-                {activities.map((activity) => (
-                  <div
+                {isLoadingActivities ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Loading activities...</p>
+                  </div>
+                ) : activities.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Activity className="w-8 h-8 mx-auto mb-2" />
+                    <p className="text-sm">No recent activities</p>
+                  </div>
+                ) : (
+                  activities.map((activity) => (
+                    <div
                     key={activity.id}
                     className={`${
                       activity.bgColor
@@ -711,7 +779,8 @@ export default function AdminDashboardContent() {
                       </p>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </main>

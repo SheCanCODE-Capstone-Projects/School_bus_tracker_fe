@@ -15,6 +15,25 @@ import {
 import AdminNavbar from "@/components/navigation/AdminNavbar";
 import AdminFooter from "@/components/navigation/AdminFooter";
 
+// Action Logger
+const logAction = (action: string, description: string, entityType: string) => {
+  try {
+    const adminName = localStorage.getItem('userName') || 
+                     JSON.parse(localStorage.getItem('user') || '{}').name || 
+                     'Admin';
+    const newLog = {
+      id: Date.now().toString(),
+      action,
+      description,
+      entityType,
+      performedBy: adminName,
+      timestamp: new Date().toISOString()
+    };
+    const logs = JSON.parse(localStorage.getItem('admin_action_logs') || '[]');
+    localStorage.setItem('admin_action_logs', JSON.stringify([newLog, ...logs].slice(0, 100)));
+  } catch (e) { console.error('Log error:', e); }
+};
+
 // Types
 interface BusStop {
   stopName: string;
@@ -383,10 +402,8 @@ export default function StudentBusDashboard() {
     }
   };
 
-  // Open modal
   const openAssignModal = () => {
     if (selectedStudents.length === 0) {
-      alert("Please select at least one student");
       return;
     }
     setShowAssignModal(true);
@@ -405,69 +422,46 @@ export default function StudentBusDashboard() {
       const token = getAuthToken();
 
       if (!token) {
-        alert("Authentication token not found. Please login again.");
         return;
       }
 
       if (!selectedBus) {
-        alert("Please select a bus to assign students to.");
         return;
       }
 
-      // Convert selected student IDs to integers
-      const studentIds = selectedStudents.map(id => parseInt(id));
       const busId = parseInt(selectedBus);
+      let allSuccess = true;
 
-      console.log("=== ASSIGNING STUDENTS TO BUS ===");
-      console.log("Student IDs:", studentIds);
-      console.log("Bus ID:", busId);
+      // Assign each student individually
+      for (const studentId of selectedStudents) {
+        const response = await fetch(
+          `https://school-bus-tracker-be.onrender.com/api/students/${studentId}/assign-bus`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ busId }),
+          }
+        );
 
-      const requestBody = {
-        busId: busId,
-        studentIds: studentIds
-      };
-
-      console.log("Request body:", requestBody);
-
-      // API call to assign students to bus using admin endpoint
-      const response = await fetch(
-        "https://school-bus-tracker-be.onrender.com/api/admin/assign-students-to-bus",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestBody),
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.log('Assignment failed for student:', studentId, errorData);
+          allSuccess = false;
         }
-      );
-
-      console.log("Response status:", response.status);
-
-      if (!response.ok) {
-        let errorData;
-        const contentType = response.headers.get("content-type");
-        
-        if (contentType && contentType.includes("application/json")) {
-          errorData = await response.json();
-        } else {
-          const text = await response.text();
-          errorData = { message: text || `HTTP ${response.status}` };
-        }
-        
-        console.error("Error response:", errorData);
-        throw new Error(errorData.message || "Failed to assign students to bus");
       }
 
-      const data = await response.json();
-      console.log("Success response:", data);
-
-      alert(`Successfully assigned ${studentIds.length} student(s) to the bus!`);
+      if (allSuccess) {
+        logAction('Students Assigned', `Assigned ${selectedStudents.length} student(s) to bus`, 'student');
+      }
+      
       closeAssignModal();
-      fetchStudents(); // Refresh the list
+      await fetchStudents();
     } catch (error) {
-      console.error("Error assigning students:", error);
-      alert(`Failed to assign students: ${error instanceof Error ? error.message : "Please try again."}`);
+      console.log('Error assigning students:', error);
+      closeAssignModal();
     }
   };
 
@@ -504,13 +498,11 @@ export default function StudentBusDashboard() {
       const token = getAuthToken();
 
       if (!token) {
-        alert("Authentication token not found. Please login again.");
         return;
       }
 
       // Validate required fields
       if (!newStudent.name || !newStudent.age) {
-        alert("Please fill in at least the student name and age.");
         return;
       }
 
@@ -596,26 +588,21 @@ export default function StudentBusDashboard() {
           errorMessage += "4. School ID mismatch\n\n";
           errorMessage += "Check browser console for more details.";
           
-          alert(errorMessage);
           return;
         }
         
         throw new Error(errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // Parse success response
       const data = JSON.parse(responseText);
       console.log("=== SUCCESS ===");
       console.log("Success response:", data);
 
-      alert("Student added successfully!");
+      logAction('Student Added', `Added new student: ${newStudent.name}`, 'student');
       closeAddStudentModal();
-      fetchStudents(); // Refresh the list
+      fetchStudents();
     } catch (error) {
-      console.error("=== EXCEPTION ===");
-      console.error("Error adding student:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
-      alert(`Failed to add student: ${error instanceof Error ? error.message : "Please try again."}`);
+      console.error(error);
     }
   };
 
@@ -628,8 +615,8 @@ export default function StudentBusDashboard() {
       parentName: student.parentName || "",
       parentPhone: student.parentPhone || "",
       address: student.address || "",
-      busStop: getBusStopName(student.busStop),
-      assignedBus: getBusName(student.assignedBus),
+      busStop: student.busStop?.stopName || "",
+      assignedBus: student.assignedBus?.busName || student.assignedBus?.busNumber || "",
     });
     setShowEditModal(true);
   };
@@ -663,9 +650,18 @@ export default function StudentBusDashboard() {
       const token = getAuthToken();
 
       if (!token) {
-        alert("Authentication token not found. Please login again.");
+        console.log('No token found');
         return;
       }
+
+      console.log('Updating student:', editStudent.id);
+      console.log('Request body:', {
+        studentName: editStudent.name,
+        age: parseInt(editStudent.age),
+        parentName: editStudent.parentName,
+        parentPhone: editStudent.parentPhone,
+        address: editStudent.address,
+      });
 
       const response = await fetch(
         `https://school-bus-tracker-be.onrender.com/api/students/${editStudent.id}`,
@@ -681,22 +677,26 @@ export default function StudentBusDashboard() {
             parentName: editStudent.parentName,
             parentPhone: editStudent.parentPhone,
             address: editStudent.address,
-            busStop: editStudent.busStop,
-            assignedBus: editStudent.assignedBus,
           }),
         }
       );
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error("Failed to update student");
+        const errorData = await response.json().catch(() => ({}));
+        console.log('Update failed:', errorData);
+        return;
       }
 
-      alert("Student updated successfully!");
+      const data = await response.json();
+      console.log('Update successful:', data);
+
+      logAction('Student Updated', `Updated student: ${editStudent.name}`, 'student');
       closeEditModal();
-      fetchStudents(); // Refresh the list
+      await fetchStudents();
     } catch (error) {
-      console.error("Error updating student:", error);
-      alert("Failed to update student. Please try again.");
+      console.log('Error updating student:', error);
     }
   };
 
@@ -718,7 +718,6 @@ export default function StudentBusDashboard() {
       const token = getAuthToken();
 
       if (!token) {
-        alert("Authentication token not found. Please login again.");
         return;
       }
 
@@ -739,12 +738,11 @@ export default function StudentBusDashboard() {
         throw new Error("Failed to delete student");
       }
 
-      alert("Student deleted successfully!");
+      logAction('Student Deleted', `Deleted student: ${studentToDelete.studentName}`, 'student');
       closeDeleteModal();
-      fetchStudents(); // Refresh the list
+      fetchStudents();
     } catch (error) {
-      console.error("Error deleting student:", error);
-      alert("Failed to delete student. Please try again.");
+      console.error(error);
     }
   };
 
@@ -862,30 +860,16 @@ export default function StudentBusDashboard() {
                 {students.length}
               </div>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer">
-              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">
-                School Bus A Students
+            {buses.slice(0, 3).map((bus, index) => (
+              <div key={bus.id} className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer">
+                <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">
+                  {bus.busName} Students
+                </div>
+                <div className="text-2xl md:text-3xl font-semibold text-gray-900">
+                  {busStats[bus.busName] || busStats[bus.busNumber] || 0}
+                </div>
               </div>
-              <div className="text-2xl md:text-3xl font-semibold text-gray-900">
-                {busStats["School Bus A"] || 0}
-              </div>
-            </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer">
-              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">
-                School Bus B Students
-              </div>
-              <div className="text-2xl md:text-3xl font-semibold text-gray-900">
-                {busStats["School Bus B"] || 0}
-              </div>
-            </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer">
-              <div className="text-gray-600 text-xs md:text-sm mb-1 md:mb-2">
-                School Bus C Students
-              </div>
-              <div className="text-2xl md:text-3xl font-semibold text-gray-900">
-                {busStats["School Bus C"] || 0}
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Students Table */}

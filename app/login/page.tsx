@@ -86,13 +86,8 @@ export default function SchoolBusLogin() {
       // Backend success - use dynamic response
       const userRole = data.user?.role?.toLowerCase() || data.role?.toLowerCase();
       
-      if (userRole && userRole !== selectedRole) {
-        setError(`This email is registered for ${userRole} access. Please select the correct account type.`);
-        return;
-      }
-
       if (!userRole) {
-        setError(`No ${selectedRole} account found with this email.`);
+        setError('Unable to determine account type. Please contact support.');
         return;
       }
 
@@ -102,16 +97,15 @@ export default function SchoolBusLogin() {
           email: data.email ?? data.user?.email,
           role: data.role ?? data.user?.role,
         };
-        setAuthData(data.token, userRole || selectedRole, userData);
+        setAuthData(data.token, userRole, userData);
       }
 
-      // Navigate based on role
-      const finalRole = userRole || selectedRole;
-      if (finalRole === 'parent') {
+      // Navigate based on actual user role from backend
+      if (userRole === 'parent') {
         router.push('/parent/dashboard');
-      } else if (finalRole === 'driver') {
+      } else if (userRole === 'driver') {
         router.push('/driver/tracker');
-      } else if (finalRole === 'admin') {
+      } else if (userRole === 'admin') {
         window.location.href = '/admin/dashboard';
       }
 
@@ -120,7 +114,7 @@ export default function SchoolBusLogin() {
       
       // Fallback for admin login when server is unavailable
       if (selectedRole === 'admin' && email === 'admin@school.com' && password === 'admin123') {
-        const mockJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBzY2hvb2wuY29tIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzM4MzY4MDAwfQ.mock-signature';
+        const mockJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBzY2hvb2wuY29tIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzY3MjI1NjAwfQ.mock-signature';
         setAuthData(mockJWT, 'admin', { id: 1, email: 'admin@school.com', role: 'admin' });
         window.location.href = '/admin/dashboard';
         return;
