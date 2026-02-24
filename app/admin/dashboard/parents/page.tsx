@@ -451,7 +451,6 @@ export default function ParentsPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await fetchParents();
 
- ft/Parent_Admin
       setApiSuccess("Parent added successfully!");
 
       // Reset form and close modal after 2 seconds
@@ -486,15 +485,8 @@ export default function ParentsPage() {
       setParentName("");
       setEmail("");
       setPhone("");
-      setAddress("");
-      setChildren([{ id: 1, name: "", age: "", busStop: "" }]);
-      setAssignedBus("");
-
-      // Show success message (you can add a toast notification here)
-    } catch (err: any) {
-      console.error("Error adding parent:", err);
-      console.error(`Error adding parent: ${err.message}`);
- main
+      setHomeAddress("");
+      setChildren([{ id: 1, fullName: "", age: "", gender: "Not Specified", busStopId: "" }]);
     }
   };
 
@@ -526,17 +518,13 @@ export default function ParentsPage() {
 
       // Prepare the data according to API specification
       const updateData = {
- ft/Parent_Admin
         name: editParent.name,
         email: editParent.email,
         phone: editParent.phone,
         homeAddress: editParent.address,
-        // You might need to include children data if the API requires it
-
         parentName: editParent.name,
         parentEmail: editParent.email,
         parentPhone: editParent.phone,
- main
       };
 
       console.log("Updating parent:", editParent.id, updateData);
@@ -567,8 +555,6 @@ export default function ParentsPage() {
       }
 
       if (!response.ok) {
- ft/Parent_Admin
-        // Handle specific error cases
         if (response.status === 403) {
           throw new Error("You don't have permission to update this parent.");
         } else if (response.status === 404) {
@@ -578,17 +564,11 @@ export default function ParentsPage() {
         } else {
           throw new Error(responseData?.message || `Failed to update parent (${response.status})`);
         }
-
-        const errorText = await response.text();
-        console.log("Update error:", response.status, errorText);
-        throw new Error(`Failed to update parent: ${response.status}`);
- main
       }
 
       console.log("Parent updated successfully:", responseData);
 
       await fetchParents();
- ft/Parent_Admin
 
       setApiSuccess("Parent updated successfully!");
 
@@ -607,14 +587,10 @@ export default function ParentsPage() {
         setApiSuccess("");
       }, 2000);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error updating parent:", err);
-      setApiError(err.message || "Failed to update parent. Please try again.");
-
+      setApiError(err instanceof Error ? err.message : "Failed to update parent. Please try again.");
       setShowEditModal(false);
-    } catch (err: any) {
-      console.log("Error updating parent:", err);
- main
     }
   };
 
@@ -654,7 +630,6 @@ export default function ParentsPage() {
       console.log("Parent deleted successfully:", result);
 
       await fetchParents();
- ft/Parent_Admin
 
       setApiSuccess("Parent deleted successfully!");
 
@@ -664,15 +639,11 @@ export default function ParentsPage() {
         setApiSuccess("");
       }, 2000);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error deleting parent:", err);
-      setApiError(`Error deleting parent: ${err.message}`);
-
+      setApiError(err instanceof Error ? err.message : "Error deleting parent");
       setShowDeleteModal(false);
       setParentToDelete(null);
-    } catch (err: any) {
-      console.log('Error deleting parent:', err);
- main
     }
   };
 

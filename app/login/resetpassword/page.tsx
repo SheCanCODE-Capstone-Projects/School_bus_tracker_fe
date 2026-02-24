@@ -180,7 +180,7 @@ export default function PasswordResetFlow() {
         {/* Reset Card */}
         <div className="bg-white rounded-3xl shadow-xl p-8">
           {/* Back Button */}
-          {(currentStep === 'email' || currentStep === 'resetForm') && (
+          {currentStep === 'email' && (
             <a 
               href="/login" 
               className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6 transition-colors"

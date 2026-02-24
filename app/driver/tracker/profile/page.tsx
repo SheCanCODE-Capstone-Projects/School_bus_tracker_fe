@@ -13,7 +13,7 @@ function busDisplay(driver: DriverProfile): string {
     return bus.busName ?? bus.busNumber ?? '—';
   }
   const id = driver.assigned_bus_id;
-  if (id != null && id !== '') return `Bus ${id}`;
+  if (id != null) return `Bus ${id}`;
   return '—';
 }
 

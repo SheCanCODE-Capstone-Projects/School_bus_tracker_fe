@@ -69,7 +69,7 @@ export const usePasswordReset = (): UsePasswordResetReturn => {
 
     try {
       // Line 65: Call API to confirm password reset
-      const response = await confirmPasswordReset(token, newPassword);
+      const response = await confirmPasswordReset(token, newPassword, newPassword);
       
       // Line 68: Handle successful response
       if (response.success) {
