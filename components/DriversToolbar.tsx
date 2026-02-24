@@ -247,41 +247,21 @@ export default function DriversToolbar() {
       // Clean the token (remove "Bearer " if already included)
       const cleanToken = token.replace(/^Bearer\s+/i, '');
 
-      // Generate truly unique data for all fields to avoid database conflicts
-      const randomString = Math.random().toString(36).substring(2, 8);
-      const timestamp = Date.now();
-      const emailParts = driverForm.email.split('@');
-      const testEmail = `${emailParts[0]}_${randomString}_${timestamp}@${emailParts[1]}`;
-      const testPhone = `+25078${randomString}${timestamp.toString().slice(-4)}`; // Unique phone
-      const testLicense = `DL${randomString.toUpperCase()}${timestamp.toString().slice(-6)}`; // Unique license
-      
-      console.log('Original data:', {
-        email: driverForm.email,
-        phone: driverForm.phoneNumber,
-        license: driverForm.licenseNumber
-      });
-      console.log('Generated unique data:', {
-        email: testEmail,
-        phone: testPhone,
-        license: testLicense
-      });
-      
-      // CORRECTED ENDPOINT & REQUEST - Using the proper API endpoint from your documentation
       const response = await fetch("https://school-bus-tracker-be.onrender.com/api/admin/add-driver", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${cleanToken}`,
-          "Cache-Control": "no-cache", // Prevent caching
+          "Cache-Control": "no-cache",
         },
         body: JSON.stringify({
-          email: testEmail, // Use unique email for testing
-          password: "DefaultDriverPassword123!", // Default password
-          full_name: `${driverForm.firstName} ${driverForm.lastName}`, // Combine first and last name
-          phone_number: testPhone, // Use unique phone for testing
-          license_number: testLicense, // Use unique license for testing
-          school_id: 1, // Use valid school ID
-          assigned_bus_id: 0 // 0 means not assigned to any bus yet
+          email: driverForm.email,
+          password: "DefaultDriverPassword123!",
+          full_name: `${driverForm.firstName} ${driverForm.lastName}`,
+          phone_number: driverForm.phoneNumber,
+          license_number: driverForm.licenseNumber,
+          school_id: 1,
+          assigned_bus_id: 0
         }),
       });
 
@@ -312,8 +292,6 @@ export default function DriversToolbar() {
 
       // Success handling - Read the response once
       responseData = await response.json();
-      console.log("Driver added successfully:", responseData);
-      
       setApiSuccess("Driver added successfully!");
       
       // Reset form

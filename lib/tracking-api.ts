@@ -236,3 +236,73 @@ export async function adminGetBusLocations(
   return (await res.json()) as AdminBusLocationPoint[];
 }
 
+/** Driver profile from GET /api/drivers/{id} – for logged-in driver. API uses snake_case. */
+export interface DriverProfile {
+  id: number;
+  name?: string;
+  fullName?: string;
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  phone_number?: string;
+  license_number?: string;
+  bus?: string | { id?: number; busName?: string; busNumber?: string; route?: string };
+  assigned_bus_id?: number | null;
+  status?: string;
+  [key: string]: unknown;
+}
+
+/** GET /api/drivers/{id} – returns driver by id (use logged-in driver id). */
+export async function getDriverById(driverId: number | string): Promise<DriverProfile> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/drivers/${driverId}`, {
+    headers: { ...requireAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  const raw = (await res.json()) as DriverProfile | { data?: DriverProfile; success?: boolean };
+  const driver = (raw && typeof raw === 'object' && raw.data) ? raw.data : (raw as DriverProfile);
+  if (!driver || typeof (driver as DriverProfile).id === 'undefined') {
+    throw new Error('Invalid driver response from server');
+  }
+  return driver as DriverProfile;
+}
+
+/** Single emergency from GET /api/driver/emergencies/{id}. */
+export interface DriverEmergency {
+  id: number;
+  type?: string;
+  description?: string;
+  status?: string;
+  bus?: string;
+  busNumber?: string;
+  driver?: string;
+  driverName?: string;
+  time?: string;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  reportedAt?: string;
+  driverContact?: string;
+  parentsNotified?: boolean;
+  resolutionNotes?: string | null;
+  resolvedBy?: string | null;
+  resolvedByAdminName?: string | null;
+  resolvedAt?: string | null;
+  [key: string]: unknown;
+}
+
+/** GET /api/driver/emergencies/{id} – emergencies for driver (id = driver id). Backend may return single object or array. */
+export async function getDriverEmergencies(driverId: number | string): Promise<DriverEmergency[]> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/driver/emergencies/${driverId}`, {
+    headers: { ...requireAuthHeaders() },
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  const data = await res.json();
+  if (Array.isArray(data)) return data;
+  const list = data?.data ?? data?.emergencies;
+  if (Array.isArray(list)) return list;
+  if (data && typeof data === 'object' && typeof (data as DriverEmergency).id !== 'undefined') {
+    return [data as DriverEmergency];
+  }
+  return [];
+}
+

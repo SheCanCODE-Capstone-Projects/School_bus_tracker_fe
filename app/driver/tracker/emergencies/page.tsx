@@ -1,66 +1,84 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, MapPin, Clock, Users } from 'lucide-react';
 import { notificationService } from '@/lib/notification-service';
 import DriverNavbar from '@/components/navigation/DriverNavbar';
+import { getUserData } from '@/lib/auth';
+import { getDriverEmergencies, type DriverEmergency } from '@/lib/tracking-api';
+
+type EmergencyDisplay = {
+  id: number;
+  type: string;
+  description: string;
+  status: string;
+  bus: string;
+  driver: string;
+  time: string;
+  location: string;
+  reportedAt: string;
+  driverContact: string;
+  parentsNotified: boolean;
+  resolutionNotes: string | null;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+};
+
+function formatDateTime(iso?: string | null): string {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString();
+  } catch {
+    return iso;
+  }
+}
+
+function toDisplay(e: DriverEmergency): EmergencyDisplay {
+  const reportedAt = e.reportedAt ?? '';
+  const location =
+    e.location ??
+    (e.latitude != null && e.longitude != null ? `${e.latitude}, ${e.longitude}` : '—');
+  return {
+    id: e.id,
+    type: e.type ?? 'Emergency',
+    description: e.description ?? '',
+    status: (e.status ?? 'active').toLowerCase(),
+    bus: e.bus ?? e.busNumber ?? '—',
+    driver: e.driver ?? e.driverName ?? '—',
+    time: e.time ?? formatDateTime(reportedAt),
+    location,
+    reportedAt: formatDateTime(reportedAt),
+    driverContact: e.driverContact ?? '—',
+    parentsNotified: e.parentsNotified ?? false,
+    resolutionNotes: e.resolutionNotes ?? null,
+    resolvedBy: e.resolvedBy ?? e.resolvedByAdminName ?? null,
+    resolvedAt: e.resolvedAt ? formatDateTime(e.resolvedAt) : null,
+  };
+}
 
 const EmergenciesPage = () => {
+  const [emergencies, setEmergencies] = useState<EmergencyDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('all');
-  const [selectedEmergency, setSelectedEmergency] = useState<typeof emergencies[0] | null>(null);
+  const [selectedEmergency, setSelectedEmergency] = useState<EmergencyDisplay | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [sendNotification, setSendNotification] = useState(true);
 
-  const emergencies = [
-    {
-      id: 1,
-      type: 'Mechanical Issue',
-      description: 'Engine overheating warning light',
-      status: 'active',
-      bus: 'Bus 03',
-      driver: 'David Brown',
-      time: '15 minutes ago',
-      location: '5th Avenue & Park Street',
-      reportedAt: '2024-12-02 2:45 PM',
-      driverContact: '+1 (555) 789-0123',
-      parentsNotified: true,
-      resolutionNotes: null,
-      resolvedBy: null,
-      resolvedAt: null
-    },
-    {
-      id: 2,
-      type: 'Traffic Delay',
-      description: 'Major traffic accident on route',
-      status: 'resolved',
-      bus: 'Bus 03',
-      driver: 'David Brown',
-      time: '1 day ago',
-      location: '3rd Avenue & Main Street',
-      reportedAt: '2024-12-01 8:15 AM',
-      driverContact: '+1 (555) 987-6543',
-      parentsNotified: true,
-      resolutionNotes: 'Alternative route taken. All students arrived safely. 12-minute delay.',
-      resolvedBy: 'Admin Sarah',
-      resolvedAt: '2024-12-01 8:30 AM'
-    },
-    {
-      id: 3,
-      type: 'Medical Assistance',
-      description: 'Student feeling unwell',
-      status: 'resolved',
-      bus: 'Bus 03',
-      driver: 'David Brown',
-      time: '2 days ago',
-      location: 'Lincoln Elementary School',
-      reportedAt: '2024-11-30 3:20 PM',
-      driverContact: '+1 (555) 123-4567',
-      parentsNotified: true,
-      resolutionNotes: 'School nurse attended. Parent picked up student. No serious issues.',
-      resolvedBy: 'Admin John',
-      resolvedAt: '2024-11-30 3:35 PM'
+  useEffect(() => {
+    const user = getUserData();
+    const id = user?.id != null ? String(user.id) : null;
+    if (!id) {
+      setLoadError('Ntabwo wiyandikishije.');
+      setLoading(false);
+      return;
     }
-  ];
+    getDriverEmergencies(id)
+      .then((list) => setEmergencies(list.map(toDisplay)))
+      .catch((e) => setLoadError(e instanceof Error ? e.message : 'Request failed'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const activeCount = emergencies.filter(e => e.status === 'active').length;
   const resolvedTodayCount = emergencies.filter(e => {
@@ -78,7 +96,7 @@ const EmergenciesPage = () => {
     return true;
   });
 
-  const handleManageClick = (emergency: typeof emergencies[0]) => {
+  const handleManageClick = (emergency: EmergencyDisplay) => {
     setSelectedEmergency(emergency);
     setResolutionNotes('');
     setSendNotification(true);
@@ -109,13 +127,34 @@ const EmergenciesPage = () => {
     handleCloseModal();
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DriverNavbar />
+        <main className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-center min-h-[40vh]">
+          <p className="text-gray-600">Loading...</p>
+        </main>
+      </div>
+    );
+  }
 
-      {/* ✅ ONLY CHANGE: replaced inline <header> with DriverNavbar */}
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DriverNavbar />
+        <main className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-center min-h-[40vh]">
+          <p className="text-red-600">{loadError}</p>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+
       <DriverNavbar />
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -280,9 +319,9 @@ const EmergenciesPage = () => {
                     </div>
                     <p className="text-gray-700 ml-6 mb-4">{emergency.reportedAt}</p>
                     <p className="font-medium text-gray-700 mb-1">Parents Notified</p>
-                    <p className="text-green-600 ml-6 flex items-center space-x-1">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Yes</span>
+                    <p className={`ml-6 flex items-center space-x-1 ${emergency.parentsNotified ? 'text-green-600' : 'text-gray-600'}`}>
+                      {emergency.parentsNotified ? <CheckCircle className="w-4 h-4" /> : null}
+                      <span>{emergency.parentsNotified ? 'Yes' : 'No'}</span>
                     </p>
                   </div>
                 </div>
@@ -311,12 +350,6 @@ const EmergenciesPage = () => {
             </div>
           ))}
         </div>
-
-        {/* Footer */}
-        <footer className="text-center py-8 mt-12">
-          <p className="text-gray-600 font-medium mb-1">School Bus Tracker © 2025</p>
-          <p className="text-gray-500 text-sm">Keeping your children safe, one ride at a time</p>
-        </footer>
 
         {/* Manage Emergency Modal */}
         {selectedEmergency && (
@@ -392,6 +425,12 @@ const EmergenciesPage = () => {
           </div>
         )}
       </main>
+
+      {/* Footer – outside main so it stays at bottom of viewport */}
+      <footer className="mt-auto text-center py-6 border-t border-gray-200 bg-white">
+        <p className="text-gray-600 font-medium mb-1">School Bus Tracker © 2025</p>
+        <p className="text-gray-500 text-sm">Keeping your children safe, one ride at a time</p>
+      </footer>
     </div>
   );
 };
