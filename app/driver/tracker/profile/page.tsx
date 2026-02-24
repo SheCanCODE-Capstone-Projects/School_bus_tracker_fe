@@ -1,10 +1,73 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Shield, Star, Calendar, Phone, Mail, User, TrendingUp, Award } from 'lucide-react';
 import DriverNavbar from '@/components/navigation/DriverNavbar';
+import { getUserData } from '@/lib/auth';
+import { getDriverById, type DriverProfile } from '@/lib/tracking-api';
+
+function busDisplay(driver: DriverProfile): string {
+  const bus = driver.bus;
+  if (bus) {
+    if (typeof bus === 'string') return bus;
+    return bus.busName ?? bus.busNumber ?? '—';
+  }
+  const id = driver.assigned_bus_id;
+  if (id != null && id !== '') return `Bus ${id}`;
+  return '—';
+}
+
+function busRoute(bus: DriverProfile['bus']): string {
+  if (!bus || typeof bus === 'string') return '';
+  return (bus as { route?: string }).route ?? '';
+}
 
 export default function DriverProfile() {
+  const [driver, setDriver] = useState<DriverProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const user = getUserData();
+    const id = user?.id != null ? String(user.id) : null;
+    if (!id) {
+      setError('Ntabwo wiyandikishije.');
+      setLoading(false);
+      return;
+    }
+    getDriverById(id)
+      .then(setDriver)
+      .catch((e) => setError(e instanceof Error ? e.message : 'Request failed'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <DriverNavbar />
+        <main className="flex-1 p-4 sm:p-6 flex items-center justify-center">
+          <p className="text-gray-600">Loading...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !driver) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <DriverNavbar />
+        <main className="flex-1 p-4 sm:p-6 flex items-center justify-center">
+          <p className="text-red-600">{error ?? 'Driver not found.'}</p>
+        </main>
+      </div>
+    );
+  }
+
+  const name = driver.full_name ?? driver.fullName ?? driver.name ?? 'Driver';
+  const phone = driver.phone_number ?? driver.phone ?? '—';
+  const busName = busDisplay(driver);
+  const busRouteText = busRoute(driver.bus);
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
 
@@ -20,7 +83,7 @@ export default function DriverProfile() {
                 👨‍✈️
               </div>
               <div className="text-center sm:text-left">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-2">Michael Johnson</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">{name}</h1>
                 <div className="flex items-center justify-center sm:justify-start gap-2">
                   <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="text-gray-300 text-sm sm:text-base">Professional Bus Driver</span>
@@ -42,7 +105,7 @@ export default function DriverProfile() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <label className="block text-sm font-medium text-gray-500 mb-1">Full Name</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-medium">Michael Johnson</p>
+                  <p className="text-base sm:text-lg text-gray-900 font-medium">{name}</p>
                 </div>
               </div>
 
@@ -52,7 +115,7 @@ export default function DriverProfile() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <label className="block text-sm font-medium text-gray-500 mb-1">Phone Number</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-medium">+1 (555) 987-6543</p>
+                  <p className="text-base sm:text-lg text-gray-900 font-medium">{phone}</p>
                 </div>
               </div>
 
@@ -62,7 +125,7 @@ export default function DriverProfile() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <label className="block text-sm font-medium text-gray-500 mb-1">Email Address</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-medium break-all sm:break-normal">michael.johnson@school.com</p>
+                  <p className="text-base sm:text-lg text-gray-900 font-medium break-all sm:break-normal">{driver.email ?? '—'}</p>
                 </div>
               </div>
             </div>
@@ -80,8 +143,8 @@ export default function DriverProfile() {
               </div>
               <div className="text-center sm:text-left">
                 <div className="text-sm font-medium text-gray-500 mb-1">Assigned Bus</div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1">Bus 01</h3>
-                <p className="text-gray-600 text-sm sm:text-base">Lincoln Elementary School</p>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1">{busName}</h3>
+                {busRouteText && <p className="text-gray-600 text-sm sm:text-base">{busRouteText}</p>}
               </div>
             </div>
           </div>
@@ -99,7 +162,7 @@ export default function DriverProfile() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <label className="block text-sm font-medium text-gray-500 mb-1">License Number</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-semibold">CDL-123456</p>
+                  <p className="text-base sm:text-lg text-gray-900 font-semibold">{driver.license_number ?? '—'}</p>
                 </div>
               </div>
 
@@ -109,7 +172,7 @@ export default function DriverProfile() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <label className="block text-sm font-medium text-gray-500 mb-1">Years of Service</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-semibold">8 years</p>
+                  <p className="text-base sm:text-lg text-gray-900 font-semibold">{(driver as { yearsOfService?: number | string }).yearsOfService ?? '—'}</p>
                 </div>
               </div>
 
@@ -119,7 +182,7 @@ export default function DriverProfile() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <label className="block text-sm font-medium text-gray-500 mb-1">Total Trips Completed</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-semibold">2,450</p>
+                  <p className="text-base sm:text-lg text-gray-900 font-semibold">{(driver as { totalTrips?: number | string }).totalTrips ?? '—'}</p>
                 </div>
               </div>
 
@@ -131,25 +194,25 @@ export default function DriverProfile() {
                   <label className="block text-sm font-medium text-green-700 mb-1">Safety Rating</label>
                   <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-yellow-400 text-yellow-400" />
-                    <p className="text-base sm:text-lg text-gray-900 font-semibold">4.9/5.0</p>
+                    <p className="text-base sm:text-lg text-gray-900 font-semibold">{(driver as { safetyRating?: string | number }).safetyRating ?? '—'}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stats Row */}
+          {/* Stats Row – optional if API returns these */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
-              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">100%</h3>
+              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{(driver as { onTimeRate?: string | number }).onTimeRate ?? '—'}</h3>
               <p className="text-gray-600 font-medium text-sm sm:text-base">On-Time Rate</p>
             </div>
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
-              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">0</h3>
+              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{(driver as { incidents?: number }).incidents ?? '—'}</h3>
               <p className="text-gray-600 font-medium text-sm sm:text-base">Incidents</p>
             </div>
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
-              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">45</h3>
+              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{(driver as { studentsCount?: number }).studentsCount ?? '—'}</h3>
               <p className="text-gray-600 font-medium text-sm sm:text-base">Students</p>
             </div>
           </div>

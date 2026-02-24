@@ -42,11 +42,23 @@ export function isAuthenticated(): boolean {
   return !!getAuthToken();
 }
 
-interface UserData {
+export interface UserData {
   id?: string | number;
   name?: string;
   email?: string;
   [key: string]: unknown;
+}
+
+/** Returns the current user data from storage (id, email, etc.). Use for "logged-in" user. */
+export function getUserData(): UserData | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem('userData');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as UserData;
+  } catch {
+    return null;
+  }
 }
 
 export function setAuthData(token: string, role: string, userData?: UserData): void {
