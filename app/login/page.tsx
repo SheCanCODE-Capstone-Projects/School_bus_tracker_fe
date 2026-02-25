@@ -265,7 +265,7 @@ export default function SchoolBusLogin() {
                   Logging in...
                 </>
               ) : (
-                `LOGIN AS A ${selectedRole.toUpperCase()}`
+                `LOGIN AS ${selectedRole === 'admin' ? 'AN' : 'A'} ${selectedRole.toUpperCase()}`
               )}
             </button>
 
