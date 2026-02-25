@@ -366,8 +366,32 @@ useEffect(() => {
     setShowEditModal(false);
     setSelectedBus(null);
   };
-  const handleUpdateBus = (updatedBusData: Bus) => {
-    setBuses((prev: Bus[]) => prev.map((b: Bus) => b.id === updatedBusData.id ? updatedBusData : b));
+  const handleUpdateBus = async (updatedBusData: Bus) => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/buses/${updatedBusData.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          busName: updatedBusData.name,
+          busNumber: updatedBusData.code,
+          route: updatedBusData.route,
+          capacity: updatedBusData.capacity,
+          status: updatedBusData.active ? "ACTIVE" : "INACTIVE",
+        }),
+      });
+
+      if (response.ok) {
+        setBuses((prev: Bus[]) => prev.map((b: Bus) => (b.id === updatedBusData.id ? updatedBusData : b)));
+      }
+    } catch (error) {
+      console.error("Error updating bus:", error);
+    }
     closeEditModal();
   };
 
