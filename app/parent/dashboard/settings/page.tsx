@@ -1,16 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import ToggleSwitch from './ToggleSwitch';
 import ParentNavbar from '@/components/navigation/ParentNavbar';
 import Footer from '@/components/Footer';
+import { getUserData } from '@/lib/auth';
+import { getParentStudents, getParentProfile } from '@/lib/tracking-api';
+
+const PARENT_BASE_URL = 'https://school-bus-tracker-be.onrender.com';
 
 export default function Settings() {
-  const [fullName, setFullName] = useState('Sarah Anderson');
-  const [email, setEmail] = useState('sarah.anderson@email.com');
-  const [phone, setPhone] = useState('+1 (555) 123-4567');
-  const [childName, setChildName] = useState('Emily Anderson');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [childName, setChildName] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,9 +23,103 @@ export default function Settings() {
   const [emergencyAlerts, setEmergencyAlerts] = useState(true);
   const [dailySummary, setDailySummary] = useState(false);
 
-  const handleSaveChanges = () => {
-    console.log('Saving changes...');
+  const [loading, setLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [saveMessage, setSaveMessage] = useState('');
+  const [parentId, setParentId] = useState<number | null>(null);
+
+  // Load real parent data on mount
+  useEffect(() => {
+    const load = async () => {
+      const userData = getUserData();
+      const id = (userData?.parentId ?? userData?.id) != null ? Number(userData?.parentId ?? userData?.id) : null;
+      setParentId(id);
+
+      const name = (userData?.name ?? userData?.fullName ?? userData?.parentName) as string | undefined;
+      const userEmail = (userData?.email as string | undefined) ?? '';
+      const userPhone = (userData?.phone ?? userData?.phoneNumber) as string | undefined;
+
+      if (name) setFullName(String(name));
+      if (userEmail) setEmail(String(userEmail));
+      if (userPhone) setPhone(String(userPhone ?? ''));
+
+      if (id != null) {
+        try {
+          const profile = await getParentProfile(id);
+          if (profile) {
+            if (profile.name) setFullName(profile.name);
+            if (profile.email) setEmail(profile.email);
+            if (profile.phone) setPhone(profile.phone ?? '');
+          }
+          const students = await getParentStudents(id);
+          const names = students.map((s) => s.studentName ?? (s as { student_name?: string }).student_name ?? '').filter(Boolean);
+          if (names.length) setChildName(names.join(', '));
+          const first = students[0];
+          if (first?.parentName && !name) setFullName(first.parentName);
+          if (first?.parentPhone && userPhone === undefined) setPhone(first.parentPhone ?? '');
+        } catch {
+          // Keep userData values
+        }
+      }
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const handleSaveChanges = async () => {
+    if (parentId == null) {
+      setSaveStatus('error');
+      setSaveMessage('Cannot save: parent ID not found. Please log in again.');
+      return;
+    }
+    setSaveStatus('saving');
+    setSaveMessage('');
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') || localStorage.getItem('token') : null;
+      if (!token) {
+        setSaveStatus('error');
+        setSaveMessage('Session expired. Please log in again.');
+        return;
+      }
+      const cleanToken = String(token).replace(/^Bearer\s+/i, '').trim();
+      const res = await fetch(`${PARENT_BASE_URL}/parent/${parentId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${cleanToken}`,
+        },
+        body: JSON.stringify({
+          name: fullName,
+          fullName: fullName,
+          email: email || undefined,
+          phone: phone || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setSaveStatus('error');
+        setSaveMessage((err?.message as string) || `Failed to save (${res.status})`);
+        return;
+      }
+      setSaveStatus('success');
+      setSaveMessage('Profile updated successfully.');
+    } catch (e) {
+      setSaveStatus('error');
+      setSaveMessage(e instanceof Error ? e.message : 'Failed to save.');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <ParentNavbar />
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,16 +175,18 @@ export default function Settings() {
             </div>
 
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Child Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Child Name(s)</label>
               <div className="relative">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-full opacity-0 focus-within:opacity-100 transition-opacity"></div>
                 <input
                   type="text"
                   value={childName}
-                  onChange={(e) => setChildName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none text-gray-900 focus:border-blue-600"
+                  readOnly
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+                  title="Child names come from your registered students"
                 />
               </div>
+              <p className="text-xs text-gray-500 mt-1">From your registered students (read-only)</p>
             </div>
           </div>
         </div>
@@ -151,7 +251,6 @@ export default function Settings() {
           </div>
 
           <div className="space-y-8">
-
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-1">Email Notifications</h3>
@@ -186,21 +285,25 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* SAVE BUTTON */}
+        {/* SAVE BUTTON + STATUS */}
+        {saveMessage && (
+          <div className={`mb-4 px-4 py-2 rounded-lg text-sm ${saveStatus === 'success' ? 'bg-green-100 text-green-800' : saveStatus === 'error' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'}`}>
+            {saveMessage}
+          </div>
+        )}
         <div className="flex justify-center sm:justify-end mb-8 sm:mb-12">
           <button
             onClick={handleSaveChanges}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 sm:px-8 py-3.5 rounded-lg transition-colors shadow-sm w-full sm:w-auto justify-center"
+            disabled={saveStatus === 'saving'}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium px-6 sm:px-8 py-3.5 rounded-lg transition-colors shadow-sm w-full sm:w-auto justify-center"
           >
             <Save className="w-5 h-5" />
-            Save Changes
+            {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
 
-
-
       </main>
-      
+
       <Footer />
     </div>
   );

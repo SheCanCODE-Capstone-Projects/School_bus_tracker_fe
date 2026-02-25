@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 
 import DriverFooter from "@/components/navigation/DriverFooter";
@@ -10,59 +9,12 @@ import DriverNavbar from "@/components/navigation/DriverNavbar";
 import DriverHeaderCard from "../../../components/DriverHeaderCard";
 import GpsTrackingCard from "../../../components/GPSTrackingCard";
 import EmergencyCard from "../../../components/EmergenceCard";
+import SinglePointMap from "@/components/navigation/maps/SinglePointMap";
 import { isAuthenticated, getUserRole } from "@/lib/auth";
 import { driverSendLocation, driverStartTracking, driverStopTracking } from "@/lib/tracking-api";
 
-/* ============================
-   DYNAMIC MAP COMPONENT
-============================ */
-const Map = dynamic(
-  () =>
-    import("react-leaflet").then((mod) => {
-      const { MapContainer, TileLayer, Marker, useMap } = mod;
-
-      if (typeof window !== "undefined") {
-        import("leaflet").then((L) => {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-expect-error
-          delete L.Icon.Default.prototype._getIconUrl;
-
-          L.Icon.Default.mergeOptions({
-            iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-            iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-            shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-            iconSize: [25, 41],
-            shadowSize: [41, 41],
-          });
-        });
-      }
-
-      function Recenter({ position }: { position: [number, number] }) {
-        const map = useMap();
-        map.setView(position);
-        return null;
-      }
-
-      return {
-        default: ({ position }: { position: [number, number] }) => (
-          <MapContainer
-            center={position}
-            zoom={15}
-            scrollWheelZoom
-            style={{ width: "100%", height: "100%" }}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-            />
-            <Marker position={position} />
-            <Recenter position={position} />
-          </MapContainer>
-        ),
-      };
-    }),
-  { ssr: false }
-);
+/** Default map center when GPS not yet available – map loads like bus details page. */
+const DEFAULT_MAP_CENTER: [number, number] = [-1.9441, 30.0619];
 
 export default function DriverTracker() {
   const router = useRouter();
@@ -116,7 +68,7 @@ export default function DriverTracker() {
       return;
     }
 
-    // Try to get one position immediately (often uses cache; can trigger "Allow?" prompt)
+    // Get current position so the map shows "where I am" directly (fresh fix when possible)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setPosition([pos.coords.latitude, pos.coords.longitude]);
@@ -126,7 +78,7 @@ export default function DriverTracker() {
         if (err.code === 1) setLocationError("Location blocked. Click «Use my location» below and choose Allow.");
         else if (err.code === 3) setLocationError("Timed out. Click «Use my location» to try again.");
       },
-      { enableHighAccuracy: false, maximumAge: 60000, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
     );
 
     const watchId = navigator.geolocation.watchPosition(
@@ -226,7 +178,7 @@ export default function DriverTracker() {
               : "Could not get location. Try again or check site settings.";
         setLocationError(msg);
       },
-      { enableHighAccuracy: false, maximumAge: 60000, timeout: 20000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
     );
   };
 
@@ -302,73 +254,58 @@ export default function DriverTracker() {
           </div>
         </div>
 
+        {/* Map section – loads like bus details: map always visible, no "Waiting for GPS" placeholder */}
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 mb-10">
-          <div className="flex justify-center">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-[1000px] max-w-full">
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
               <div className="flex items-center gap-2 mb-4">
-                <div className="h-4 w-1 bg-blue-700 rounded-lg"></div>
-                <h3 className="text-xl text-black">Current Location Preview</h3>
+                <div className="h-4 w-1 bg-blue-700 rounded-lg" />
+                <h3 className="text-lg font-bold text-gray-800">Tracking &amp; location</h3>
               </div>
 
-              <div className="flex items-end gap-4 rounded-lg p-4 bg-blue-300">
-                <div className="flex flex-col gap-2 text-xs p-3 w-32 bg-white border border-gray-300 rounded-lg shadow-lg">
-                  <h3 className="font-semibold mb-1 text-gray-700">Status Legend</h3>
+              <div className="h-[500px] w-full relative overflow-hidden rounded-lg border border-gray-200">
+                <SinglePointMap
+                  position={position ?? DEFAULT_MAP_CENTER}
+                  showMarker={!!position}
+                />
+              </div>
 
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-gray-600">On Route</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                    <span className="text-gray-600">Stopped</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-gray-600">Emergency</span>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-col gap-2">
-                  <div className="h-[300px]">
-                    {position ? (
-                      <Map position={position} />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-700 bg-blue-100/50 rounded-lg p-4">
-                        <div className="text-center max-w-sm">
-                          <div className="text-3xl mb-2">📍</div>
-                          <p className="text-sm font-medium mb-1">Waiting for GPS location...</p>
-                          <p className="text-xs text-gray-600 mb-3">
-                            If nothing appears, the browser may be waiting for your permission. Click the button below — it often triggers the &quot;Allow location?&quot; prompt.
-                          </p>
-                          {locationError && (
-                            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-3">
-                              {locationError}
-                            </p>
-                          )}
-                          <button
-                            type="button"
-                            onClick={requestLocation}
-                            disabled={isRequestingLocation}
-                            className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-60"
-                          >
-                            {isRequestingLocation ? "Requesting location…" : "Use my location"}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {position && (
-                    <div className="text-xs text-gray-700 bg-white/80 rounded px-3 py-2 border border-gray-200">
-                      <span className="font-semibold">Current position:</span> Lat {position[0].toFixed(6)}, Lng {position[1].toFixed(6)}
-                      {isTracking && (
-                        <span className="ml-2 text-green-700"> • Sending to server every 5s (last: {lastSent})</span>
-                      )}
-                    </div>
+              {position ? (
+                <p className="text-xs text-gray-500 mt-2">
+                  <span className="font-medium">Current position:</span> Lat {position[0].toFixed(6)}, Lng {position[1].toFixed(6)}
+                  {isTracking && (
+                    <span className="ml-2 text-green-700"> • Sending to server every 5s (last: {lastSent})</span>
+                  )}
+                </p>
+              ) : (
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                  <button
+                    type="button"
+                    onClick={requestLocation}
+                    disabled={isRequestingLocation}
+                    className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                  >
+                    {isRequestingLocation ? "Requesting…" : "Use my location"}
+                  </button>
+                  {locationError && (
+                    <span className="text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-xs">
+                      {locationError}
+                    </span>
                   )}
                 </div>
-              </div>
+              )}
+            </div>
+
+            <div className="mt-4 flex items-center gap-4 text-xs text-gray-600">
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-green-500 rounded-full" /> On Route
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-yellow-400 rounded-full" /> Stopped
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-red-500 rounded-full" /> Emergency
+              </span>
             </div>
           </div>
         </div>

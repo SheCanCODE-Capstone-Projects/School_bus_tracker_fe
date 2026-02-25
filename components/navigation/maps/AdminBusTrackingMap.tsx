@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import {
   adminGetTrackingStatus,
@@ -9,44 +8,7 @@ import {
   type AdminTrackingStatusResponse,
   type AdminBusLocationPoint,
 } from "@/lib/tracking-api";
-
-const AdminSinglePointMap = dynamic(
-  () =>
-    import("react-leaflet").then((mod) => {
-      const { MapContainer, TileLayer, Marker, useMap } = mod;
-      if (typeof window !== "undefined") {
-        import("leaflet").then((L) => {
-          // @ts-expect-error
-          delete L.Icon.Default.prototype._getIconUrl;
-          L.Icon.Default.mergeOptions({
-            iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-            iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-            iconSize: [25, 41],
-            shadowSize: [41, 41],
-          });
-        });
-      }
-      function Recenter({ position }: { position: [number, number] }) {
-        const map = useMap();
-        map.setView(position);
-        return null;
-      }
-      return {
-        default: ({ position }: { position: [number, number] }) => (
-          <MapContainer center={position} zoom={14} scrollWheelZoom style={{ width: "100%", height: "100%" }}>
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-            />
-            <Marker position={position} />
-            <Recenter position={position} />
-          </MapContainer>
-        ),
-      };
-    }),
-  { ssr: false }
-);
+import SinglePointMap from "./SinglePointMap";
 
 const POLL_STATUS_MS = 15000;
 const POLL_LOCATIONS_MS = 10000;
@@ -150,7 +112,7 @@ export default function AdminBusTrackingMap({ busId, busName }: AdminBusTracking
       {/* Map */}
       <div className="h-[500px] w-full relative overflow-hidden rounded-lg border border-gray-200">
         {position ? (
-          <AdminSinglePointMap position={position} />
+          <SinglePointMap position={position} />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
             <div className="text-center text-gray-500">

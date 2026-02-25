@@ -82,6 +82,8 @@ export default function ParentsPage() {
   // Bus stops state
   const [busStops, setBusStops] = useState<BusStopOption[]>([]);
   const [loadingBusStops, setLoadingBusStops] = useState(false);
+  // Buses state for Edit Parent and dropdowns (GET /api/buses)
+  const [buses, setBuses] = useState<Array<{ id: number; busName: string; busNumber: string }>>([]);
 
   // Form states
   const [parentName, setParentName] = useState("");
@@ -107,48 +109,66 @@ export default function ParentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch bus stops
+  const API_BASE = "https://school-bus-tracker-be.onrender.com/api";
+
+  // Fetch bus stops from GET /api/bus-stops (real data)
   const fetchBusStops = async () => {
     try {
       setLoadingBusStops(true);
       const token = getAuthToken();
       const cleanToken = token.replace(/^Bearer\s+/i, '');
 
-      const response = await fetch(
-        "https://school-bus-tracker-be.onrender.com/api/bus-stops",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${cleanToken}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE}/bus-stops`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cleanToken}`,
+        },
+      });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch bus stops");
-      }
-
+      if (!response.ok) return;
       const result = await response.json();
-      
-      if (result.success && Array.isArray(result.data)) {
-        setBusStops(result.data);
-      } else if (Array.isArray(result)) {
-        setBusStops(result);
-      } else {
-        console.warn("Unexpected bus stops data format:", result);
-        setBusStops([]);
-      }
+      const list = result?.data ?? result?.busStops ?? (Array.isArray(result) ? result : []) as Array<Record<string, unknown>>;
+      const normalized: BusStopOption[] = list.map((s: Record<string, unknown>) => ({
+        id: Number(s.id) || 0,
+        name: String(s.name ?? s.stopName ?? s.stop_name ?? ""),
+        address: String(s.address ?? ""),
+      })).filter((s: { id: number }) => s.id > 0);
+      setBusStops(normalized);
     } catch (err) {
       console.error("Error fetching bus stops:", err);
-      setBusStops([
-        { id: 1, name: "Oak Street Stop", address: "Oak Street" },
-        { id: 2, name: "Maple Avenue Stop", address: "Maple Avenue" },
-        { id: 3, name: "Pine Road Stop", address: "Pine Road" },
-        { id: 4, name: "Elm Street Stop", address: "Elm Street" },
-      ]);
+      setBusStops([]);
     } finally {
       setLoadingBusStops(false);
+    }
+  };
+
+  // Fetch buses from GET /api/buses (real data for Edit Parent dropdown)
+  const fetchBuses = async () => {
+    try {
+      const token = getAuthToken();
+      const cleanToken = token.replace(/^Bearer\s+/i, '');
+      if (!cleanToken) return;
+
+      const response = await fetch(`${API_BASE}/buses`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cleanToken}`,
+        },
+      });
+
+      if (!response.ok) return;
+      const raw = await response.json();
+      const list = (raw?.success && raw?.data ? raw.data : raw?.buses ?? (Array.isArray(raw) ? raw : [])) as Array<Record<string, unknown>>;
+      const normalized = list.map((b: Record<string, unknown>) => ({
+        id: Number(b.id) || 0,
+        busName: String(b.busName ?? b.bus_name ?? b.number ?? ""),
+        busNumber: String(b.busNumber ?? b.bus_number ?? b.code ?? ""),
+      })).filter((b: { id: number }) => b.id > 0);
+      setBuses(normalized);
+    } catch (err) {
+      console.error("Error fetching buses:", err);
     }
   };
 
@@ -267,14 +287,23 @@ export default function ParentsPage() {
   useEffect(() => {
     if (!isAuthorized) return;
     fetchParents();
+    fetchBusStops();
+    fetchBuses();
   }, [isAuthorized]);
 
-  // Fetch bus stops when modal opens
+  // Refetch bus stops when Add Parent modal opens
   useEffect(() => {
     if (showAddParentModal && isAuthorized) {
       fetchBusStops();
     }
   }, [showAddParentModal, isAuthorized]);
+
+  // Refetch buses when Edit Parent modal opens
+  useEffect(() => {
+    if (showEditModal && isAuthorized) {
+      fetchBuses();
+    }
+  }, [showEditModal, isAuthorized]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -1368,9 +1397,15 @@ export default function ParentsPage() {
                     className="w-full px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                   >
                     <option value="">Select a bus</option>
-                    <option value="Bus 01">Bus 01</option>
-                    <option value="Bus 02">Bus 02</option>
-                    <option value="Bus 03">Bus 03</option>
+                    {buses.map((bus) => {
+                      const label = bus.busName || (bus.busNumber ? `Bus ${bus.busNumber}` : `Bus ${bus.id}`);
+                      const value = bus.busName || (bus.busNumber ? `Bus ${bus.busNumber}` : String(bus.id));
+                      return (
+                        <option key={bus.id} value={value}>
+                          {label}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>

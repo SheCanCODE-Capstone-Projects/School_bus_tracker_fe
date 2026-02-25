@@ -210,6 +210,30 @@ export async function parentGetBusLocation(busId: number | string): Promise<Pare
   return (await res.json()) as ParentBusLocationResponse;
 }
 
+/** Parent profile for settings – from GET /parent/{parentId} or inferred from userData + students. */
+export interface ParentProfile {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  childNames?: string;
+}
+
+/** GET /parent/{parentId} – optional; returns parent profile. If 404, use userData + students. */
+export async function getParentProfile(parentId: number | string): Promise<ParentProfile | null> {
+  const res = await fetchWithTimeout(`${PARENT_BASE_URL}/parent/${parentId}`, {
+    headers: { ...requireAuthHeaders() },
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as Record<string, unknown>;
+  return {
+    name: String(data?.name ?? data?.fullName ?? data?.parentName ?? '').trim() || undefined,
+    email: String(data?.email ?? '').trim() || undefined,
+    phone: String(data?.phone ?? data?.phoneNumber ?? '').trim() || undefined,
+    address: String(data?.address ?? data?.homeAddress ?? '').trim() || undefined,
+  };
+}
+
 export async function adminGetTrackingStatus(busId: number | string): Promise<AdminTrackingStatusResponse> {
   const res = await fetchWithTimeout(`${API_BASE_URL}/admin/buses/${busId}/tracking-status`, {
     headers: { ...requireAuthHeaders() },
@@ -236,6 +260,25 @@ export async function adminGetBusLocations(
   return (await res.json()) as AdminBusLocationPoint[];
 }
 
+/** Assigned bus object from API (snake_case). */
+export interface DriverAssignedBus {
+  id?: number;
+  bus_name?: string;
+  bus_number?: string;
+  route?: string;
+  capacity?: number;
+  status?: string;
+}
+
+/** Student on bus from driver profile API. */
+export interface StudentOnBus {
+  id?: number;
+  student_name?: string;
+  age?: number;
+  parent_name?: string;
+  parent_phone?: string;
+}
+
 /** Driver profile from GET /api/drivers/{id} – for logged-in driver. API uses snake_case. */
 export interface DriverProfile {
   id: number;
@@ -246,8 +289,10 @@ export interface DriverProfile {
   phone?: string;
   phone_number?: string;
   license_number?: string;
-  bus?: string | { id?: number; busName?: string; busNumber?: string; route?: string };
+  bus?: string | { id?: number; busName?: string; busNumber?: string; bus_name?: string; bus_number?: string; route?: string };
   assigned_bus_id?: number | null;
+  assigned_bus?: DriverAssignedBus;
+  students_on_bus?: StudentOnBus[];
   status?: string;
   [key: string]: unknown;
 }

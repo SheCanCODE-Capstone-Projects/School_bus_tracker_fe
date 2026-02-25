@@ -75,7 +75,8 @@ export default function AdminDashboardContent() {
   const [isLoadingEmergencies, setIsLoadingEmergencies] = useState(true);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(true);
-  
+  const [schoolName, setSchoolName] = useState<string>("");
+
   // Role-based protection - only allow admin access
   useEffect(() => {
     const checkAuth = async () => {
@@ -189,12 +190,34 @@ export default function AdminDashboardContent() {
 
     if (!isLoading) {
       fetchEmergencies();
-      
-      // Refresh emergencies every 30 seconds
       const interval = setInterval(fetchEmergencies, 30000);
-      
       return () => clearInterval(interval);
     }
+  }, [isLoading]);
+
+  // Fetch school(s) from API for map marker (real data)
+  useEffect(() => {
+    const fetchSchools = async () => {
+      const token = getAuthToken();
+      if (!token) return;
+      try {
+        const res = await fetch("https://school-bus-tracker-be.onrender.com/api/schools", {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = data?.content ?? data?.data ?? data?.schools ?? (Array.isArray(data) ? data : []);
+        const arr = Array.isArray(list) ? list : [];
+        const first = arr[0];
+        const name = first && (typeof first === "object")
+          ? (first.schoolName ?? first.name ?? first.school_name ?? "")
+          : "";
+        setSchoolName(String(name || "").trim() || "School");
+      } catch {
+        setSchoolName("School");
+      }
+    };
+    if (!isLoading) fetchSchools();
   }, [isLoading]);
 
   // Fetch admin action logs
@@ -430,37 +453,22 @@ export default function AdminDashboardContent() {
     },
   ];
 
-  // Static buses for map display only
-  const mapBuses: BusData[] = [
-    {
-      id: "1",
-      number: "Bus 01",
-      driver: "Michael Johnson",
-      status: "moving",
-      position: { x: 25, y: 35 },
-    },
-    {
-      id: "2",
-      number: "Bus 02",
-      driver: "Sarah Williams",
-      status: "stopped",
-      position: { x: 65, y: 55 },
-    },
-    {
-      id: "3",
-      number: "Bus 03",
-      driver: "David Brown",
-      status: "emergency",
-      position: { x: 50, y: 45 },
-    },
-    {
-      id: "4",
-      number: "Bus 04",
-      driver: "Emily Davis",
-      status: "moving",
-      position: { x: 35, y: 65 },
-    },
-  ];
+  // Buses with active emergency show as "Emergency" on map
+  const busNumbersInEmergency = new Set(
+    emergencies.filter((e) => e.status === "ACTIVE").map((e) => e.busNumber?.trim())
+  );
+  // Use real buses for map; assign stable positions so they don't overlap
+  const mapBuses: BusData[] = buses.map((bus, i) => {
+    const inEmergency = bus.number && busNumbersInEmergency.has(bus.number.trim());
+    return {
+      ...bus,
+      status: inEmergency ? "emergency" : bus.status,
+      position: {
+        x: 20 + (i % 3) * 28 + (i % 2) * 5,
+        y: 25 + Math.floor(i / 3) * 28 + (i % 3) * 8,
+      },
+    };
+  });
 
   const getBusStatusColor = (status: string) => {
     switch (status) {
@@ -552,26 +560,21 @@ export default function AdminDashboardContent() {
                 </div>
 
                 {/* Map */}
-                <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl h-96 overflow-hidden">
-                  {/* School Marker */}
-                  <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
-                    {/* Single large transparent animated circle */}
+                <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl h-96 overflow-hidden pt-6 px-2">
+                  {/* School Marker - real data from API, z-30 so not hidden behind buses */}
+                  <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30 flex flex-col items-center pointer-events-none">
                     <div className="relative flex items-center justify-center mb-2">
-                      <span className="absolute inline-flex h-20 w-20 rounded-full bg-blue-500/20 animate-ping"></span>
+                      <span className="absolute inline-flex h-20 w-20 rounded-full bg-blue-500/20 animate-ping" aria-hidden />
                     </div>
-
-                    {/* School label */}
-                    <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg relative z-10">
+                    <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg relative z-30 whitespace-nowrap min-w-[8rem] text-center">
                       <span className="text-sm font-semibold">
-                        Lincoln Elementary School
+                        {schoolName || "School"}
                       </span>
                     </div>
                   </div>
 
                   {/* Bus Markers - Static data for map */}
-                  {mapBuses
-                    .filter((bus) => bus.status !== "offline")
-                    .map((bus) => (
+                  {mapBuses.map((bus) => (
                       <div
                         key={bus.id}
                         className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"

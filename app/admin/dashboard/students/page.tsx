@@ -36,11 +36,13 @@ const logAction = (action: string, description: string, entityType: string) => {
 
 // Types
 interface BusStop {
+  id?: number;
   stopName: string;
   address: string;
 }
 
 interface AssignedBus {
+  id?: number;
   busName: string;
   busNumber: string;
 }
@@ -65,9 +67,10 @@ export default function StudentBusDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // State for bus stops and buses
+  // State for bus stops, buses, and schools
   const [busStops, setBusStops] = useState<Array<{ id: number; stopName: string; address: string }>>([]);
   const [buses, setBuses] = useState<Array<{ id: number; busName: string; busNumber: string }>>([]);
+  const [schools, setSchools] = useState<Array<{ id: number; name: string }>>([]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,6 +90,7 @@ export default function StudentBusDashboard() {
     parentName: "",
     parentPhone: "",
     address: "",
+    schoolId: "",
     busStopId: "",
     assignedBusId: "",
   });
@@ -104,8 +108,8 @@ export default function StudentBusDashboard() {
     parentName: "",
     parentPhone: "",
     address: "",
-    busStop: "",
-    assignedBus: "",
+    busStopId: "",
+    assignedBusId: "",
   });
 
   // Search state
@@ -216,8 +220,8 @@ export default function StudentBusDashboard() {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
           },
-          mode: "cors", // Enable CORS
-          credentials: "include", // Include credentials if needed
+          mode: "cors",
+          credentials: "include",
         }
       );
 
@@ -264,66 +268,118 @@ export default function StudentBusDashboard() {
     }
   };
 
-  // Fetch students on component mount
+  // Fetch students, bus stops, buses, and schools on component mount
   useEffect(() => {
     fetchStudents();
     fetchBusStops();
     fetchBuses();
+    fetchSchools();
   }, []);
 
-  // Fetch bus stops
+  // Refetch bus stops, buses, and schools when Add Student modal opens so dropdowns have real data
+  useEffect(() => {
+    if (showAddStudentModal) {
+      fetchBusStops();
+      fetchBuses();
+      fetchSchools();
+    }
+  }, [showAddStudentModal]);
+
+  // Refetch bus stops and buses when Edit Student modal opens so dropdowns have real data
+  useEffect(() => {
+    if (showEditModal) {
+      fetchBusStops();
+      fetchBuses();
+    }
+  }, [showEditModal]);
+
+  const API_BASE = "https://school-bus-tracker-be.onrender.com/api";
+
+  // Fetch bus stops from GET /api/bus-stops (real data for Add Student dropdown)
   const fetchBusStops = async () => {
     try {
       const token = getAuthToken();
-      if (!token) return;
-
-      const response = await fetch(
-        "https://school-bus-tracker-be.onrender.com/api/bus-stops",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const busStopsData = data.data || data.busStops || (Array.isArray(data) ? data : []);
-        setBusStops(busStopsData);
-        console.log("Bus stops loaded:", busStopsData);
+      if (!token) {
+        setBusStops([]);
+        return;
       }
+      const cleanToken = String(token).replace(/^Bearer\s+/i, "").trim();
+      const response = await fetch(`${API_BASE}/bus-stops`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cleanToken}`,
+        },
+      });
+      if (!response.ok) {
+        setBusStops([]);
+        return;
+      }
+      const raw = await response.json();
+      const list = raw?.data ?? raw?.content ?? raw?.busStops ?? (Array.isArray(raw) ? raw : []) as Array<Record<string, unknown>>;
+      const normalized = (Array.isArray(list) ? list : []).map((s: Record<string, unknown>, index: number) => ({
+        id: Number(s.id) ?? index + 1,
+        stopName: String(s.stopName ?? s.stop_name ?? s.name ?? "").trim() || `Bus Stop ${(Number(s.id) ?? index + 1)}`,
+        address: String(s.address ?? ""),
+      }));
+      setBusStops(normalized);
     } catch (error) {
       console.error("Error fetching bus stops:", error);
+      setBusStops([]);
     }
   };
 
-  // Fetch buses
+  // Fetch buses from GET /api/buses – display names
   const fetchBuses = async () => {
     try {
       const token = getAuthToken();
       if (!token) return;
 
-      const response = await fetch(
-        "https://school-bus-tracker-be.onrender.com/api/buses",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE}/buses`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
 
-      if (response.ok) {
-        const data = await response.json();
-        const busesData = data.data || data.buses || (Array.isArray(data) ? data : []);
-        setBuses(busesData);
-        console.log("Buses loaded:", busesData);
-      }
+      if (!response.ok) return;
+      const raw = await response.json();
+      const list = (raw?.success && raw?.data ? raw.data : raw?.buses ?? (Array.isArray(raw) ? raw : [])) as Record<string, unknown>[];
+      const normalized = list.map((b: Record<string, unknown>) => ({
+        id: Number(b.id) || 0,
+        busName: String(b.busName ?? b.bus_name ?? b.number ?? ""),
+        busNumber: String(b.busNumber ?? b.bus_number ?? b.code ?? ""),
+      })).filter((b: { id: number }) => b.id > 0);
+      setBuses(normalized);
     } catch (error) {
       console.error("Error fetching buses:", error);
+    }
+  };
+
+  // Fetch schools from GET /api/schools (required for Add Student – schoolId query param)
+  const fetchSchools = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+      const response = await fetch(`${API_BASE}/schools`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) return;
+      const raw = await response.json();
+      const list = raw?.content ?? raw?.data ?? raw?.schools ?? (Array.isArray(raw) ? raw : []) as Array<Record<string, unknown>>;
+      const normalized = (Array.isArray(list) ? list : []).map((s: Record<string, unknown>) => ({
+        id: Number(s.id) || 0,
+        name: String(s.schoolName ?? s.name ?? s.school_name ?? "").trim() || `School ${s.id}`,
+      })).filter((s: { id: number }) => s.id > 0);
+      setSchools(normalized);
+    } catch (error) {
+      console.error("Error fetching schools:", error);
+      setSchools([]);
     }
   };
 
@@ -416,51 +472,41 @@ export default function StudentBusDashboard() {
     setSelectedBus("");
   };
 
-  // Assign students to bus
+  // Assign students to bus – PATCH /api/admin/assign-students-to-bus
   const handleAssignToBus = async () => {
     try {
       const token = getAuthToken();
 
-      if (!token) {
-        return;
-      }
+      if (!token) return;
+      if (!selectedBus || selectedStudents.length === 0) return;
 
-      if (!selectedBus) {
-        return;
-      }
+      const busId = parseInt(selectedBus, 10);
+      const studentIds = selectedStudents.map((id) => parseInt(id, 10)).filter((n) => !isNaN(n));
 
-      const busId = parseInt(selectedBus);
-      let allSuccess = true;
-
-      // Assign each student individually
-      for (const studentId of selectedStudents) {
-        const response = await fetch(
-          `https://school-bus-tracker-be.onrender.com/api/students/${studentId}/assign-bus`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ busId }),
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.log('Assignment failed for student:', studentId, errorData);
-          allSuccess = false;
+      const response = await fetch(
+        "https://school-bus-tracker-be.onrender.com/api/admin/assign-students-to-bus",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ studentIds, busId }),
         }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.log("Assign to bus failed:", response.status, errorData);
+        closeAssignModal();
+        return;
       }
 
-      if (allSuccess) {
-        logAction('Students Assigned', `Assigned ${selectedStudents.length} student(s) to bus`, 'student');
-      }
-      
+      logAction("Students Assigned", `Assigned ${selectedStudents.length} student(s) to bus`, "student");
       closeAssignModal();
       await fetchStudents();
     } catch (error) {
-      console.log('Error assigning students:', error);
+      console.log("Error assigning students:", error);
       closeAssignModal();
     }
   };
@@ -479,6 +525,7 @@ export default function StudentBusDashboard() {
       parentName: "",
       parentPhone: "",
       address: "",
+      schoolId: "",
       busStopId: "",
       assignedBusId: "",
     });
@@ -501,9 +548,13 @@ export default function StudentBusDashboard() {
         return;
       }
 
-      // Validate required fields
+      // Validate required fields (backend requires schoolId as query param)
       if (!newStudent.name || !newStudent.age) {
         return;
+      }
+      const schoolId = newStudent.schoolId ? parseInt(newStudent.schoolId, 10) : null;
+      if (!schoolId || schoolId < 1) {
+        return; // or set error: "Please select a school"
       }
 
       const requestBody: any = {
@@ -535,11 +586,8 @@ export default function StudentBusDashboard() {
         console.error("Could not decode token:", e);
       }
       
-      console.log("Request body:", requestBody);
-      console.log("URL:", "https://school-bus-tracker-be.onrender.com/api/students");
-
       const response = await fetch(
-        "https://school-bus-tracker-be.onrender.com/api/students",
+        `${API_BASE}/students?schoolId=${schoolId}`,
         {
           method: "POST",
           headers: {
@@ -608,6 +656,25 @@ export default function StudentBusDashboard() {
 
   // Handle edit click
   const handleEditClick = (student: Student) => {
+    const busStopIdFromApi = (student.busStop as BusStop & { id?: number })?.id;
+    const assignedBusIdFromApi = (student.assignedBus as AssignedBus & { id?: number })?.id;
+    // If API didn't return id, try to match by name so dropdown pre-selects
+    let busStopId = busStopIdFromApi != null ? String(busStopIdFromApi) : "";
+    let assignedBusId = assignedBusIdFromApi != null ? String(assignedBusIdFromApi) : "";
+    if (!busStopId && student.busStop?.stopName) {
+      const match = busStops.find((s) => (s.stopName || "").trim() === (student.busStop?.stopName || "").trim());
+      if (match) busStopId = String(match.id);
+    }
+    if (!assignedBusId && (student.assignedBus?.busName || student.assignedBus?.busNumber)) {
+      const nameOrNum = (student.assignedBus?.busName || student.assignedBus?.busNumber || "").trim();
+      const match = buses.find(
+        (b) =>
+          (b.busName || "").trim() === nameOrNum ||
+          (b.busNumber || "").trim() === nameOrNum ||
+          `Bus ${b.busNumber}`.trim() === nameOrNum
+      );
+      if (match) assignedBusId = String(match.id);
+    }
     setEditStudent({
       id: student.id.toString(),
       name: student.studentName,
@@ -615,8 +682,8 @@ export default function StudentBusDashboard() {
       parentName: student.parentName || "",
       parentPhone: student.parentPhone || "",
       address: student.address || "",
-      busStop: student.busStop?.stopName || "",
-      assignedBus: student.assignedBus?.busName || student.assignedBus?.busNumber || "",
+      busStopId,
+      assignedBusId,
     });
     setShowEditModal(true);
   };
@@ -631,8 +698,8 @@ export default function StudentBusDashboard() {
       parentName: "",
       parentPhone: "",
       address: "",
-      busStop: "",
-      assignedBus: "",
+      busStopId: "",
+      assignedBusId: "",
     });
   };
 
@@ -677,6 +744,8 @@ export default function StudentBusDashboard() {
             parentName: editStudent.parentName,
             parentPhone: editStudent.parentPhone,
             address: editStudent.address,
+            ...(editStudent.busStopId ? { busStopId: parseInt(editStudent.busStopId, 10) } : {}),
+            ...(editStudent.assignedBusId ? { assignedBusId: parseInt(editStudent.assignedBusId, 10) } : {}),
           }),
         }
       );
@@ -1138,6 +1207,26 @@ export default function StudentBusDashboard() {
               <div className="space-y-3 md:space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    School <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newStudent.schoolId}
+                    onChange={(e) =>
+                      handleInputChange("schoolId", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                  >
+                    <option value="">Select a school</option>
+                    {schools.map((school) => (
+                      <option key={school.id} value={String(school.id)}>
+                        {school.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Student Name
                   </label>
                   <input
@@ -1220,7 +1309,7 @@ export default function StudentBusDashboard() {
                   >
                     <option value="">Select a bus stop</option>
                     {busStops.map((stop) => (
-                      <option key={stop.id} value={stop.id}>
+                      <option key={stop.id} value={String(stop.id)}>
                         {stop.stopName}
                       </option>
                     ))}
@@ -1404,14 +1493,20 @@ export default function StudentBusDashboard() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Bus Stop
                   </label>
-                  <input
-                    type="text"
-                    value={editStudent.busStop}
+                  <select
+                    value={editStudent.busStopId}
                     onChange={(e) =>
-                      handleEditInputChange("busStop", e.target.value)
+                      handleEditInputChange("busStopId", e.target.value)
                     }
                     className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
-                  />
+                  >
+                    <option value="">Select a bus stop</option>
+                    {busStops.map((stop) => (
+                      <option key={stop.id} value={String(stop.id)}>
+                        {stop.stopName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -1419,16 +1514,18 @@ export default function StudentBusDashboard() {
                     Assigned Bus
                   </label>
                   <select
-                    value={editStudent.assignedBus}
+                    value={editStudent.assignedBusId}
                     onChange={(e) =>
-                      handleEditInputChange("assignedBus", e.target.value)
+                      handleEditInputChange("assignedBusId", e.target.value)
                     }
                     className="w-full px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                   >
                     <option value="">Select a bus</option>
-                    <option value="Bus 01">Bus 01</option>
-                    <option value="Bus 02">Bus 02</option>
-                    <option value="Bus 03">Bus 03</option>
+                    {buses.map((bus) => (
+                      <option key={bus.id} value={String(bus.id)}>
+                        {bus.busName} ({bus.busNumber})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
