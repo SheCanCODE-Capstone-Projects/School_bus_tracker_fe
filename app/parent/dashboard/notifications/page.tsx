@@ -139,6 +139,31 @@ export default function ParentNotifications() {
     return localStorage.getItem('authToken');
   };
 
+  const READ_IDS_KEY = 'parent_notifications_read_ids';
+
+  const getReadIdsFromStorage = (): Set<string> => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = localStorage.getItem(READ_IDS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch {
+      return new Set();
+    }
+  };
+
+  const persistReadId = (id: string) => {
+    const set = getReadIdsFromStorage();
+    set.add(id);
+    localStorage.setItem(READ_IDS_KEY, JSON.stringify([...set]));
+  };
+
+  const persistAllReadIds = (ids: string[]) => {
+    const set = getReadIdsFromStorage();
+    ids.forEach((id) => set.add(id));
+    localStorage.setItem(READ_IDS_KEY, JSON.stringify([...set]));
+  };
+
   // Fetch real notifications from the backend
   const fetchNotifications = async () => {
     setIsLoading(true);
@@ -173,17 +198,21 @@ export default function ParentNotifications() {
 
       const apiNotifications: ApiNotification[] = await response.json();
       console.log('Notifications received:', apiNotifications);
-      
-      // Transform API notifications to match our Notification interface
+
+      const readIdsFromStorage = getReadIdsFromStorage();
+
+      // Transform API notifications; treat as read if API says read OR we have it in local read set (survives refresh)
       const transformedNotifications: Notification[] = apiNotifications.map(apiNotif => {
+        const id = apiNotif.id.toString();
         const busId = extractBusIdFromMessage(apiNotif.message);
+        const isRead = apiNotif.read || readIdsFromStorage.has(id);
         return {
-          id: apiNotif.id.toString(),
+          id,
           type: mapNotificationType(apiNotif.type),
           title: apiNotif.title,
           message: apiNotif.message,
           timestamp: new Date().toLocaleString(),
-          status: apiNotif.read ? "read" : "unread",
+          status: isRead ? "read" : "unread",
           busId: busId,
           busNumber: busId ? `Bus ${busId.toString().padStart(2, '0')}` : undefined,
         };
@@ -348,6 +377,7 @@ export default function ParentNotifications() {
   }, [notifications]);
 
   const markAsRead = (id: string) => {
+    persistReadId(id);
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, status: "read" } : n))
     );
@@ -355,7 +385,10 @@ export default function ParentNotifications() {
   };
 
   const markAllAsRead = () => {
+    const ids = notifications.map((n) => n.id);
+    persistAllReadIds(ids);
     setNotifications((prev) => prev.map((n) => ({ ...n, status: "read" })));
+    ids.forEach((id) => markAsReadOnBackend(id));
   };
 
   const deleteNotification = (id: string) => {

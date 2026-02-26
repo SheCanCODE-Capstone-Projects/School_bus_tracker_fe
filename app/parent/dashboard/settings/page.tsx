@@ -6,9 +6,7 @@ import ToggleSwitch from './ToggleSwitch';
 import ParentNavbar from '@/components/navigation/ParentNavbar';
 import Footer from '@/components/Footer';
 import { getUserData } from '@/lib/auth';
-import { getParentStudents, getParentProfile } from '@/lib/tracking-api';
-
-const PARENT_BASE_URL = 'https://school-bus-tracker-be.onrender.com';
+import { getParentStudents, getParentProfile, updateParentProfile } from '@/lib/tracking-api';
 
 export default function Settings() {
   const [fullName, setFullName] = useState('');
@@ -27,6 +25,8 @@ export default function Settings() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState('');
   const [parentId, setParentId] = useState<number | null>(null);
+  const [address, setAddress] = useState('');
+  const [schoolId, setSchoolId] = useState<number | null>(null);
 
   // Load real parent data on mount
   useEffect(() => {
@@ -50,6 +50,8 @@ export default function Settings() {
             if (profile.name) setFullName(profile.name);
             if (profile.email) setEmail(profile.email);
             if (profile.phone) setPhone(profile.phone ?? '');
+            if (profile.address) setAddress(profile.address);
+            if (typeof profile.schoolId === 'number') setSchoolId(profile.schoolId);
           }
           const students = await getParentStudents(id);
           const names = students.map((s) => s.studentName ?? (s as { student_name?: string }).student_name ?? '').filter(Boolean);
@@ -72,35 +74,27 @@ export default function Settings() {
       setSaveMessage('Cannot save: parent ID not found. Please log in again.');
       return;
     }
+
+    if (newPassword && newPassword !== confirmPassword) {
+      setSaveStatus('error');
+      setSaveMessage('New password and confirmation do not match.');
+      return;
+    }
+
     setSaveStatus('saving');
     setSaveMessage('');
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') || localStorage.getItem('token') : null;
-      if (!token) {
-        setSaveStatus('error');
-        setSaveMessage('Session expired. Please log in again.');
-        return;
-      }
-      const cleanToken = String(token).replace(/^Bearer\s+/i, '').trim();
-      const res = await fetch(`${PARENT_BASE_URL}/parent/${parentId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${cleanToken}`,
-        },
-        body: JSON.stringify({
-          name: fullName,
-          fullName: fullName,
-          email: email || undefined,
-          phone: phone || undefined,
-        }),
+      const passwordToSend = newPassword || currentPassword || undefined;
+
+      await updateParentProfile({
+        name: fullName || undefined,
+        email: email || undefined,
+        phone: phone || undefined,
+        homeAddress: address || undefined,
+        schoolId: schoolId ?? undefined,
+        password: passwordToSend,
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setSaveStatus('error');
-        setSaveMessage((err?.message as string) || `Failed to save (${res.status})`);
-        return;
-      }
+
       setSaveStatus('success');
       setSaveMessage('Profile updated successfully.');
     } catch (e) {
@@ -111,12 +105,11 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <ParentNavbar />
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex items-center justify-center">
+        <main className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
         </main>
-        <Footer />
       </div>
     );
   }

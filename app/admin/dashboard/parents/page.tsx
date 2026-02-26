@@ -95,14 +95,26 @@ export default function ParentsPage() {
     { id: 1, fullName: "", age: "", gender: "Not Specified", busStopId: "" },
   ]);
 
-  const [editParent, setEditParent] = useState({
+  const [editParent, setEditParent] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    schoolId: number;
+    childName: string;
+    assignedBus: string;
+    assignedBusId: number;
+  }>({
     id: "",
     name: "",
     email: "",
     phone: "",
     address: "",
+    schoolId: 1,
     childName: "",
     assignedBus: "",
+    assignedBusId: 0,
   });
 
   const [parents, setParents] = useState([]);
@@ -116,6 +128,11 @@ export default function ParentsPage() {
     try {
       setLoadingBusStops(true);
       const token = getAuthToken();
+      if (!token) {
+        console.error("No auth token found while fetching bus stops");
+        setBusStops([]);
+        return;
+      }
       const cleanToken = token.replace(/^Bearer\s+/i, '');
 
       const response = await fetch(`${API_BASE}/bus-stops`, {
@@ -147,6 +164,10 @@ export default function ParentsPage() {
   const fetchBuses = async () => {
     try {
       const token = getAuthToken();
+      if (!token) {
+        console.error("No auth token found while fetching buses");
+        return;
+      }
       const cleanToken = token.replace(/^Bearer\s+/i, '');
       if (!cleanToken) return;
 
@@ -190,6 +211,9 @@ export default function ParentsPage() {
     try {
       setLoading(true);
       const token = getAuthToken();
+      if (!token) {
+        throw new Error("Missing auth token. Please login again.");
+      }
       const cleanToken = token.replace(/^Bearer\s+/i, '');
 
       console.log("Fetching parents from /api/admin/parents");
@@ -415,6 +439,11 @@ export default function ParentsPage() {
       setIsSubmitting(true);
 
       const token = getAuthToken();
+      if (!token) {
+        setApiError("Missing auth token. Please log in again.");
+        setIsSubmitting(false);
+        return;
+      }
 
       // Clean the token (remove "Bearer " if already included)
       const cleanToken = token.replace(/^Bearer\s+/i, '');
@@ -520,19 +549,30 @@ export default function ParentsPage() {
   };
 
   const handleEdit = (parent: any) => {
+    const busLabel = parent.assignedBus ?? "";
+    const matchedBus = buses.find(
+      (b) =>
+        String(b.id) === busLabel ||
+        b.busNumber === busLabel ||
+        b.busName === busLabel ||
+        (b.busNumber && busLabel.includes(b.busNumber)) ||
+        (b.busName && busLabel.includes(b.busName))
+    );
     setEditParent({
       id: parent.id,
       name: parent.name,
       email: parent.email,
       phone: parent.phone,
-      address: parent.address,
-      childName: parent.childName,
-      assignedBus: parent.assignedBus,
+      address: parent.address ?? "",
+      schoolId: parent.schoolId ?? 1,
+      childName: parent.childName ?? "",
+      assignedBus: busLabel,
+      assignedBusId: matchedBus ? matchedBus.id : 0,
     });
     setShowEditModal(true);
   };
 
-  const handleEditInputChange = (field: string, value: string) => {
+  const handleEditInputChange = (field: string, value: string | number) => {
     setEditParent({ ...editParent, [field]: value });
   };
 
@@ -543,25 +583,33 @@ export default function ParentsPage() {
       setApiSuccess("");
 
       const token = getAuthToken();
+      if (!token) {
+        throw new Error("Missing auth token. Please login again.");
+      }
       const cleanToken = token.replace(/^Bearer\s+/i, '');
 
-      // Prepare the data according to API specification
-      const updateData = {
+      // Backend schema: name, email, phone, password, children[], home_address, school_id
+      const updateData: Record<string, unknown> = {
         name: editParent.name,
         email: editParent.email,
         phone: editParent.phone,
-        homeAddress: editParent.address,
-        parentName: editParent.name,
-        parentEmail: editParent.email,
-        parentPhone: editParent.phone,
+        home_address: editParent.address || undefined,
+        school_id: editParent.schoolId ?? 1,
+        children: [
+          {
+            id: 0,
+            student_name: editParent.childName || "",
+            assigned_bus_id: editParent.assignedBusId || 0,
+          },
+        ],
       };
 
       console.log("Updating parent:", editParent.id, updateData);
 
       const response = await fetch(
-        `https://school-bus-tracker-be.onrender.com/api/admin/parents/${editParent.id}`,
+        `https://school-bus-tracker-be.onrender.com/api/admin/actions/parents/${editParent.id}`,
         {
-          method: "PATCH",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${cleanToken}`,
@@ -610,8 +658,10 @@ export default function ParentsPage() {
           email: "",
           phone: "",
           address: "",
+          schoolId: 1,
           childName: "",
           assignedBus: "",
+          assignedBusId: 0,
         });
         setApiSuccess("");
       }, 2000);
@@ -634,12 +684,15 @@ export default function ParentsPage() {
       setApiSuccess("");
 
       const token = getAuthToken();
+      if (!token) {
+        throw new Error("Missing auth token. Please login again.");
+      }
       const cleanToken = token.replace(/^Bearer\s+/i, '');
 
       console.log("Deleting parent:", parentToDelete.id);
 
       const response = await fetch(
-        `https://school-bus-tracker-be.onrender.com/api/admin/parents/${parentToDelete.id}`,
+        `https://school-bus-tracker-be.onrender.com/api/admin/actions/parents/${parentToDelete.id}`,
         {
           method: "DELETE",
           headers: {
@@ -1296,7 +1349,7 @@ export default function ParentsPage() {
                 setApiSuccess("");
               }}
             />
-            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-4 md:p-6 max-h-[90vh] overflow-y-auto">
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl p-4 md:p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3 mb-4 md:mb-6">
                 <div className="bg-green-100 p-2 rounded-2xl">
                   <SquarePen className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
@@ -1319,94 +1372,125 @@ export default function ParentsPage() {
                 </div>
               )}
 
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-4 md:space-y-6">
+                {/* Parent Information - same structure as Add Parent */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Parent Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editParent.name}
-                    onChange={(e) =>
-                      handleEditInputChange("name", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
-                  />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Parent Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Parent Full Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editParent.name}
+                        onChange={(e) =>
+                          handleEditInputChange("name", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={editParent.email}
+                        onChange={(e) =>
+                          handleEditInputChange("email", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={editParent.phone}
+                        onChange={(e) =>
+                          handleEditInputChange("phone", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Home Address
+                      </label>
+                      <input
+                        type="text"
+                        value={editParent.address}
+                        onChange={(e) =>
+                          handleEditInputChange("address", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        School ID
+                      </label>
+                      <input
+                        type="number"
+                        value={editParent.schoolId}
+                        onChange={(e) =>
+                          handleEditInputChange("schoolId", parseInt(e.target.value, 10) || 1)
+                        }
+                        className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Default: 1 (you may need to adjust based on your school)</p>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Children & Assignment - aligned with Add Parent */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={editParent.email}
-                    onChange={(e) =>
-                      handleEditInputChange("email", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={editParent.phone}
-                    onChange={(e) =>
-                      handleEditInputChange("phone", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address
-                  </label>
-                  <input
-                    type="text"
-                    value={editParent.address}
-                    onChange={(e) =>
-                      handleEditInputChange("address", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Child Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editParent.childName}
-                    onChange={(e) =>
-                      handleEditInputChange("childName", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Assigned Bus
-                  </label>
-                  <select
-                    value={editParent.assignedBus}
-                    onChange={(e) =>
-                      handleEditInputChange("assignedBus", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
-                  >
-                    <option value="">Select a bus</option>
-                    {buses.map((bus) => {
-                      const label = bus.busName || (bus.busNumber ? `Bus ${bus.busNumber}` : `Bus ${bus.id}`);
-                      const value = bus.busName || (bus.busNumber ? `Bus ${bus.busNumber}` : String(bus.id));
-                      return (
-                        <option key={bus.id} value={value}>
-                          {label}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Children Information
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Child&apos;s Full Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editParent.childName}
+                        onChange={(e) =>
+                          handleEditInputChange("childName", e.target.value)
+                        }
+                        placeholder="e.g. child name or list"
+                        className="w-full px-4 py-2.5 md:py-3 text-gray-600 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Assigned Bus
+                      </label>
+                      <select
+                        value={editParent.assignedBusId || ""}
+                        onChange={(e) =>
+                          handleEditInputChange("assignedBusId", parseInt(e.target.value, 10) || 0)
+                        }
+                        className="w-full px-4 py-2.5 md:py-3 border text-gray-600 border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
+                      >
+                        <option value="">Select a bus</option>
+                        {buses.map((bus) => {
+                          const label = bus.busName || (bus.busNumber ? `Bus ${bus.busNumber}` : `Bus ${bus.id}`);
+                          return (
+                            <option key={bus.id} value={bus.id}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 

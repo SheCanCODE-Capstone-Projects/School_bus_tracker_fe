@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Shield, Star, Calendar, Phone, Mail, User, TrendingUp, Award, Users } from 'lucide-react';
+import { Shield, Phone, Mail, User, Users } from 'lucide-react';
 import DriverNavbar from '@/components/navigation/DriverNavbar';
 import { getUserData } from '@/lib/auth';
 import { getDriverById, type DriverProfile, type StudentOnBus } from '@/lib/tracking-api';
@@ -171,71 +171,28 @@ export default function DriverProfile() {
             </div>
           </div>
 
-          {/* Professional Details */}
+          {/* Professional Details – only fields the API returns (license_number) */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6 transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
             <div className="flex items-center gap-3 mb-6 group">
               <div className="w-1 h-6 bg-blue-600 rounded-full transition-all duration-300 group-hover:w-2"></div>
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Professional Details</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">License Number</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-semibold">{driver.license_number ?? '—'}</p>
-                </div>
+            <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4 max-w-md">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
               </div>
-
-              <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Years of Service</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-semibold">{(driver as { yearsOfService?: number | string }).yearsOfService ?? '—'}</p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Total Trips Completed</label>
-                  <p className="text-base sm:text-lg text-gray-900 font-semibold">{(driver as { totalTrips?: number | string }).totalTrips ?? '—'}</p>
-                </div>
-              </div>
-
-              <div className="bg-green-50 rounded-lg sm:rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Award className="w-4 h-4 sm:w-5 sm:h-5 text-green-700" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <label className="block text-sm font-medium text-green-700 mb-1">Safety Rating</label>
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-yellow-400 text-yellow-400" />
-                    <p className="text-base sm:text-lg text-gray-900 font-semibold">{(driver as { safetyRating?: string | number }).safetyRating ?? '—'}</p>
-                  </div>
-                </div>
+              <div className="min-w-0 flex-1">
+                <label className="block text-sm font-medium text-gray-500 mb-1">License Number</label>
+                <p className="text-base sm:text-lg text-gray-900 font-semibold">{driver.license_number ?? '—'}</p>
               </div>
             </div>
           </div>
 
-          {/* Stats Row – optional if API returns these */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6">
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
-              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{(driver as { onTimeRate?: string | number }).onTimeRate ?? '—'}</h3>
-              <p className="text-gray-600 font-medium text-sm sm:text-base">On-Time Rate</p>
-            </div>
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
-              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{(driver as { incidents?: number }).incidents ?? '—'}</h3>
-              <p className="text-gray-600 font-medium text-sm sm:text-base">Incidents</p>
-            </div>
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg">
+          {/* Students count – from API students_on_bus */}
+          <div className="mb-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center transition-transform duration-300 hover:-translate-y-1 sm:hover:-translate-y-2.5 hover:shadow-lg max-w-xs">
               <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{studentsCount}</h3>
-              <p className="text-gray-600 font-medium text-sm sm:text-base">Students</p>
+              <p className="text-gray-600 font-medium text-sm sm:text-base">Students on bus</p>
             </div>
           </div>
 
