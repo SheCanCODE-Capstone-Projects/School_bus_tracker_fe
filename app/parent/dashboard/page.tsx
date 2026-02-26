@@ -79,9 +79,9 @@ export default function ParentDashboard() {
 
       <main className="flex-1 p-4 md:p-6">
 
-        {/* 🔶 Top Notification Banner */}
+        {/* 🔶 Top Notification Banner – uses bus location vs stop for distance/ETA */}
         <div className="mb-6">
-          <Notifications />
+          <Notifications busId={busId} students={students} />
         </div>
 
         {/* 🔷 Main Dashboard Content */}
