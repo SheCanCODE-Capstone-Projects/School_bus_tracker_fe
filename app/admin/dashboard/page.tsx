@@ -498,7 +498,7 @@ export default function AdminDashboardContent() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "moving":
-        return "Active";
+        return "On Route";
       case "stopped":
         return "Stopped";
       case "emergency":
@@ -593,7 +593,7 @@ export default function AdminDashboardContent() {
                               <Navigation className="w-5 h-5 text-white" />
                             </div>
                             <div className="text-left">
-                              <p className="text-sm font-bold">{bus.number}</p>
+                              <p className="text-sm font-bold">{bus.busName ?? bus.number}</p>
                               <p className="text-xs opacity-90">
                                 {getStatusText(bus.status)}
                               </p>
@@ -613,8 +613,8 @@ export default function AdminDashboardContent() {
                     </button>
                   </div>
 
-                  {/* Status Legend */}
-                  <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-3">
+                  {/* Status Legend – above bus cards so it is never hidden (z-30 > bus z-20) */}
+                  <div className="absolute bottom-4 left-4 z-30 bg-white rounded-lg shadow-md p-3 pointer-events-none">
                     <p className="text-xs font-semibold text-gray-700 mb-2">
                       Status Legend
                     </p>
@@ -624,12 +624,16 @@ export default function AdminDashboardContent() {
                         <span className="text-xs text-gray-600">On Route</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
                         <span className="text-xs text-gray-600">Stopped</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                         <span className="text-xs text-gray-600">Emergency</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span className="text-xs text-gray-600">Offline</span>
                       </div>
                     </div>
                   </div>
@@ -681,20 +685,20 @@ export default function AdminDashboardContent() {
                                 bus.status === "moving"
                                   ? "bg-green-500"
                                   : bus.status === "stopped"
-                                  ? "bg-yellow-500"
+                                  ? "bg-amber-500"
                                   : bus.status === "emergency"
                                   ? "bg-red-500"
                                   : "bg-gray-400"
                               } rounded-full`}
                             ></div>
                             <span className="font-semibold text-gray-900 text-sm">
-                              {bus.number}
+                              {bus.busName ?? bus.number}
                             </span>
                           </div>
 
-                          {bus.busName && (
+                          {bus.number && (
                             <p className="text-xs text-gray-500 mb-1">
-                              {bus.busName}
+                              {bus.number}
                             </p>
                           )}
 

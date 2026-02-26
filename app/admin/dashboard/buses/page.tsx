@@ -402,11 +402,13 @@ useEffect(() => {
     // Generate truly unique bus number to avoid duplicates
     const timestamp = Date.now();
     const uniqueBusNumber = code || `SCH-${timestamp.toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
-    
+
+    // Payload: do NOT send "current filled" as a key. Send only "capacity", and set it to the number the user entered in the "Current Filled" field.
+    const currentFilledValue = capacity;
     const payload = {
       busName: name,
       busNumber: uniqueBusNumber,
-      capacity,
+      capacity: currentFilledValue,
       route,
       status: active ? "ACTIVE" : "INACTIVE"
     };
