@@ -216,6 +216,7 @@ export interface ParentProfile {
   email?: string;
   phone?: string;
   address?: string;
+  schoolId?: number;
   childNames?: string;
 }
 
@@ -231,7 +232,42 @@ export async function getParentProfile(parentId: number | string): Promise<Paren
     email: String(data?.email ?? '').trim() || undefined,
     phone: String(data?.phone ?? data?.phoneNumber ?? '').trim() || undefined,
     address: String(data?.address ?? data?.homeAddress ?? '').trim() || undefined,
+    schoolId: typeof data?.schoolId === 'number'
+      ? (data.schoolId as number)
+      : typeof data?.school_id === 'number'
+        ? (data.school_id as number)
+        : undefined,
   };
+}
+
+/** Payload for PUT /api/parent/profile. All fields optional; backend can ignore missing ones. */
+export interface ParentProfileUpdatePayload {
+  name?: string;
+  email?: string;
+  phone?: string;
+  homeAddress?: string;
+  schoolId?: number;
+  password?: string;
+}
+
+/** PUT /api/parent/profile – update logged-in parent's profile. */
+export async function updateParentProfile(
+  payload: ParentProfileUpdatePayload
+): Promise<TrackingSuccessResponse | { success?: boolean; message?: string }> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/parent/profile`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...requireAuthHeaders(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  try {
+    return (await res.json()) as TrackingSuccessResponse | { success?: boolean; message?: string };
+  } catch {
+    return { success: true };
+  }
 }
 
 export async function adminGetTrackingStatus(busId: number | string): Promise<AdminTrackingStatusResponse> {
