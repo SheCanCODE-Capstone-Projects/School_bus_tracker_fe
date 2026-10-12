@@ -1,0 +1,33 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "Parent_notification",
+    "Peace_branch",
+    "Yvette-Manishimwe-patch-1",
+    "integration-of-parents-page",
+    "main",
+    "origin",
+    "sandrine",
+    "solving-responsiveness-of-login-page"
+  ],
+  "parent": {
+    "Parent_notification": "main",
+    "Peace_branch": "main",
+    "Yvette-Manishimwe-patch-1": "main",
+    "integration-of-parents-page": "main",
+    "main": null,
+    "origin": "main",
+    "sandrine": "main",
+    "solving-responsiveness-of-login-page": "main"
+  },
+  "order": [
+    "main",
+    "Parent_notification",
+    "Peace_branch",
+    "Yvette-Manishimwe-patch-1",
+    "integration-of-parents-page",
+    "origin",
+    "sandrine",
+    "solving-responsiveness-of-login-page"
+  ]
+}
